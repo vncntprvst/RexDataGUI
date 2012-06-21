@@ -1,5 +1,5 @@
 function [alignedrasters, alignindex, trialindex, alltimefromtrig, alltimetotrig, eyehoriz, eyevert, eyevelocity, amplitudes, peakvels, peakaccs, allonofftime, trialnumbers] = ...
-    rdd_rasters( name, spikechannel, aligntocode, noneofcodes, allowbadtrials, alignsacnum, greycodes, aligntype)
+    rdd_rasters( name, spikechannel, aligntocode, noneofcodes, allowbadtrials, alignsacnum, greycodes, aligntype, collapse)
 
 % used to be: rdd_rasters( name, spikechannel, anyofcodes, allofcodes, noneofcodes, alignmentcode, allowbadtrials, alignsacnum, oncode, offcode)
 
@@ -160,18 +160,18 @@ while ~islast
     if isempty(h) || isempty(ecodeout)
         cond_disp( 'Something wrong with trial, no data.' );
     else
-        if size(alignto,1)>1
-            %             if ~sum(find(alignto==1001))
+        if  collapse %for collapsed alignements
             anyof = has_any_of( ecodeout, alignto );
             allof = 1;
-            %                 % reintroduced anyof for collapsed alignements
         else
             allof = has_all_of( ecodeout, alignto );
             anyof=1;
         end
-        %             end
-        %         end
+    if logical(sum(find(noneofcodes==alignto(1)))) %in case the purpose IS to align to a noneof code
+        noneof = 1;
+    else
         noneof = has_none_of( ecodeout, noneofcodes );
+    end
         
         %  If these are all true, we have found a trial matching the
         %  requested codes.  Now check for alignment, which might be a
@@ -179,7 +179,7 @@ while ~islast
         %  (falign) of the ecode indices where there's a match, which is
         %  probably unneccessary, since only the first is used.
         
-        if allof & noneof %anyof &
+        if allof & noneof & anyof
             falign = [];
             for i = 1:length( alignto )
                 fnext = find( ecodeout == alignto(i) );
@@ -205,15 +205,23 @@ while ~islast
                 
                 % get the alignment type. If it's a saccade align code, replace aligntime with the
                 % actual sac start (with new sac detection method:
-                ATPbuttonnb=find(strcmp(get(get(findobj('Tag','aligntimepanel'),'SelectedObject'),'Tag'), ...
-                    get(findall(findobj('Tag','aligntimepanel')),'Tag')));
-                if  strcmp(aligntype,'sac') || strcmp(aligntype,'corsac') % mainsacalign button OR corrective saccade
+%                 ATPbuttonnb=find(strcmp(get(get(findobj('Tag','aligntimepanel'),'SelectedObject'),'Tag'), ...
+%                     get(findall(findobj('Tag','aligntimepanel')),'Tag')));
+
+                if  strcmp(aligntype,'sac') || strcmp(aligntype,'corsac') ...
+                        || strcmp(aligntype,'error2')% mainsacalign button OR corrective saccade
                     ampsacofint=[];
                     nwsacstart=cat(1,curtrialsacInfo.starttime);
                     if strcmp(tasktype,'tokens')
+                        if strcmp(aligntype,'error2')
+                            sacofint=nwsacstart>etimeout(falign(1)-2); % finding saccades ocuring
+                                                                       % between the last token and
+                                                                       %the detected saccade (to the wrong target)
+                        else
                         sacofint=nwsacstart>etimeout(falign(1))-40;  % the token task is special
                         % in that we do not detect the saccade itself, but the eye leaving
                         % the fixation window. The small delay (40ms) reflects that
+                        end
                     else
                         sacofint=nwsacstart>etimeout(falign(1)-1); %considering all saccades occuring after the ecode
                     end                                            %preceding the saccade ecode, which is often erroneous
@@ -224,7 +232,7 @@ while ~islast
                     %start time of first saccade greater than 3 degrees (typical
                     %restriction window) after relevant ecode (ecodesacstart-1)
                     if logical(sum(ampsacofint>3))
-                        if ATPbuttonnb==6
+                        if strcmp(aligntype,'sac') || strcmp(aligntype,'error2') 
                             aligntime=getfield(curtrialsacInfo, {find(ampsacofint>3,1)}, 'starttime');
                             sacamp=getfield(curtrialsacInfo, {find(ampsacofint>3,1)}, 'amplitude');
                             sacpeakpeakvel=getfield(curtrialsacInfo, {find(ampsacofint>3,1)}, 'peakVelocity');

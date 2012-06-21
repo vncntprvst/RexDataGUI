@@ -154,8 +154,8 @@ for i=1:numrast
     axis(gca,'tight');
     box off;
     set(gca,'Color','white','TickDir','out','FontName','calibri','FontSize',8); %'YAxisLocation','rigth'
-    hxlabel=xlabel(gca,'Time (ms)','FontName','calibri','FontSize',8);
-    set(hxlabel,'Position',get(hxlabel,'Position') - [180 -0.2 0]); %doesn't stay there when export !
+%     hxlabel=xlabel(gca,'Time (ms)','FontName','calibri','FontSize',8);
+%     set(hxlabel,'Position',get(hxlabel,'Position') - [180 -0.2 0]); %doesn't stay there when export !
     hylabel=ylabel(gca,'Firing rate (spikes/s)','FontName','calibri','FontSize',8);
     
     patch([repmat((alignidx-start)-2,1,2) repmat((alignidx-start)+2,1,2)], ...
@@ -164,21 +164,20 @@ for i=1:numrast
     
     %Plot eye velocities
     heyevelplot=subplot(numsubplot,1,(numsubplot*2/3)+1:numsubplot,'Layer','top','Parent', handles.mainfig);
-    title('Eye velocity','FontName','calibri','FontSize',11);
-    % h = xlabel('');     pos = get(h,'Position'); delete(h)
-    % h = title('title'); set(h,'Position',pos);
+    title('Mean Eye Velocity','FontName','calibri','FontSize',11);
+    hxlabel=xlabel(gca,'Time (ms)','FontName','calibri','FontSize',8);
     
     hold on;
     
     eyevel=alignedata(i).eyevel;
-    eyevel=median(eyevel(:,start:stop));
+    eyevel=mean(eyevel(:,start:stop));
     heyevelline(i)=plot(eyevel,'Color',cc(i,:),'LineWidth',1);
     %axis(gca,'tight');
     eyevelymax=max(eyevel);
     if eyevelymax>0.8
         eyevelymax=eyevelymax*1.1;
     else
-        eyevelymax=0.8
+        eyevelymax=0.8;
     end
     axis([0 stop-start 0 eyevelymax]);
     set(gca,'Color','none','TickDir','out','FontSize',8,'FontName','calibri','box','off');
@@ -189,7 +188,7 @@ for i=1:numrast
     
     % get directions for the legend
     curdir{i}=alignedata(i).dir;
-    aligntype{i}=alignedata(i).alignlabel
+    aligntype{i}=alignedata(i).alignlabel;
     
 end
 %moving up all rasters now
@@ -218,7 +217,7 @@ set(heyevelplot,'position',eyevelplotpos);
 % plot a legend in this last graph
 clear spacer
 spacer(1:numrast,1)={' '};
-hlegdir = legend(heyevelline, strcat(curdir',spacer, aligntype'),'Location','NorthWest');
+hlegdir = legend(heyevelline, strcat(aligntype',spacer,curdir'),'Location','NorthWest');
 set(hlegdir,'Interpreter','none', 'Box', 'off','LineWidth',1.5,'FontName','calibri','FontSize',9);
 
 
@@ -438,8 +437,8 @@ figtitleh = title(transferedaxes(find(axespos(:,2)==max(axespos(:,2)))),...
     ['File: ',filename,' - Task: ',tasktype,' - Alignment: ',alignment]);
 set(figtitleh,'Interpreter','none'); %that prevents underscores turning charcter into subscript
     % and moving everything up a bit
-axespos(:,2)=axespos(:,2)+10; %units in pixels now
-axespos=mat2cell(axespos,ones(size(axespos,1),1)); %reconversion, if necessary
+axespos(:,2)=axespos(:,2)+50; %units in pixels now
+axespos=mat2cell(axespos,ones(size(axespos,1),1)); %reconversion
 set(transferedaxes,{'Position'},axespos);
     %and the title a little bit more
 titlepos=get(figtitleh,'position');
@@ -453,10 +452,11 @@ set(figtitleh,'position',titlepos);
 %basic png fig: 
 % saveas(exportfig,exportfigname,'png');
 %reasonably low size / good definition pdf figure:
-%print(gcf, '-dpdf', '-noui', '-painters','-r300', exportfigname);
+print(gcf, '-dpdf', '-noui', '-painters','-r300', exportfigname);
+
 % export_fig solves the font embedding problem for illustrator (not adobe reader though), but is slower. Use -nocrop
 % option to prevent border cropping
-export_fig(exportfigname,'-pdf','-transparent','-painters','-r300',exportfig);
+%export_fig(exportfigname,'-pdf','-transparent','-painters','-r300',exportfig);
 %for eps, use: print2eps(exportfigname,exportfig, '-noui', '-painters','-r300');
 
 % for higher (possibly) reso, could use print '-depsc2' format

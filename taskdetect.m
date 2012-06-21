@@ -4,7 +4,7 @@ function [curtasktype, ecodecueon, ecodesacstart, ecodesacend]=taskdetect(codes,
 % called by rex_process_inGUI and by data_info
 
 if nargin<2
-    curtasktype=[]
+    curtasktype=[];
 end
 
 global tasktype;

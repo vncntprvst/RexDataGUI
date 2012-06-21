@@ -104,6 +104,7 @@ alignsacnum=0;
 alignseccodes=[];
 alignlabel=[];
 secalignlabel=[];
+collapsecode=0;
 
 %define ecodes according to task
 %add last number for direction
@@ -278,10 +279,14 @@ if strcmp(get(get(findobj('Tag','showdirpanel'),'SelectedObject'),'Tag'),'selecd
         alignseccodes=alignseccodes(seccodeidx);
     end
     
-elseif strcmp(get(get(findobj('Tag','showdirpanel'),'SelectedObject'),'Tag'),'seleccollapall');
+elseif strcmp(get(get(findobj('Tag','showdirpanel'),'SelectedObject'),'Tag'),'seleccompall');
+    collapsecode=1;
     %compile all trial directions into a single raster
-    aligncodes=ecodealign; % so that when  aligncodes is only three numbers long, rdd_rasters knows it has to collapse all directions together
-    alignseccodes=secondcode; % but this behavior is adapted to current use.
+    aligncodes=aligncodes'; % previously: ecodealign,  so that when
+                            % aligncodes was only three numbers long, 
+                            % rdd_rasters would know it had to collapse all 
+                            % directions together
+    alignseccodes= alignseccodes'; %secondcode; 
 else
     disp('Selected option: all directions'); %that's the 'selecalldir' tag
 end
@@ -311,8 +316,8 @@ end
 % Needs to be run for aech direction, and each alignment code (Unless all
 % directions are collapse, or only one alignement code, etc...)
 
-% future immprovement: add nonecodes
-nonecodes=[];
+% default nonecodes. Potential conflict resolved in rdd_rasters
+nonecodes=[17385 16386];
 
 % variable to save aligned data
 datalign=struct('dir',{},'rasters',{},'trials',{},'timefromtrig',{},'timetotrig',{},'alignidx',{},'eyeh',{},'eyev',{},'eyevel',{},'amplitudes',{},...
@@ -336,8 +341,12 @@ end
             alignlabel='stop';
         end
         
-        for numlab=1:length(aligncodes)+length(alignseccodes)
-        datalign(numlab).alignlabel =alignlabel;
+        if  singlerastplot || aligncodes(1)==1030 || aligncodes(1)== 17385 
+            datalign(1).alignlabel=alignlabel; %only one array
+        else
+            for numlab=1:size(aligncodes,1)+size(alignseccodes,1)
+            datalign(numlab).alignlabel =alignlabel;
+            end
         end
         
         if sum(alignseccodes)
@@ -350,11 +359,13 @@ end
             secalignlabel='tgt';
         elseif strfind(SATPSelectedButton,'stop')
             secalignlabel='stop';
+        elseif strfind(SATPSelectedButton,'errcd2align')
+            secalignlabel='error2';
         elseif strfind(SATPSelectedButton,'nosec') %unnecessary
             secalignlabel='none';
         end
         
-                for numlab=(length(aligncodes)+length(alignseccodes))/2+1:length(aligncodes)+length(alignseccodes)
+                for numlab=(size(aligncodes,1)+size(alignseccodes,1))/2+1:size(aligncodes,1)+size(alignseccodes,1)
                     datalign(numlab).alignlabel =secalignlabel;
                 end 
         end
@@ -381,7 +392,7 @@ sdfploth = axes('parent',sdfflowh,'Color','none');
    aligntype=datalign.alignlabel;
     [rasters,aidx, trialidx, timefromtrigs, timetotrigs, eyeh,eyev,eyevel,...
         amplitudes,peakvels,peakaccs,allgreyareas] = rdd_rasters( rdd_filename, spikechannel,...
-        aligncodes, nonecodes, includebad, alignsacnum, greycodes, aligntype);
+        aligncodes, nonecodes, includebad, alignsacnum, greycodes, aligntype, collapsecode);
        
     if isempty( rasters )
             disp( 'No raster could be generated (rex_rasters_trialtype returned empty raster)' );
@@ -477,22 +488,36 @@ else % if multiple, separate directions, or multiple align codes, create individ
         allaligncodes=aligncodes;
         rotaterow=0;
     else
-        numcodes=2*max(length(aligncodes),length(alignseccodes));
+        if collapsecode
+            numcodes=max(length(aligncodes),length(alignseccodes)); %if collapsed ecodes
+        else 
+            numcodes=2*max(length(aligncodes),length(alignseccodes)); %not collapsed together
+        end
         if length(aligncodes)==length(alignseccodes)
             allaligncodes=[aligncodes;alignseccodes]
             rotaterow=0;
         else %unequal length of alignment codes. Making them equal here
             allaligncodes=1001*ones(numcodes,2); %first making a matrix 1001 to fill up the future "voids"
-            if length(aligncodes)>length(alignseccodes)
-            allaligncodes(1:length(aligncodes),1)=aligncodes;
-            allaligncodes(length(aligncodes)+1:end,1)=alignseccodes*ones(length(aligncodes),1);
-            allaligncodes(length(aligncodes)+1:end,2)=basecodes;
-            rotaterow=fliplr(allaligncodes(length(aligncodes)+1:end,:));
-            else
-            allaligncodes(1:length(alignseccodes),1)=alignseccodes;
-            allaligncodes(length(alignseccodes)+1:end,1)=aligncodes*ones(length(alignseccodes),1);
-            allaligncodes(length(alignseccodes)+1:end,2)=basecodes;
-            rotaterow=fliplr(allaligncodes(length(alignseccodes)+1:end,:));
+            if size(aligncodes,1)>size(alignseccodes,1)
+            allaligncodes(1:size(aligncodes,1),1)=aligncodes;
+            allaligncodes(size(aligncodes,1)+1:end,1)=alignseccodes*ones(size(aligncodes,1),1);
+            allaligncodes(size(aligncodes,1)+1:end,2)=basecodes;
+            rotaterow=fliplr(allaligncodes(size(aligncodes,1)+1:end,:));
+            elseif size(aligncodes,1)<size(alignseccodes,1)
+            allaligncodes(1:size(alignseccodes,1),1)=alignseccodes;
+            allaligncodes(size(alignseccodes,1)+1:end,1)=aligncodes*ones(size(alignseccodes,1),1);
+            allaligncodes(size(alignseccodes,1)+1:end,2)=basecodes;
+            rotaterow=fliplr(allaligncodes(size(alignseccodes,1)+1:end,:));
+            elseif size(aligncodes,2)>size(alignseccodes,2)
+            allaligncodes(1:size(aligncodes,1),1:size(aligncodes,2))=aligncodes;
+            allaligncodes(size(aligncodes,1)+1:end,1:size(alignseccodes,2))=alignseccodes*ones(size(aligncodes,1),1);
+            allaligncodes(size(aligncodes,1)+1:end,size(alignseccodes,2)+1:end)=NaN;
+            rotaterow=0;
+            elseif size(aligncodes,2)<size(alignseccodes,2)
+            allaligncodes(1:size(alignseccodes,1),1:size(alignseccodes,2))=alignseccodes;
+            allaligncodes(size(alignseccodes,1)+1:end,1:size(aligncodes,2))=aligncodes*ones(size(alignseccodes,1),1);
+            allaligncodes(size(alignseccodes,1)+1:end,size(aligncodes,2)+1:end)=NaN;
+            rotaterow=0;
             end
         end
     end
@@ -521,7 +546,7 @@ end
        aligntype=datalign(i).alignlabel;
        [rasters,aidx, trialidx, timefromtrigs, timetotrigs, eyeh,eyev,eyevel,...
            amplitudes,peakvels,peakaccs,allgreyareas] = rdd_rasters( rdd_filename, spikechannel,...
-           allaligncodes(i,:), nonecodes, includebad, alignsacnum, greycodes, aligntype);
+           allaligncodes(i,:), nonecodes, includebad, alignsacnum, greycodes, aligntype, collapsecode);
        
         if isempty( rasters )
             disp( 'No raster could be generated (rex_rasters_trialtype returned empty raster)' );
@@ -595,25 +620,29 @@ end
             curdirnb=allaligncodes(i,1)-(floor(allaligncodes(i,1)/10)*10);
         end
         
-        if curdirnb==0
-            curdir='upward';
-        elseif curdirnb==1
-            curdir='up_right';
-        elseif curdirnb==2
-            curdir='rightward';
-        elseif curdirnb==3
-            curdir='down_right';
-        elseif curdirnb==4
-            curdir='downward';
-        elseif curdirnb==5
-            curdir='down_left';
-        elseif curdirnb==6
-            curdir='leftward';
-        elseif curdirnb==7
-            if strcmp(tasktype,'tokens') && sum(allaligncodes(:,1)-(floor(allaligncodes(1,1)/10)*10)==2)
-                curdir='leftward'; % made a mistake on the flag
-            else
-                curdir='up_left';
+        if collapsecode
+            curdir='all_directions';
+        else
+            if curdirnb==0
+                curdir='upward';
+            elseif curdirnb==1
+                curdir='up_right';
+            elseif curdirnb==2
+                curdir='rightward';
+            elseif curdirnb==3
+                curdir='down_right';
+            elseif curdirnb==4
+                curdir='downward';
+            elseif curdirnb==5
+                curdir='down_left';
+            elseif curdirnb==6
+                curdir='leftward';
+            elseif curdirnb==7
+                if strcmp(tasktype,'tokens') && sum(allaligncodes(:,1)-(floor(allaligncodes(1,1)/10)*10)==2)
+                    curdir='leftward'; % made a mistake on the flag
+                else
+                    curdir='up_left';
+                end
             end
         end
         
