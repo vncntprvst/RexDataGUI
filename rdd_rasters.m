@@ -251,20 +251,42 @@ while ~islast
                 end
                 
                 % now get the time of "greying" ecodes
+                selectedgrey=find([get(findobj('Tag','greycue'),'Value'),get(findobj('Tag','greyemvt'),'Value'),get(findobj('Tag','greyfix'),'Value')]);
+                greytypes={'cue';'eyemvt';'fix'};
+                greytypes=(greytypes(selectedgrey));
+                codepairnb=floor(size(greycodes,2)/2);%there may be multiple code. See l. 421 as well as here (273)
                 if logical(sum(greycodes))
                     shortecodout=floor(ecodeout./10);
                     if size(greycodes,1)>1 %more than one row: means several checkboxes are selected
                         for i=1:size(greycodes,1)
-                            for j=1:size(greycodes,2)
-                                try fonoffcode(i,j) = find(shortecodout == greycodes(i,j),1);  catch fonoffcode(i,j) = NaN; end %in multiple code tasks (ie, gapstop), may fail to find the code in the ecode list
-                                try onoffcodetime(i,j) = etimeout(fonoffcode(i,j)) * (arate / 1000); catch onoffcodetime(i,j) = NaN; end
+                            goodsacnum=0;
+                            if strcmp(greytypes(i),'eyemvt') %adjust times to real saccade times
+                                % find which saccade is the "good" one (if any) in this trial
+                                try goodsacnum=find(~cellfun(@isempty,{curtrialsacInfo.latency}));  catch goodsacnum=0; end                              
                             end
+                                for j=1:size(greycodes,2)
+                                    try fonoffcode(i,j) = find(shortecodout == greycodes(i,j),1);  catch fonoffcode(i,j) = NaN; end %in multiple code tasks (ie, gapstop), may fail to find the code in the ecode list
+                                    try onoffcodetime(i,j) = etimeout(fonoffcode(i,j)) * (arate / 1000); catch onoffcodetime(i,j) = NaN; end
+                                end
+                                if logical(goodsacnum)
+                                    onoffcodetime(i,1)=getfield(curtrialsacInfo, {goodsacnum}, 'starttime');
+                                    onoffcodetime(i,1+codepairnb)=getfield(curtrialsacInfo, {goodsacnum}, 'endtime');
+                                end  
                         end
                     else
-                        for j=1:size(greycodes,2)
-                            try fonoffcode(j) = find( shortecodout == greycodes(j),1); catch fonoffcode(j) = NaN; end
-                            try onoffcodetime(j) = etimeout(fonoffcode(j)) * (arate / 1000); catch onoffcodetime(j) = NaN; end
+                        goodsacnum=0;
+                        if strcmp(greytypes,'eyemvt') %adjust times to real saccade times
+                                % find which saccade is the "good" one (if any) in this trial
+                        try goodsacnum=find(~cellfun(@isempty,{curtrialsacInfo.latency}));   catch goodsacnum=0; end                             
                         end
+                            for j=1:size(greycodes,2)
+                                try fonoffcode(j) = find( shortecodout == greycodes(j),1); catch fonoffcode(j) = NaN; end
+                                try onoffcodetime(j) = etimeout(fonoffcode(j)) * (arate / 1000); catch onoffcodetime(j) = NaN; end
+                            end
+                               if logical(goodsacnum)
+                                    onoffcodetime(1)=getfield(curtrialsacInfo, {goodsacnum}, 'starttime');
+                                    onoffcodetime(1+codepairnb)=getfield(curtrialsacInfo, {goodsacnum}, 'endtime');
+                                end  
                     end
                 end
                 
@@ -388,7 +410,6 @@ while ~islast
                     %collect supplementary ecodes times (aka greycodes)
                     if logical(sum(greycodes))
                         trialonofftime=zeros(1,length(h));
-                        codepairnb=floor(size(onoffcodetime,2)/2);%there may be multiple code. (Presumably) only one pair is valid for this particular trial
                         if size(greycodes,1)>1 %more than one row
                             for i=1:size(greycodes,1)
                                 onoffkeepcode=[onoffcodetime(i,find(~isnan(onoffcodetime(i,:)),1))...
@@ -397,7 +418,7 @@ while ~islast
                             end
                         else
                             onoffkeepcode=[onoffcodetime(1,find(~isnan(onoffcodetime(1,:)),1))...
-                                onoffcodetime(1,find(~isnan(onoffcodetime(1,:)),1)+codepairnb)]; %keep the first pair of good codes)
+                            onoffcodetime(1,find(~isnan(onoffcodetime(1,:)),1)+codepairnb)]; %keep the first pair of good codes
                             trialonofftime(onoffkeepcode(1):onoffkeepcode(2))=1;
                         end
                         allonoffcodetime=cat_variable_size_row(allonoffcodetime, trialonofftime);

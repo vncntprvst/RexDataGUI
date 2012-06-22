@@ -108,9 +108,10 @@ end
 numrast=length(alignedata);
 for i=1:numrast
     rasters=alignedata(i).rasters;
-    alignidx= alignedata(i).alignidx;
-    start = alignidx - plotstart;
-    stop = alignidx + plotstop;
+    alignidx=alignedata(i).alignidx;
+    greyareas=alignedata(i).allgreyareas;
+    start=alignidx - plotstart;
+    stop=alignidx + plotstop;
     
     trials = size(rasters,1);
     isnantrial=zeros(1,size(rasters,1));
@@ -138,6 +139,27 @@ for i=1:numrast
             isnantrial(j)=1;
         end
         plot([spiketimes;spiketimes],[ones(size(spiketimes))*j;ones(size(spiketimes))*j-1],'color',cc(i,:),'LineStyle','-');
+        
+        % drawing the grey areas
+        try
+            greytimes=find(greyareas(j,start:stop)); % converting from a matrix representation to a time collection,
+                                                     % within selected time range
+        catch %grey times out of designated period's limits
+            greytimes=0;
+        end
+        diffgrey = find(diff(greytimes)>1); % In case the two grey areas overlap, it doesn't discriminate.
+                                            % But that's not a problem
+        diffgreytimes = greytimes(diffgrey);
+        if greytimes
+        patch([greytimes(1) greytimes(end) greytimes(end) greytimes(1)],[j j j-1 j-1],...
+            [0 0 0], 'EdgeColor', 'none', 'FaceAlpha', 0.3);
+        end
+        if diffgreytimes
+            %we'll see that later
+            diffgreytimes
+            pause
+        end
+        
     end
     axis(gca, 'off', 'tight');
     
@@ -158,6 +180,7 @@ for i=1:numrast
 %     set(hxlabel,'Position',get(hxlabel,'Position') - [180 -0.2 0]); %doesn't stay there when export !
     hylabel=ylabel(gca,'Firing rate (spikes/s)','FontName','calibri','FontSize',8);
     
+    % drawing the alignment bar
     patch([repmat((alignidx-start)-2,1,2) repmat((alignidx-start)+2,1,2)], ...
         [get(gca,'YLim') fliplr(get(gca,'YLim'))], ...
         [0 0 0 0],[1 0 0],'EdgeColor','none','FaceAlpha',0.5);

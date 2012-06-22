@@ -99,6 +99,7 @@ function datalign = rdd_rasters_sdf(rdd_filename, trialdirs)
 %    aligncodes = str2num( answer{ 2 } );
 %    mstart = mstart * -1.0;
 %    wb = waitbar( 0.1, 'Generating rasters...' );
+global directory slash;
 
 alignsacnum=0;
 alignseccodes=[];
@@ -295,16 +296,15 @@ end
 greycodes=[];
 togrey=find([get(findobj('Tag','greycue'),'Value'),get(findobj('Tag','greyemvt'),'Value'),get(findobj('Tag','greyfix'),'Value')]);
 
-if logical(sum(togrey))
-    if strcmp(tasktype,'gapstop')
-        saccode=[704 704];
-        stopcode=[507 507];
+    if strcmp(tasktype,'gapstop') %otherwise CAT arguments dimensions are not consistent below
+        saccode=[saccode saccode];
+        stopcode=[stopcode stopcode];
     end
+
+
+if logical(sum(togrey))
     greycodes =[tgtcode tgtoffcode;saccode saccode;fixcode fixoffcode];
     greycodes=greycodes(togrey,:); %selecting out the codes
-    if strcmp(tasktype,'base2rem50')
-    greycodes=[] %too complicated for the moment. Just unselected all checkboxes
-    end
 end
 
 
@@ -432,12 +432,86 @@ sdfploth = axes('parent',sdfflowh,'Color','none');
         
         axis([0 stop-start+1 0 size(rasters,1)]);
         hold on
+        
+        %% grey pathches
+            if logical(sum(togrey))
+                for j=1:size(allgreyareas,1) %plotting grey area trial by trial
+                    try
+                        greytimes=find(allgreyareas(j,start:stop)); %converting from a matrix representation to a time collection, within selected time range
+                    catch %grey times out of designated period's limits
+                        greytimes=0;
+                    end
+                    
+                    diffgrey = find(diff(greytimes)>1);
+                    diffgreytimes = greytimes(diffgrey);
+                    
+                    if greytimes
+                    if isempty(diffgreytimes)
+                        patch([greytimes(1) greytimes(end) greytimes(end) greytimes(1)],[j j j-1 j-1],...
+                            [0 0 0], 'EdgeColor', 'none', 'FaceAlpha', 0.3);
+                        greylim1 = patch([greytimes(1) greytimes(1)], [j j-1], [1 0 0]);
+                        greylim2 = patch([greytimes(end) greytimes(end)], [j j-1], [1 0 0]);
+                        set(greylim1, 'Edgecolor', [0 0 1],'Linewidth',2, 'EdgeAlpha', 0.5, 'FaceAlpha', 0.3)
+                        set(greylim2, 'Edgecolor', [0 0 1],'Linewidth',2, 'EdgeAlpha', 0.5, 'FaceAlpha', 0.3)
+                    else
+                        for k = 1:length(diffgreytimes)
+                            if k==1
+                                patch([greytimes(1) greytimes(diffgrey(k)) greytimes(diffgrey(k)) greytimes(1)],[j j j-1 j-1],...
+                                    [0 0 0], 'EdgeColor', 'none', 'FaceAlpha', 0.3);
+                                greylim3 = patch([greytimes(1) greytimes(1)], [j j-1], [1 0 0]);
+                                greylim4 = patch([greytimes(diffgrey(k)) greytimes(diffgrey(k))], [j j-1], [1 0 0]);
+                                set(greylim3, 'Edgecolor', [0 0 1],'Linewidth',2, 'EdgeAlpha', 0.5, 'FaceAlpha', 0.3)
+                                set(greylim4, 'Edgecolor', [0 0 1],'Linewidth',2, 'EdgeAlpha', 0.5, 'FaceAlpha', 0.3)
+                            end
+                            if k == length(diffgreytimes)
+                                patch([greytimes(diffgrey(k)+1) greytimes(end) greytimes(end) greytimes(diffgrey(k)+1)],[j j j-1 j-1],...
+                                    [0 0 0], 'EdgeColor', 'none', 'FaceAlpha', 0.3);
+                                greylim5 = patch([greytimes(diffgrey(k)+1) greytimes(diffgrey(k)+1)], [j j-1], [1 0 0]);
+                                greylim6 = patch([greytimes(end) greytimes(end)], [j j-1], [1 0 0]);
+                                set(greylim5, 'Edgecolor', [0 0 1],'Linewidth',2, 'EdgeAlpha', 0.5, 'FaceAlpha', 0.3)
+                                set(greylim6, 'Edgecolor', [0 0 1],'Linewidth',2, 'EdgeAlpha', 0.5, 'FaceAlpha', 0.3)
+                            else
+                                patch([greytimes(diffgrey(k)+1) greytimes(diffgrey(k+1)) greytimes(diffgrey(k+1)) greytimes(diffgrey(k)+1)],[j j j-1 j-1],...
+                                    [0 0 0], 'EdgeColor', 'none', 'FaceAlpha', 0.3);
+                                greylim7 = patch([greytimes(diffgrey(k)+1) greytimes(diffgrey(k)+1)], [j j-1], [1 0 0]);
+                                greylim8 = patch([greytimes(diffgrey(k+1)) greytimes(diffgrey(k+1))], [j j-1], [1 0 0]);
+                                set(greylim7, 'Edgecolor', [0 0 1],'Linewidth',2, 'EdgeAlpha', 0.5, 'FaceAlpha', 0.3)
+                                set(greylim8, 'Edgecolor', [0 0 1],'Linewidth',2, 'EdgeAlpha', 0.5, 'FaceAlpha', 0.3)
+                            end
+                        end
+                    end
+                    
+                    end
+            end
+       end
+        
         for j=1:size(rasters,1) %plotting rasters trial by trial
         spiketimes=find(rasters(j,start:stop)); %converting from a matrix representation to a time collection, within selected time range
             if isnan(sum(rasters(j,start:stop)))
                 isnantrial(j)=1;
             end
-        plot([spiketimes;spiketimes],[ones(size(spiketimes))*j;ones(size(spiketimes))*j-1],'k-')
+        rastploth = plot([spiketimes;spiketimes],[ones(size(spiketimes))*j;ones(size(spiketimes))*j-1],'k-');
+        uistack(rastploth,'down');
+        
+        % stacking the grey patches properly 
+        if exist('greylim1')
+            uistack(greylim1,'top');
+        elseif exist('greylim2')
+            uistack(greylim2,'top');
+        elseif exist('greylim3')
+            uistack(greylim3,'top');
+        elseif exist('greylim4')
+            uistack(greylim4,'top');
+        elseif exist('greylim5')
+            uistack(greylim5,'top');
+        elseif exist('greylim6')
+            uistack(greylim6,'top');
+        elseif exist('greylim7')
+            uistack(greylim7,'top');
+        elseif exist('greylim8')
+            uistack(greylim8,'top');     
+        end
+
         end
         hold off
         set(gca,'TickDir','out'); % draw the tick marks on the outside
@@ -494,7 +568,7 @@ else % if multiple, separate directions, or multiple align codes, create individ
             numcodes=2*max(length(aligncodes),length(alignseccodes)); %not collapsed together
         end
         if length(aligncodes)==length(alignseccodes)
-            allaligncodes=[aligncodes;alignseccodes]
+            allaligncodes=[aligncodes;alignseccodes];
             rotaterow=0;
         else %unequal length of alignment codes. Making them equal here
             allaligncodes=1001*ones(numcodes,2); %first making a matrix 1001 to fill up the future "voids"
@@ -591,18 +665,81 @@ end
         isnantrial=zeros(1,size(rasters,1));
         axis([0 stop-start+1 0 size(rasters,1)]);
         hold on
-        for j=1:size(rasters,1) %plotting rasters trial by trial
+        
+         %% grey patches for multiple plots
+        if logical(sum(togrey))
+                for j=1:size(allgreyareas,1) %plotting grey area trial by trial
+                    greytimes=find(allgreyareas(j,start:stop)); %converting from a matrix representation to a time collection, within selected time range
+                    
+                    diffgrey = find(diff(greytimes)>1); %in case the two grey areas overlap, it doesn't discriminate. But that's not a problem
+                    diffgreytimes = greytimes(diffgrey);              
+                    
+                    if isempty(diffgreytimes)
+                        patch([greytimes(1) greytimes(end) greytimes(end) greytimes(1)],[j j j-1 j-1],...
+                            [0 0 0], 'EdgeColor', 'none', 'FaceAlpha', 0.3);
+                        greylim1 = patch([greytimes(1) greytimes(1)], [j j-1], [1 0 0]);
+                        greylim2 = patch([greytimes(end) greytimes(end)], [j j-1], [1 0 0]);
+                        set(greylim1, 'Edgecolor', [0 0 1],'Linewidth',2, 'EdgeAlpha', 0.5, 'FaceAlpha', 0.3)
+                        set(greylim2, 'Edgecolor', [0 0 1],'Linewidth',2, 'EdgeAlpha', 0.5, 'FaceAlpha', 0.3)
+                    else
+                        for k = 1:length(diffgreytimes)
+                            if k==1
+                                patch([greytimes(1) greytimes(diffgrey(k)) greytimes(diffgrey(k)) greytimes(1)],[j j j-1 j-1],...
+                                    [0 0 0], 'EdgeColor', 'none', 'FaceAlpha', 0.3);
+                                greylim3 = patch([greytimes(1) greytimes(1)], [j j-1], [1 0 0]);
+                                greylim4 = patch([greytimes(diffgrey(k)) greytimes(diffgrey(k))], [j j-1], [1 0 0]);
+                                set(greylim3, 'Edgecolor', [0 0 1],'Linewidth',2, 'EdgeAlpha', 0.5, 'FaceAlpha', 0.3)
+                                set(greylim4, 'Edgecolor', [0 0 1],'Linewidth',2, 'EdgeAlpha', 0.5, 'FaceAlpha', 0.3)
+                            end
+                            if k == length(diffgreytimes)
+                                patch([greytimes(diffgrey(k)+1) greytimes(end) greytimes(end) greytimes(diffgrey(k)+1)],[j j j-1 j-1],...
+                                    [0 0 0], 'EdgeColor', 'none', 'FaceAlpha', 0.3);
+                                greylim5 = patch([greytimes(diffgrey(k)+1) greytimes(diffgrey(k)+1)], [j j-1], [1 0 0]);
+                                greylim6 = patch([greytimes(end) greytimes(end)], [j j-1], [1 0 0]);
+                                set(greylim5, 'Edgecolor', [0 0 1],'Linewidth',2, 'EdgeAlpha', 0.5, 'FaceAlpha', 0.3)
+                                set(greylim6, 'Edgecolor', [0 0 1],'Linewidth',2, 'EdgeAlpha', 0.5, 'FaceAlpha', 0.3)
+                            else
+                                patch([greytimes(diffgrey(k)+1) greytimes(diffgrey(k+1)) greytimes(diffgrey(k+1)) greytimes(diffgrey(k)+1)],[j j j-1 j-1],...
+                                    [0 0 0], 'EdgeColor', 'none', 'FaceAlpha', 0.3);
+                                greylim7 = patch([greytimes(diffgrey(k)+1) greytimes(diffgrey(k)+1)], [j j-1], [1 0 0]);
+                                greylim8 = patch([greytimes(diffgrey(k+1)) greytimes(diffgrey(k+1))], [j j-1], [1 0 0]);
+                                set(greylim7, 'Edgecolor', [0 0 1],'Linewidth',2, 'EdgeAlpha', 0.5, 'FaceAlpha', 0.3)
+                                set(greylim8, 'Edgecolor', [0 0 1],'Linewidth',2, 'EdgeAlpha', 0.5, 'FaceAlpha', 0.3)
+                            end
+                        end
+                    end
+                    
+                end
+        end    
+            
+        %% plotting rasters trial by trial
+        for j=1:size(rasters,1) 
         spiketimes=find(rasters(j,start:stop)); %converting from a matrix representation to a time collection, within selected time range
             if isnan(sum(rasters(j,start:stop)))
                 isnantrial(j)=1;
             end
-        plot([spiketimes;spiketimes],[ones(size(spiketimes))*j;ones(size(spiketimes))*j-1],'k-');
-                % had a doubt about the number of spikes displayed. Twas due to
-                % the stupid imagesc rasterplot, which doesn't scale properly at
-                % small window sizes
-                % spkcntstr=sprintf('number of spikes in raster %d trial %d is %d', i, j, length(spiketimes));
-                % disp(spkcntstr);
+        rastploth=plot([spiketimes;spiketimes],[ones(size(spiketimes))*j;ones(size(spiketimes))*j-1],'k-');
+        uistack(rastploth,'down');
         end
+          
+        if exist('greylim1')
+            uistack(greylim1,'top');
+        elseif exist('greylim2')
+            uistack(greylim2,'top');
+        elseif exist('greylim3')
+            uistack(greylim3,'top');
+        elseif exist('greylim4')
+            uistack(greylim4,'top');
+        elseif exist('greylim5')
+            uistack(greylim5,'top');
+        elseif exist('greylim6')
+            uistack(greylim6,'top');
+        elseif exist('greylim7')
+            uistack(greylim7,'top');
+        elseif exist('greylim8')
+            uistack(greylim8,'top');
+        end
+
         hold off;
         set(gca,'TickDir','out'); % draw the tick marks on the outside
         set(gca,'YTick', []); % don't draw y-axis ticks
@@ -707,8 +844,7 @@ end
 
 end
 
-        datalign(1).savealignname = cat( 2, 'B:\data\Recordings\processed\aligned\', rdd_filename, '_', [alignlabel secalignlabel]);
-        
+datalign(1).savealignname = cat( 2, directory, 'processed',slash, 'aligned',slash, rdd_filename, '_', cell2mat(unique({datalign.alignlabel})));        
 
 %% eye velocity plot
 % subplot( 3,1, 3 );
