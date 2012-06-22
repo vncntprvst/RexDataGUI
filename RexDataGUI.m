@@ -337,6 +337,7 @@ if overwrite
         [filedates,fdateidx] = sort(filedates,'descend');
         dirlisting = {dirlisting(:).name};
         dirlisting=dirlisting(fdateidx);
+        dirlisting = dirlisting(cellfun('isempty',strfind(dirlisting,'myBreakpoints')));
         dirlisting = dirlisting(~cellfun('isempty',strfind(dirlisting,'mat')));
         for i=1:length(dirlisting)
             thisfilename=cell2mat(dirlisting(i));
@@ -390,8 +391,23 @@ function displaymfiles_Callback(hObject, eventdata, handles)
 % hObject    handle to displaymfiles (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-if strcmp(get(gcf,'SelectionType'),'normal')==1 % if simple click, just higlight it, don't open
-else %if strcmp(get(gcf,'SelectionType'),'open')==1
+if strcmp(get(gcf,'SelectionType'),'normal') % if simple click, just higlight it, don't open
+    %set uimenu content for following rightclick
+    %SelectionType 'Alternate' (Right click) doesn't work with listbox
+    %dispmenu=(get(hObject,'UIContextMenu'));
+    listboxcontextmenu=uicontextmenu;
+    processedrexfiles = cellstr(get(hObject,'String')); % returns displaymfiles contents as cell array
+    rclk_filename = processedrexfiles{get(hObject,'Value')}; %returns selected item from displaymfiles
+    filecontent=matfile(rclk_filename);
+    filecodes=filecontent.allcodes;
+    curtasktype=taskdetect(filecodes);
+    if iscell(curtasktype)
+    curtasktype=cell2mat(curtasktype);
+    end
+    disptask=uimenu('Parent',listboxcontextmenu,'Label',curtasktype);
+    set(hObject,'UIContextMenu',listboxcontextmenu);
+    
+elseif strcmp(get(gcf,'SelectionType'),'open')
    
 s=dbstatus; %little trick to prevent removal of breakpoints with clear
 save('myBreakpoints.mat', 's');
