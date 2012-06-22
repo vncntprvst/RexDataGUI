@@ -70,7 +70,12 @@ archst  = computer('arch');
 global directory slash
 
 if strcmp(archst, 'maci64')
-    directory = '/Users/nick/Dropbox/filesforNick/';
+    name = getenv('USER'); 
+    if strcmp(name, 'nick')
+        directory = '/Users/nick/Dropbox/filesforNick/';
+    elseif strcmp(name, 'Frank')
+        directory = '/Users/Frank/Desktop/monkeylab/data/';
+    end
     slash = '/';
 elseif strcmp(archst, 'win32')
     directory = 'B:\data\Recordings\';
