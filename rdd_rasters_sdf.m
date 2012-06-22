@@ -669,7 +669,11 @@ end
          %% grey patches for multiple plots
         if logical(sum(togrey))
                 for j=1:size(allgreyareas,1) %plotting grey area trial by trial
-                    greytimes=find(allgreyareas(j,start:stop)); %converting from a matrix representation to a time collection, within selected time range
+                    try
+                        greytimes=find(allgreyareas(j,start:stop)); %converting from a matrix representation to a time collection, within selected time range
+                    catch %grey times out of designated period's limits
+                        greytimes=0;
+                    end
                     
                     diffgrey = find(diff(greytimes)>1); %in case the two grey areas overlap, it doesn't discriminate. But that's not a problem
                     diffgreytimes = greytimes(diffgrey);              
