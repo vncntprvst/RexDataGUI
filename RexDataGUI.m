@@ -67,7 +67,7 @@ guidata(hObject, handles);
 % determines computer type
 archst  = computer('arch');
 
-global directory slash
+global directory slash;
 
 if strcmp(archst, 'maci64')
     name = getenv('USER'); 
