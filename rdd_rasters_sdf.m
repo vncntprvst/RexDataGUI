@@ -308,8 +308,8 @@ if logical(sum(togrey))
 end
 
 
-%% generate rasters
-%%%%%%%%%%%%%%%%%%%
+%% aligning data and generating rasters
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % First, align data to codes
 % Function rdd_rasters returns value for alignedrasters, alignindex, eyehoriz, eyevert, eyevelocity, allonofftime, trialnumbers
@@ -370,191 +370,8 @@ end
                 end 
         end
 
-
-if  singlerastplot || aligncodes(1)==1030 || aligncodes(1)== 17385 
-    % || aligncodes(1)==16386 || aligncodes(1)==16387 || aligncodes(1)==16388;
-     %Which means that, until other code is deemed necessary, if aligned on
-     %reward or error codes, and only one align code, collapse all trials
-     
-figure(gcf);
-
-rasterflowh = uigridcontainer('v0','Units','norm','Position',[.3,.1,.7,.9], ...
-    'Margin',3,'Tag','rasterflow','parent',findobj('Tag','rasterspanel'),'backgroundcolor', 'white');
-  % default GridSize is [1,1]
-rasterh = axes('parent',rasterflowh);
-set(rasterh,'YTickLabel',[],'XTickLabel',[]);
-
-sdfflowh = uigridcontainer('v0','Units','norm','Position',[.3,.1,.7,.9], ...
-    'Tag','rasterflow','parent',findobj('Tag','rasterspanel'),'backgroundcolor', 'none');
- % default GridSize is [1,1]
-sdfploth = axes('parent',sdfflowh,'Color','none');
-
-   aligntype=datalign.alignlabel;
-    [rasters,aidx, trialidx, timefromtrigs, timetotrigs, eyeh,eyev,eyevel,...
-        amplitudes,peakvels,peakaccs,allgreyareas] = rdd_rasters( rdd_filename, spikechannel,...
-        aligncodes, nonecodes, includebad, alignsacnum, greycodes, aligntype, collapsecode);
-       
-    if isempty( rasters )
-            disp( 'No raster could be generated (rex_rasters_trialtype returned empty raster)' );
-            return;
-        else
-            datalign(1).rasters=rasters;
-            datalign(1).alignidx=aidx;
-            datalign(1).trials=find(trialidx);
-            datalign(1).timefromtrig=timefromtrigs;
-            datalign(1).timetotrig=timetotrigs;
-            datalign(1).eyeh=eyeh;
-            datalign(1).eyev=eyev;
-            datalign(1).eyevel=eyevel;
-            datalign(1).allgreyareas=allgreyareas;
-            datalign(1).amplitudes=amplitudes;
-            datalign(1).peakvels=peakvels;
-            datalign(1).peakaccs=peakaccs;            
-        end;
+%% formatting aligncodes
         
-    
-      % adjust temporal axis
-        start = aidx - mstart;
-        stop = aidx + mstop;
-        if start < 1
-            start = 1;
-        end;
-        if stop > length( rasters )
-            stop = length( rasters );
-        end;
-        
-        
-        %get the current axes
-        axes(rasterh);
-    
-        trials = size(rasters,1);   
-        isnantrial=zeros(1,size(rasters,1));
-        
-        axis([0 stop-start+1 0 size(rasters,1)]);
-        hold on
-        
-        %% grey pathches
-            if logical(sum(togrey))
-                for j=1:size(allgreyareas,1) %plotting grey area trial by trial
-                    try
-                        greytimes=find(allgreyareas(j,start:stop)); %converting from a matrix representation to a time collection, within selected time range
-                    catch %grey times out of designated period's limits
-                        greytimes=0;
-                    end
-                    
-                    diffgrey = find(diff(greytimes)>1);
-                    diffgreytimes = greytimes(diffgrey);
-                    
-                    if greytimes
-                    if isempty(diffgreytimes)
-                        patch([greytimes(1) greytimes(end) greytimes(end) greytimes(1)],[j j j-1 j-1],...
-                            [0 0 0], 'EdgeColor', 'none', 'FaceAlpha', 0.3);
-                        greylim1 = patch([greytimes(1) greytimes(1)], [j j-1], [1 0 0]);
-                        greylim2 = patch([greytimes(end) greytimes(end)], [j j-1], [1 0 0]);
-                        set(greylim1, 'Edgecolor', [0 0 1],'Linewidth',2, 'EdgeAlpha', 0.5, 'FaceAlpha', 0.3)
-                        set(greylim2, 'Edgecolor', [0 0 1],'Linewidth',2, 'EdgeAlpha', 0.5, 'FaceAlpha', 0.3)
-                    else
-                        for k = 1:length(diffgreytimes)
-                            if k==1
-                                patch([greytimes(1) greytimes(diffgrey(k)) greytimes(diffgrey(k)) greytimes(1)],[j j j-1 j-1],...
-                                    [0 0 0], 'EdgeColor', 'none', 'FaceAlpha', 0.3);
-                                greylim3 = patch([greytimes(1) greytimes(1)], [j j-1], [1 0 0]);
-                                greylim4 = patch([greytimes(diffgrey(k)) greytimes(diffgrey(k))], [j j-1], [1 0 0]);
-                                set(greylim3, 'Edgecolor', [0 0 1],'Linewidth',2, 'EdgeAlpha', 0.5, 'FaceAlpha', 0.3)
-                                set(greylim4, 'Edgecolor', [0 0 1],'Linewidth',2, 'EdgeAlpha', 0.5, 'FaceAlpha', 0.3)
-                            end
-                            if k == length(diffgreytimes)
-                                patch([greytimes(diffgrey(k)+1) greytimes(end) greytimes(end) greytimes(diffgrey(k)+1)],[j j j-1 j-1],...
-                                    [0 0 0], 'EdgeColor', 'none', 'FaceAlpha', 0.3);
-                                greylim5 = patch([greytimes(diffgrey(k)+1) greytimes(diffgrey(k)+1)], [j j-1], [1 0 0]);
-                                greylim6 = patch([greytimes(end) greytimes(end)], [j j-1], [1 0 0]);
-                                set(greylim5, 'Edgecolor', [0 0 1],'Linewidth',2, 'EdgeAlpha', 0.5, 'FaceAlpha', 0.3)
-                                set(greylim6, 'Edgecolor', [0 0 1],'Linewidth',2, 'EdgeAlpha', 0.5, 'FaceAlpha', 0.3)
-                            else
-                                patch([greytimes(diffgrey(k)+1) greytimes(diffgrey(k+1)) greytimes(diffgrey(k+1)) greytimes(diffgrey(k)+1)],[j j j-1 j-1],...
-                                    [0 0 0], 'EdgeColor', 'none', 'FaceAlpha', 0.3);
-                                greylim7 = patch([greytimes(diffgrey(k)+1) greytimes(diffgrey(k)+1)], [j j-1], [1 0 0]);
-                                greylim8 = patch([greytimes(diffgrey(k+1)) greytimes(diffgrey(k+1))], [j j-1], [1 0 0]);
-                                set(greylim7, 'Edgecolor', [0 0 1],'Linewidth',2, 'EdgeAlpha', 0.5, 'FaceAlpha', 0.3)
-                                set(greylim8, 'Edgecolor', [0 0 1],'Linewidth',2, 'EdgeAlpha', 0.5, 'FaceAlpha', 0.3)
-                            end
-                        end
-                    end
-                    
-                    end
-            end
-       end
-        
-        for j=1:size(rasters,1) %plotting rasters trial by trial
-        spiketimes=find(rasters(j,start:stop)); %converting from a matrix representation to a time collection, within selected time range
-            if isnan(sum(rasters(j,start:stop)))
-                isnantrial(j)=1;
-            end
-        rastploth = plot([spiketimes;spiketimes],[ones(size(spiketimes))*j;ones(size(spiketimes))*j-1],'k-');
-        uistack(rastploth,'down');
-        
-        % stacking the grey patches properly 
-        if exist('greylim1')
-            uistack(greylim1,'top');
-        elseif exist('greylim2')
-            uistack(greylim2,'top');
-        elseif exist('greylim3')
-            uistack(greylim3,'top');
-        elseif exist('greylim4')
-            uistack(greylim4,'top');
-        elseif exist('greylim5')
-            uistack(greylim5,'top');
-        elseif exist('greylim6')
-            uistack(greylim6,'top');
-        elseif exist('greylim7')
-            uistack(greylim7,'top');
-        elseif exist('greylim8')
-            uistack(greylim8,'top');     
-        end
-
-        end
-        hold off
-        set(gca,'TickDir','out'); % draw the tick marks on the outside
-        set(gca,'YTick', []); % don't draw y-axis ticks
-        set(gca,'YDir','reverse');
-        set(gca,'YColor',get(gcf,'Color')); % hide the y axis
-        box off
-     
-        % write that directions are collapsed
-        curdir='all_collapsed';
-
-        s1 = sprintf( 'Trials for %s direction, n = %d trials.', curdir, trials); %num2str( aligncodes(i) )
-        title( s1 );
-        
-        datalign(1).dir=curdir;      
-        
-        % restrict sdf to time window
-%       if one wants to remove trials with NaNs :
-%         sumall=sum(rasters(~isnantrial,start:stop));
-%         sdf=spike_density(sumall,fsigma)./length(find(~isnantrial));
-        % otherwise, replace them with 0s
-        rasters(isnan(rasters))=0;
-        sumall=sum(rasters(:,start:stop));
-        sdf=spike_density(sumall,fsigma)./trials;
-
-        %pdf = probability_density( sumall, fsigma ) ./ trials;
-            
-        % on to raster plots
-        axes(sdfploth);
-
-        plot(sdf,'Color','b','LineWidth',3); 
-        axis([0 stop-start 0 200])
-        set(sdfploth,'Color','none','YAxisLocation','right','TickDir','out', ...
-            'FontSize',8,'Position',get(rasterh,'Position'));
-        
-        patch([repmat((aidx-start),1,2) repmat((aidx-start)+10,1,2)], ...
-        [get(gca,'YLim') fliplr(get(gca,'YLim'))], ...
-        [0 0 0 0],[1 0 0],'EdgeColor','none','FaceAlpha',0.5);
-        
-    
-    
-else % if multiple, separate directions, or multiple align codes, create individual rasterplots and sdf plots locations
-    
     allaligncodes=[];
     
     if ~sum(alignseccodes) %only one align code
@@ -596,35 +413,59 @@ else % if multiple, separate directions, or multiple align codes, create individ
         end
     end
             
-figure(gcf);
-
-rasterflowh = uigridcontainer('v0','Units','norm','Position',[.3,.1,.7,.9], ...
-    'Margin',3,'Tag','rasterflow','parent',findobj('Tag','rasterspanel'),'backgroundcolor', 'white');
-set(rasterflowh, 'GridSize',[ceil(numcodes/2),2]);  % default GridSize is [1,1]
-for i=1:numcodes
-rasterh(i) = axes('parent',rasterflowh);
-set(rasterh(i),'YTickLabel',[],'XTickLabel',[]);
-end
-
-sdfflowh = uigridcontainer('v0','Units','norm','Position',[.3,.1,.7,.9], ...
-    'Tag','rasterflow','parent',findobj('Tag','rasterspanel'),'backgroundcolor', 'none');
-set(sdfflowh, 'GridSize',[ceil(numcodes/2),2]);  % default GridSize is [1,1]
-for i=1:numcodes
-sdfploth(i) = axes('parent',sdfflowh,'Color','none');
-%set(rasterh(i),'YTickLabel',[],'XTickLabel',[]);
-end
-
-
-    % align trials
+    
+     % align trials
     for i=1:numcodes
        aligntype=datalign(i).alignlabel;
+       if strcmp(aligntype,'stop')
+           includebad=1; %we want to compare cancelled with non-cancelled
+           numplots=numcodes+1;
+       else
+            includebad=0;
+            numplots=numcodes;
+       end
        [rasters,aidx, trialidx, timefromtrigs, timetotrigs, eyeh,eyev,eyevel,...
-           amplitudes,peakvels,peakaccs,allgreyareas] = rdd_rasters( rdd_filename, spikechannel,...
+           amplitudes,peakvels,peakaccs,allgreyareas,badidx,ssd] = rdd_rasters( rdd_filename, spikechannel,...
            allaligncodes(i,:), nonecodes, includebad, alignsacnum, greycodes, aligntype, collapsecode);
+       
        
         if isempty( rasters )
             disp( 'No raster could be generated (rex_rasters_trialtype returned empty raster)' );
             continue;
+        elseif strcmp(aligntype,'stop')
+            canceledtrials=~badidx';
+            datalign(i).alignlabel='stop_cancel';
+            datalign(i).rasters=rasters(canceledtrials,:);
+            datalign(i).alignidx=aidx;
+            datalign(i).trials=trialidx(canceledtrials);
+            datalign(i).timefromtrig=timefromtrigs(canceledtrials);
+            datalign(i).timetotrig=timetotrigs(canceledtrials);
+            datalign(i).eyeh=eyeh(canceledtrials,:);
+            datalign(i).eyev=eyev(canceledtrials,:);
+            datalign(i).eyevel=eyevel(canceledtrials,:);
+            datalign(i).allgreyareas=allgreyareas(canceledtrials,:);
+            datalign(i).amplitudes=amplitudes(canceledtrials);
+            datalign(i).peakvels=peakvels(canceledtrials);
+            datalign(i).peakaccs=peakaccs(canceledtrials);       
+            datalign(i).bad=badidx(canceledtrials); 
+            datalign(i).ssd=ssd(canceledtrials); 
+            
+            canceledtrials=~canceledtrials;
+            datalign(i+1).alignlabel='stop_non_cancel';
+            datalign(i+1).rasters=rasters(canceledtrials,:);
+            datalign(i+1).alignidx=aidx;
+            datalign(i+1).trials=trialidx(canceledtrials);
+            datalign(i+1).timefromtrig=timefromtrigs(canceledtrials);
+            datalign(i+1).timetotrig=timetotrigs(canceledtrials);
+            datalign(i+1).eyeh=eyeh(canceledtrials,:);
+            datalign(i+1).eyev=eyev(canceledtrials,:);
+            datalign(i+1).eyevel=eyevel(canceledtrials,:);
+            datalign(i+1).allgreyareas=allgreyareas(canceledtrials,:);
+            datalign(i+1).amplitudes=amplitudes(canceledtrials);
+            datalign(i+1).peakvels=peakvels(canceledtrials);
+            datalign(i+1).peakaccs=peakaccs(canceledtrials);       
+            datalign(i+1).bad=badidx(canceledtrials); 
+            datalign(i+1).ssd=ssd(canceledtrials); 
         else
             datalign(i).rasters=rasters;
             datalign(i).alignidx=aidx;
@@ -638,8 +479,167 @@ end
             datalign(i).amplitudes=amplitudes;
             datalign(i).peakvels=peakvels;
             datalign(i).peakaccs=peakaccs;       
-        end;
-        
+            datalign(i).bad=badidx; 
+         end
+             
+
+    end
+    
+%% calculate ssrt 
+if strcmp(aligntype,'stop')
+    % saccade delay for non-stop trials
+    cuetimes=datalign(1,1).allgreyareas;
+    sactime=datalign(1,1).alignidx;
+    sacdelay=nan(size(cuetimes,1),1);
+    for nbtr=1:size(cuetimes,1)
+        sacdelay(nbtr)=sactime-find(cuetimes(nbtr,1:sactime),1);
+    end
+    
+    % calculating probabilities
+    delaybincenters=[69   117   169   217]; %based on Boucher et al values
+    nccssdhist=hist(datalign(end).ssd,delaybincenters);
+    ccssdhist=hist(datalign(end-1).ssd,delaybincenters);
+    probastop=nccssdhist./(nccssdhist+ccssdhist);
+    
+    %finding ssrt - first method
+
+    % mean inhibition function
+    mininhibfun=(sum((probastop(2:4)-probastop(1:3)).*delaybincenters(2:4)))./(max(probastop)-min(probastop));
+    inhibfunssrt(1)=mean(sacdelay)-mininhibfun;
+    % fitting weibull function
+    if ~(length(find(probastop))<length(probastop))
+    weibullcdfparam=wblfit(probastop);
+    weibullcdf=wblcdf(probastop,weibullcdfparam(1),weibullcdfparam(2));
+    %plot(weibullcdf)
+    mininhibfunwb=(sum((weibullcdf(2:4)-weibullcdf(1:3)).*delaybincenters(2:4)))...
+        ./(max(weibullcdf)-min(weibullcdf));
+    inhibfunssrt(2)=mean(sacdelay)-mininhibfunwb;
+    end
+
+%finding ssrt - second method
+    delaydistribedges=min(sacdelay)-1:10:max(sacdelay)+1;
+    delaydistribpdf=histc(sort(sacdelay),delaydistribedges);
+    emptyvalues=find(~delaydistribpdf);
+    if emptyvalues(1)==1
+        emptyvalues=emptyvalues(2:end);
+    end
+    if emptyvalues(end)==length(delaydistribpdf)
+        emptyvalues=emptyvalues(1:end-1);
+    end
+    for empt=1:length(emptyvalues)
+        delaydistribpdf(emptyvalues(empt))=mean([delaydistribpdf(emptyvalues(empt)-1)...
+            delaydistribpdf(emptyvalues(empt)+1)]);
+    end
+    %interpdelaydistribpdf=interp1(delaydistribedges,delaydistribpdf,min(totsadelay)-1:1:max(totsadelay)+1); 
+    delayfreq=delaydistribpdf./sum(delaydistribpdf);
+    %plot(cumtrapz(delayfreq));
+    
+    %interpdelfrq=interpdelaydistribpdf./sum(interpdelaydistribpdf);
+%     wbfitparam=wblfit(delayfreq);
+%     delaywbfit=wblcdf(delayfreq,wbfitparam(1),wbfitparam(2));
+
+    % finding SSRT for each SSD
+    sufficientdelay=find(probastop(1)<=cumtrapz(delayfreq),1);
+    intssrt(1)=delaydistribedges(sufficientdelay);
+    sufficientdelay=find(probastop(2)<=cumtrapz(delayfreq),1);
+    intssrt(2)=delaydistribedges(sufficientdelay);
+    sufficientdelay=find(probastop(3)<=cumtrapz(delayfreq),1);
+    intssrt(3)=delaydistribedges(sufficientdelay);
+    sufficientdelay=find(probastop(4)<=cumtrapz(delayfreq),1);
+    intssrt(4)=delaydistribedges(sufficientdelay);
+    
+    if inhibfunssrt>=(mean(intssrt)+std(intssrt))
+        ssrt=mean(intssrt);
+    else
+        ssrt=mean([intssrt inhibfunssrt]);
+    end
+    
+    % finally, adding SSRT to canceled trials alignment time, and selecting
+    % latency matched no-stop trials
+    
+    alignnum=find(strcmp({datalign.alignlabel},'stop_cancel'));
+    datalign(1,alignnum).alignidx=datalign(alignnum).alignidx+ssrt; %using a single value for ssrt
+    ssd=datalign(1,alignnum).ssd;
+    alignnum=find(strcmp({datalign.alignlabel},'sac'));
+    latmatch=sacdelay>=mean(ssd)+ssrt;
+    
+            datalign(1,alignnum).rasters=datalign(1,alignnum).rasters(latmatch,:);
+ %          datalign(1,alignnum).alignidx=datalign(1,alignnum).alignidx; %    doesn't change
+            datalign(1,alignnum).trials=datalign(1,alignnum).trials(latmatch);
+            datalign(1,alignnum).timefromtrig=datalign(1,alignnum).timefromtrig(latmatch);
+            datalign(1,alignnum).timetotrig=datalign(1,alignnum).timetotrig(latmatch);
+            datalign(1,alignnum).eyeh=datalign(1,alignnum).eyeh(latmatch,:);
+            datalign(1,alignnum).eyev=datalign(1,alignnum).eyev(latmatch,:);
+            datalign(1,alignnum).eyevel=datalign(1,alignnum).eyevel(latmatch,:);
+            datalign(1,alignnum).allgreyareas=datalign(1,alignnum).allgreyareas(latmatch,:);
+            datalign(1,alignnum).amplitudes=datalign(1,alignnum).amplitudes(latmatch);
+            datalign(1,alignnum).peakvels=datalign(1,alignnum).peakvels(latmatch);
+            datalign(1,alignnum).peakaccs=datalign(1,alignnum).peakaccs(latmatch);       
+            datalign(1,alignnum).bad=datalign(1,alignnum).bad(latmatch); 
+end
+
+%% Now plotting rasters
+%%%%%%%%%%%%%%%%%%%%%%
+    
+figure(gcf);
+
+if  singlerastplot || aligncodes(1)==1030 || aligncodes(1)== 17385 
+    % || aligncodes(1)==16386 || aligncodes(1)==16387 || aligncodes(1)==16388;
+     %Which means that, until other code is deemed necessary, if aligned on
+     %reward or error codes, and only one align code, collapse all trials
+       
+     rasterflowh = uigridcontainer('v0','Units','norm','Position',[.3,.1,.7,.9], ...
+    'Margin',3,'Tag','rasterflow','parent',findobj('Tag','rasterspanel'),'backgroundcolor', 'white');
+  % default GridSize is [1,1]
+rasterh = axes('parent',rasterflowh);
+set(rasterh,'YTickLabel',[],'XTickLabel',[]);
+
+sdfflowh = uigridcontainer('v0','Units','norm','Position',[.3,.1,.7,.9], ...
+    'Tag','rasterflow','parent',findobj('Tag','rasterspanel'),'backgroundcolor', 'none');
+ % default GridSize is [1,1]
+sdfploth = axes('parent',sdfflowh,'Color','none');
+     
+     
+else % if multiple, separate directions, or multiple align codes, create individual rasterplots and sdf plots locations
+
+rasterflowh = uigridcontainer('v0','Units','norm','Position',[.3,.1,.7,.9], ...
+    'Margin',3,'Tag','rasterflow','parent',findobj('Tag','rasterspanel'),'backgroundcolor', 'white');
+set(rasterflowh, 'GridSize',[ceil(numplots/2),2]);  % default GridSize is [1,1]
+for i=1:numplots
+rasterh(i) = axes('parent',rasterflowh);
+set(rasterh(i),'YTickLabel',[],'XTickLabel',[]);
+end
+
+sdfflowh = uigridcontainer('v0','Units','norm','Position',[.3,.1,.7,.9], ...
+    'Tag','rasterflow','parent',findobj('Tag','rasterspanel'),'backgroundcolor', 'none');
+set(sdfflowh, 'GridSize',[ceil(numplots/2),2]);  % default GridSize is [1,1]
+for i=1:numplots
+sdfploth(i) = axes('parent',sdfflowh,'Color','none');
+%set(rasterh(i),'YTickLabel',[],'XTickLabel',[]);
+end
+
+end
+
+for i=1:numplots
+         
+            rasters=datalign(i).rasters;
+            aidx=datalign(i).alignidx;
+            trialidx=datalign(i).trials;
+            timefromtrigs=datalign(i).timefromtrig;
+            timetotrigs=datalign(i).timetotrig;
+            eyeh=datalign(i).eyeh;
+            eyev=datalign(i).eyev;
+            eyevel=datalign(i).eyevel;
+            allgreyareas=datalign(i).allgreyareas;
+            amplitudes=datalign(i).amplitudes;
+            peakvels=datalign(i).peakvels;
+            peakaccs=datalign(i).peakaccs;       
+            badidx=datalign(i).bad; 
+            if strcmp(aligntype,'stop')
+            ssd=datalign(i).ssd; 
+            end
+    
+    
         % adjust temporal axis
         start = aidx - mstart;
         stop = aidx + mstop;
@@ -755,10 +755,15 @@ end
         % finding current trial direction. 
         % Direction already flipped left/ right in find_saccades_3 line 183
         % (see rex_process > find_saccades_3)
-        if logical(sum(rotaterow(1,:))) && logical(i>=length(aligncodes)+1)
-            curdirnb=rotaterow(i-length(aligncodes),1)-(floor(rotaterow(i-length(aligncodes),1)/10)*10);
+        if i>numcodes
+            aligncodeidx=max(numcodes);
         else
-            curdirnb=allaligncodes(i,1)-(floor(allaligncodes(i,1)/10)*10);
+            aligncodeidx=i;
+        end
+        if logical(sum(rotaterow(1,:))) && logical(aligncodeidx>=length(aligncodes)+1)
+            curdirnb=rotaterow(aligncodeidx-length(aligncodes),1)-(floor(rotaterow(aligncodeidx-length(aligncodes),1)/10)*10);
+        else
+            curdirnb=allaligncodes(aligncodeidx,1)-(floor(allaligncodes(aligncodeidx,1)/10)*10);
         end
         
         if collapsecode
@@ -846,9 +851,8 @@ end
 %    spy(rasters(:,start:stop),':',5);
 %    set(gca,'PlotBoxAspectRatio',[1052 200 1]);
 
-end
-
 datalign(1).savealignname = cat( 2, directory, 'processed',slash, 'aligned',slash, rdd_filename, '_', cell2mat(unique({datalign.alignlabel})));        
+end
 
 %% eye velocity plot
 % subplot( 3,1, 3 );

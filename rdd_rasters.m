@@ -1,4 +1,4 @@
-function [alignedrasters, alignindex, trialindex, alltimefromtrig, alltimetotrig, eyehoriz, eyevert, eyevelocity, amplitudes, peakvels, peakaccs, allonofftime, trialnumbers] = ...
+function [alignedrasters, alignindex, trialindex, alltimefromtrig, alltimetotrig, eyehoriz, eyevert, eyevelocity, amplitudes, peakvels, peakaccs, allonofftime,badidx,allssd] = ...
     rdd_rasters( name, spikechannel, aligntocode, noneofcodes, allowbadtrials, alignsacnum, greycodes, aligntype, collapse)
 
 % used to be: rdd_rasters( name, spikechannel, anyofcodes, allofcodes, noneofcodes, alignmentcode, allowbadtrials, alignsacnum, oncode, offcode)
@@ -72,43 +72,9 @@ amplitudes=[];
 peakvels=[];
 peakaccs=[];
 alignto = aligntocode;
-
-%
-% if nargin < 6
-%     if isempty( anyofcodes )
-%         alignmentcode = allofcodes;
-%     else
-%         alignmentcode = anyofcodes;
-%     end;
-% end;
-%
-% if isempty( allofcodes ) && isempty( anyofcodes )
-%     cond_disp( 'rex_rasters_trialtype:  "All of" code list and "Any of" code list cannot both be empty.' );
-%     return;
-% end;
-%
-
-%
-% if nargin <7
-%     allowbadtrials = 0;
-% end;
-%
-% if nargin < 8
-%     alignsacnum = 0;
-% end;
-%
-% if nargin < 9
-%     oncode = alignto(1);
-% end;
-%
-% if nargin < 10
-%     offcode = alignto(1);
-% end;
-%
-% if spikechannel > 10
-%     s = sprintf( 'rex_rasters_trialtype:  the neural data channel requested (%d) was crazy.\n', spikechannel );
-%     return;
-% end;
+sacamp = NaN;
+sacpeakpeakvel = NaN;
+sacpeakacc = NaN;
 
 sbad = '';
 if ~allowbadtrials
@@ -131,9 +97,8 @@ eyevelocity = [];
 allonoffcodetime = [];
 alltimefromtrig=[];
 alltimetotrig=[];
-sacamp = NaN;
-sacpeakpeakvel = NaN;
-sacpeakacc = NaN;
+badidx=[];
+allssd=[];
 
 %  Loop through all of the trials using rex_first_trial and rex_next_trial.
 %  See if each trial has the right codes, and try to align the spike data
@@ -153,7 +118,7 @@ while ~islast
     
     %[ecodeout, etimeout, spkchan, spk, arate, h, v, start_time, badtrial ] = rex_trial(name, d );
     
-    [ecodeout, etimeout, spkchan, spk, arate, h, v, start_time, rdt_badtrial, curtrialsacInfo] = rdd_rex_trial(name, d);%, rdt_includeaborted);
+    [ecodeout, etimeout, spkchan, spk, arate, h, v, start_time, isbadtrial, curtrialsacInfo] = rdd_rex_trial(name, d);%, rdt_includeaborted);
     
     %curdir=ecodeout(2)-floor(ecodeout(2)/10)*10;
     
@@ -167,7 +132,8 @@ while ~islast
             allof = has_all_of( ecodeout, alignto );
             anyof=1;
         end
-    if logical(sum(find(noneofcodes==alignto(1)))) %in case the purpose IS to align to a noneof code
+    if logical(sum(find(noneofcodes==alignto(1)))) ... %in case the purpose IS to align to a noneof code
+            || allowbadtrials % or if we want the bad trials too
         noneof = 1;
     else
         noneof = has_none_of( ecodeout, noneofcodes );
@@ -249,8 +215,20 @@ while ~islast
                         end
                     end
                 end
+                if strcmp(aligntype,'stop')
+                        if ecodeout(9)==17385 || ecodeout(9)==16386
+                             ampsacofint=[];
+                             nwsacstart=cat(1,curtrialsacInfo.starttime);
+                             sacofint=nwsacstart>etimeout(falign(1));
+                             if sum(sacofint)
+                                  aligntime=getfield(curtrialsacInfo, {find(sacofint,1)}, 'starttime');
+                             else
+                                  alignmentfound = 0;
+                             end
+                        end
+                 end
                 
-                % now get the time of "greying" ecodes
+                %% now get the time of "greying" ecodes
                 selectedgrey=find([get(findobj('Tag','greycue'),'Value'),get(findobj('Tag','greyemvt'),'Value'),get(findobj('Tag','greyfix'),'Value')]);
                 greytypes={'cue';'eyemvt';'fix'};
                 greytypes=(greytypes(selectedgrey));
@@ -298,7 +276,14 @@ while ~islast
                     nummatch = nummatch + 1;
                     alignindexlist( nummatch ) = aligntime;
                     trialindex(nummatch)=d;
-                    
+                    badidx(nummatch)=isbadtrial;
+                    if strcmp(aligntype,'stop')
+                        if ecodeout(9)==17385 || ecodeout(9)==16386
+                             badidx(nummatch)=2; %non-cancelled trials
+                        end
+                    allssd(nummatch)=etimeout(:,8)-etimeout(:,7);
+                    end
+                                        
                     % trigger times
                     % beginning of trial trigger
                     if find(ecodeout==1502) % Trigger code

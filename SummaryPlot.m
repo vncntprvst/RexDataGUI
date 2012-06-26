@@ -130,6 +130,14 @@ for i=1:numrast
         set(gca,'position',rastpos); 
     end
     
+    % sorting rasters according greytime
+    greystarts=nan(size(greyareas,1),1);
+    for grst=1:size(greyareas,1)
+        greystarts(grst)=find(greyareas(grst,:),1);
+    end
+    [greystarts,sortidx]=sort(greystarts,'descend');
+    greyareas=greyareas(sortidx,:);
+    rasters=rasters(sortidx,:);
     
     %axis([0 stop-start+1 0 size(rasters,1)]);
     hold on
@@ -151,8 +159,8 @@ for i=1:numrast
                                             % But that's not a problem
         diffgreytimes = greytimes(diffgrey);
         if greytimes
-        patch([greytimes(1) greytimes(end) greytimes(end) greytimes(1)],[j j j-1 j-1],...
-            [0 0 0], 'EdgeColor', 'none', 'FaceAlpha', 0.3);
+        patch([greytimes(1) greytimes(20) greytimes(20) greytimes(1)],[j j j-1 j-1],...
+            [0 0 0], 'EdgeColor', 'none'); % 'FaceAlpha', 0.3
         end
         if diffgreytimes
             %we'll see that later
