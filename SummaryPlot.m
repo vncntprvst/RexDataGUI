@@ -72,7 +72,11 @@ end
 global filename tasktype;
 
 if length(varargin)>2
-    tasktype=cell2mat(varargin{3});
+    if iscell(varargin{3})
+        tasktype=cell2mat(varargin{3});
+    else
+        tasktype = varargin{3};
+    end
 else
     tasktype=[];
 end
