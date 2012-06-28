@@ -23,7 +23,7 @@ function varargout = RexDataGUI(varargin)
 %
 % See also: GUIDE, GUIDATA, GUIHANDLES
 
-% Last Modified by GUIDE v2.5 06-Jun-2012 17:43:13
+% Last Modified by GUIDE v2.5 27-Jun-2012 15:26:39
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -81,7 +81,7 @@ elseif strcmp(archst, 'win32')
     directory = 'B:\data\Recordings\';
     slash = '\';
 end
-    
+
 
 % UIWAIT makes RexDataGUI wait for user response (see UIRESUME)
 % uiwait(handles.rdd);
@@ -902,3 +902,38 @@ filename=get(findobj('Tag','filenamedisplay'),'String');
 tasktype=get(findobj('Tag','taskdisplay'),'String');
 dataaligned=guidata(findobj('Tag','exportdata'));
 SummaryPlot(dataaligned,filename,tasktype);
+
+
+% --- Executes on button press in rastersandsdf_tab.
+function rastersandsdf_tab_Callback(hObject, eventdata, handles)
+% hObject    handle to rastersandsdf_tab (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+set(handles.trialdatapanel,'Visible','Off');
+set(handles.rasterspanel,'Visible','On');
+
+
+% --- Executes on button press in trialdata_tab.
+function trialdata_tab_Callback(hObject, eventdata, handles)
+% hObject    handle to trialdata_tab (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+set(handles.rasterspanel,'Visible','Off');
+set(handles.trialdatapanel,'Visible','On');
+
+% --- Executes on key press with focus on rastersandsdf_tab and none of its controls.
+function rastersandsdf_tab_KeyPressFcn(hObject, eventdata, handles)
+% hObject    handle to rastersandsdf_tab (see GCBO)
+% eventdata  structure with the following fields (see UICONTROL)
+%	Key: name of the key that was pressed, in lower case
+%	Character: character interpretation of the key(s) that was pressed
+%	Modifier: name(s) of the modifier key(s) (i.e., control, shift) pressed
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --- If Enable == 'on', executes on mouse press in 5 pixel border.
+% --- Otherwise, executes on mouse press in 5 pixel border or over rastersandsdf_tab.
+function rastersandsdf_tab_ButtonDownFcn(hObject, eventdata, handles)
+% hObject    handle to rastersandsdf_tab (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
