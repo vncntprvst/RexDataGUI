@@ -909,8 +909,8 @@ function rastersandsdf_tab_Callback(hObject, eventdata, handles)
 % hObject    handle to rastersandsdf_tab (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-set(handles.trialdatapanel,'Visible','Off');
-set(handles.rasterspanel,'Visible','On');
+set(findobj('Tag','trialdatapanel'),'visible','off')
+set(findobj('Tag','rasterspanel'),'visible','on')
 
 
 % --- Executes on button press in trialdata_tab.
@@ -918,8 +918,8 @@ function trialdata_tab_Callback(hObject, eventdata, handles)
 % hObject    handle to trialdata_tab (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-set(handles.rasterspanel,'Visible','Off');
-set(handles.trialdatapanel,'Visible','On');
+set(findobj('Tag','rasterspanel'),'visible','off')
+set(findobj('Tag','trialdatapanel'),'visible','on')
 
 % --- Executes on key press with focus on rastersandsdf_tab and none of its controls.
 function rastersandsdf_tab_KeyPressFcn(hObject, eventdata, handles)
