@@ -23,7 +23,7 @@ function varargout = RexDataGUI(varargin)
 %
 % See also: GUIDE, GUIDATA, GUIHANDLES
 
-% Last Modified by GUIDE v2.5 27-Jun-2012 15:26:39
+% Last Modified by GUIDE v2.5 01-Jul-2012 19:39:59
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -937,3 +937,13 @@ function rastersandsdf_tab_ButtonDownFcn(hObject, eventdata, handles)
 % hObject    handle to rastersandsdf_tab (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes on button press in statistics_tab.
+function statistics_tab_Callback(hObject, eventdata, handles)
+% hObject    handle to statistics_tab (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+set(findobj('Tag','rasterspanel'),'visible','off')
+set(findobj('Tag','trialdatapanel'),'visible','off')
