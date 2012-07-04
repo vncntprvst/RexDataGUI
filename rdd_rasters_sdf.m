@@ -869,9 +869,13 @@ end
 
 %% Present statistics
 
+set(findobj('Tag','wilcoxontable'),'ColumnName',[],'Data',[],'RowName',[]); %Clears previous table
+
+% Create table data
 if any(h)
     data = transpose(p(p < 0.05));
-    set(findobj('Tag','wilcoxontable'),'ColumnName',{'Visually Responsive'},'Data',data);
+    stat_dir = str2mat(datalign(find(p < 0.05)).dir);
+    set(findobj('Tag','wilcoxontable'),'ColumnName',{'Visually Responsive'},'Data',data,'RowName',stat_dir);
     
     
 end
