@@ -847,10 +847,16 @@ for i=1:numplots
             mvmt_response_min = timesmat(2,1) - 100;
             mvmt_response_max = timesmat(2,1) + 50;
             
+            if strcmp(tasktype,'memguided') || strcmp(tasktype,'vg_saccades')
+                delay_min = timesmat(3,2) - 450;
+                delay_max = timesmat(3,2) - 300;
+            end
+            
             if ~isnantrial(num_trials)
             visual_response(num_trials).struct = rasters(num_trials, vis_response_min:vis_response_max);
             baseline_activity(num_trials).struct = rasters(num_trials, baseline_min:baseline_max);
             movement_response(num_trials).struct = rasters(num_trials, mvmt_response_min:mvmt_response_max);
+            delay_period(num_trials).struct = rasters(num_trials, delay_min:delay_max);
             end
             
         end
@@ -860,24 +866,60 @@ for i=1:numplots
         visual_sum = sum(cat(1, visual_response.struct));
         baseline_sum = sum(cat(1, baseline_activity.struct));
         movement_sum = sum(cat(1, movement_response.struct));
+        delay_sum = sum(cat(1, delay_period.struct));
         
-        [p(i),h(i)] = ranksum(visual_sum, baseline_sum);
+        [p_vis(i),h_vis(i)] = ranksum(visual_sum, baseline_sum);
         
-        
+        [p_mvmt(i),h_mvmt(i)] = ranksum(movement_sum, delay_sum);        
         
 end
 
 %% Present statistics
-
-set(findobj('Tag','wilcoxontable'),'ColumnName',[],'Data',[],'RowName',[]); %Clears previous table
+    data = {};
+    stat_dir = {};
+set(findobj('Tag','wilcoxontable'),'ColumnName',[],'Data',data,'RowName',[]); %Clears previous table
 
 % Create table data
-if any(h)
-    data = transpose(p(p < 0.05));
-    stat_dir = str2mat(datalign(find(p < 0.05)).dir);
-    set(findobj('Tag','wilcoxontable'),'ColumnName',{'Visually Responsive'},'Data',data,'RowName',stat_dir);
+if any(h_vis) || any(h_mvmt)
     
+    mvmt_ind = find(h_mvmt);
+    vis_ind = find(h_vis);
     
+    max_ind = max([max(mvmt_ind) max(vis_ind)]);
+    
+    for ind = 1:max_ind
+        
+        if h_mvmt(ind) && h_vis(ind)
+            data = cat(1, data, [ num2cell(p_vis(ind)), num2cell(p_mvmt(ind))]);
+        elseif h_mvmt(ind) && ~h_vis(ind)
+            data = cat(1, data, [ cellstr('                   *'), num2cell(p_mvmt(ind))]);
+        elseif ~h_mvmt(ind) && h_vis(ind)
+            data = cat(1, data, [ num2cell(p_vis(ind)), cellstr('                   *')]);
+        end
+        
+        stat_dir{ind} = datalign(ind).dir;
+                    
+    end
+    
+    columnNames = {'Visually Responsive', 'Movement Related'};
+    
+    set(findobj('Tag','wilcoxontable'),'ColumnName',columnNames);
+    set(findobj('Tag','wilcoxontable'),'Data',data);
+    set(findobj('Tag','wilcoxontable'),'RowName',stat_dir);
+    
+%     
+% elseif find(h_mvmt,1,'first') > find(h_vis,1,'first')
+%     
+%     data = transpose(p_vis(p_vis < 0.05));
+%     stat_dir = str2mat(datalign(find(p_vis < 0.05)).dir);
+%     set(findobj('Tag','wilcoxontable'),'ColumnName',{'Visually Responsive'},'Data',data,'RowName',stat_dir);
+%     
+%     data = transpose(p_mvmt(p_mvmt < 0.05));
+%     stat_dir = str2mat(datalign(find(p_mvmt < 0.05)).dir);
+%     set(findobj('Tag','wilcoxontable'),'ColumnName',{'Movement-Related'},'Data',data,'RowName',stat_dir);
+%     
+elseif ~any(h_vis) && ~any(h_mvmt)
+    return
 end
 
 
