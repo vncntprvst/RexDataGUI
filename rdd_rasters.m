@@ -1,5 +1,5 @@
-function [alignedrasters, alignindex, trialindex, alltimefromtrig, alltimetotrig, eyehoriz, eyevert, eyevelocity, amplitudes, peakvels, peakaccs, allonofftime,badidx,allssd] = ...
-    rdd_rasters( name, spikechannel, aligntocode, noneofcodes, allowbadtrials, alignsacnum, greycodes, aligntype, collapse)
+function [alignedrasters, alignindex, trialindex, alltimefromtrig, alltimetotrig, eyehoriz, eyevert, eyevelocity, amplitudes, peakvels, peakaccs, allonofftime,badidx,allssd,allcondtime] = ...
+    rdd_rasters( name, spikechannel, aligntocode, noneofcodes, allowbadtrials, alignsacnum, greycodes, aligntype, collapse, conditions)
 
 % used to be: rdd_rasters( name, spikechannel, anyofcodes, allofcodes, noneofcodes, alignmentcode, allowbadtrials, alignsacnum, oncode, offcode)
 
@@ -99,6 +99,7 @@ alltimefromtrig=[];
 alltimetotrig=[];
 badidx=[];
 allssd=[];
+allcondtime = [];
 
 %  Loop through all of the trials using rex_first_trial and rex_next_trial.
 %  See if each trial has the right codes, and try to align the spike data
@@ -268,6 +269,19 @@ while ~islast
                     end
                 end
                 
+                %% find condition times
+                codepairnb=floor(size(conditions,2)/2);%there may be multiple code. See l. 421 as well as here (273)
+                shortecodout=floor(ecodeout./10);
+                for i=1:size(conditions,1)
+
+                    for j=1:size(conditions,2)
+                        try fcondcode(i,j) = find(shortecodout == conditions(i,j),1);  catch fcondcode(i,j) = NaN; end %in multiple code tasks (ie, gapstop), may fail to find the code in the ecode list
+                        try condcodetime(i,j) = etimeout(fcondcode(i,j)) * (arate / 1000); catch condcodetime(i,j) = NaN; end
+                    end
+
+                end
+                
+                condmattime = {condcodetime};
                 
                 %% filling up alignindexlist with align times
                 %                if alignsacnum == 0
@@ -409,9 +423,12 @@ while ~islast
                         allonoffcodetime=cat_variable_size_row(allonoffcodetime, trialonofftime);
                     end
                     
+                    % collect condition times
+                    allcondtime = cat_variable_size_row(allcondtime, condmattime);
+                    
                     %and finally collect trigger alignments
                     alltimefromtrig=[alltimefromtrig timefromtrig];
-                    alltimetotrig=[alltimetotrig timetotrig];       
+                    alltimetotrig=[alltimetotrig timetotrig]; 
                     
                 end;
             end;
@@ -421,6 +438,10 @@ while ~islast
     [d, islast] = rex_next_trial( name, d, allowbadtrials );
     
 end;
+
+% transpose condition times to single row; each column is a cell of the
+% three condition times
+allcondtime = transpose(allcondtime);
 
 if isempty( rasters )
     cond_disp( 'rdd_rasters: Cannot generate rasters with the given codes, since no matching trials were found.' );
@@ -461,6 +482,8 @@ if logical(sum(greycodes))
 else
     allonofftime = [];
 end
+
+
 
 % Done.  Everything is collected and aligned for all matching trials.
 

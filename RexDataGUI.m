@@ -23,7 +23,7 @@ function varargout = RexDataGUI(varargin)
 %
 % See also: GUIDE, GUIDATA, GUIHANDLES
 
-% Last Modified by GUIDE v2.5 01-Jul-2012 19:39:59
+% Last Modified by GUIDE v2.5 03-Jul-2012 21:58:53
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -910,8 +910,8 @@ function rastersandsdf_tab_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 set(findobj('Tag','trialdatapanel'),'visible','off')
+set(findobj('Tag','statisticspanel'),'visible','off')
 set(findobj('Tag','rasterspanel'),'visible','on')
-
 
 % --- Executes on button press in trialdata_tab.
 function trialdata_tab_Callback(hObject, eventdata, handles)
@@ -919,6 +919,7 @@ function trialdata_tab_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 set(findobj('Tag','rasterspanel'),'visible','off')
+set(findobj('Tag','statisticspanel'),'visible','off')
 set(findobj('Tag','trialdatapanel'),'visible','on')
 
 % --- Executes on key press with focus on rastersandsdf_tab and none of its controls.
@@ -947,3 +948,4 @@ function statistics_tab_Callback(hObject, eventdata, handles)
 
 set(findobj('Tag','rasterspanel'),'visible','off')
 set(findobj('Tag','trialdatapanel'),'visible','off')
+set(findobj('Tag','statisticspanel'),'visible','on')

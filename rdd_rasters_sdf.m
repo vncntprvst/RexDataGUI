@@ -301,10 +301,10 @@ togrey=find([get(findobj('Tag','greycue'),'Value'),get(findobj('Tag','greyemvt')
         stopcode=[stopcode stopcode];
     end
 
+    conditions =[tgtcode tgtoffcode;saccode saccode;fixcode fixoffcode];
 
 if logical(sum(togrey))
-    greycodes =[tgtcode tgtoffcode;saccode saccode;fixcode fixoffcode];
-    greycodes=greycodes(togrey,:); %selecting out the codes
+    greycodes=conditions(togrey,:); %selecting out the codes
 end
 
 
@@ -425,8 +425,8 @@ end
             numplots=numcodes;
        end
        [rasters,aidx, trialidx, timefromtrigs, timetotrigs, eyeh,eyev,eyevel,...
-           amplitudes,peakvels,peakaccs,allgreyareas,badidx,ssd] = rdd_rasters( rdd_filename, spikechannel,...
-           allaligncodes(i,:), nonecodes, includebad, alignsacnum, greycodes, aligntype, collapsecode);
+           amplitudes,peakvels,peakaccs,allgreyareas,badidx,ssd,condtimes] = rdd_rasters( rdd_filename, spikechannel,...
+           allaligncodes(i,:), nonecodes, includebad, alignsacnum, greycodes, aligntype, collapsecode, conditions);
        
        
         if isempty( rasters )
@@ -449,6 +449,7 @@ end
             datalign(i).peakaccs=peakaccs(canceledtrials);       
             datalign(i).bad=badidx(canceledtrials); 
             datalign(i).ssd=ssd(canceledtrials); 
+            datalign(i).condtimes=condtimes(canceledtrials);
             
             canceledtrials=~canceledtrials;
             datalign(i+1).alignlabel='stop_non_cancel';
@@ -466,6 +467,7 @@ end
             datalign(i+1).peakaccs=peakaccs(canceledtrials);       
             datalign(i+1).bad=badidx(canceledtrials); 
             datalign(i+1).ssd=ssd(canceledtrials); 
+            datalign(i+1).condtimes=condtimes(canceledtrials);
         else
             datalign(i).rasters=rasters;
             datalign(i).alignidx=aidx;
@@ -480,6 +482,7 @@ end
             datalign(i).peakvels=peakvels;
             datalign(i).peakaccs=peakaccs;       
             datalign(i).bad=badidx; 
+            datalign(i).condtimes=condtimes;
          end
              
 
@@ -829,9 +832,51 @@ for i=1:numplots
         patch([repmat((aidx-start),1,2) repmat((aidx-start)+10,1,2)], ...
         [get(gca,'YLim')-20 fliplr(get(gca,'YLim'))-20], ...
         [0 0 0 0],[1 0 0],'EdgeColor','none','FaceAlpha',0.5);
+    
+    
+        %% Statistic Information
+        for num_trials = 1:size(rasters,1)
+            timesmat = condtimes{num_trials};
+            
+            vis_response_min = timesmat(1,1)+50;
+            vis_response_max = timesmat(1,1)+200;
+            
+            baseline_min = timesmat(1,1)-151;
+            baseline_max = timesmat(1,1)-1;
+            
+            mvmt_response_min = timesmat(2,1) - 100;
+            mvmt_response_max = timesmat(2,1) + 50;
+            
+            if ~isnantrial(num_trials)
+            visual_response(num_trials).struct = rasters(num_trials, vis_response_min:vis_response_max);
+            baseline_activity(num_trials).struct = rasters(num_trials, baseline_min:baseline_max);
+            movement_response(num_trials).struct = rasters(num_trials, mvmt_response_min:mvmt_response_max);
+            end
+            
+        end
         
+        % complete statistics
+        
+        visual_sum = sum(cat(1, visual_response.struct));
+        baseline_sum = sum(cat(1, baseline_activity.struct));
+        movement_sum = sum(cat(1, movement_response.struct));
+        
+        [p(i),h(i)] = ranksum(visual_sum, baseline_sum);
+        
+        
+        
+end
 
-    end
+%% Present statistics
+
+if any(h)
+    data = transpose(p(p < 0.05));
+    set(findobj('Tag','wilcoxontable'),'ColumnName',{'Visually Responsive'},'Data',data);
+    
+    
+end
+
+
     % comparison of raster from different methods
 %    figure(21);
 %    subplot(3,1,1)
@@ -851,7 +896,7 @@ for i=1:numplots
 %    spy(rasters(:,start:stop),':',5);
 %    set(gca,'PlotBoxAspectRatio',[1052 200 1]);
 
-datalign(1).savealignname = cat( 2, directory, 'processed',slash, 'aligned',slash, rdd_filename, '_', cell2mat(unique({datalign.alignlabel})));        
+datalign(1).savealignname = cat( 2, directory, 'processed',slash, 'aligned',slash, rdd_filename, '_', cell2mat(unique({datalign.alignlabel})));
 end
 
 %% eye velocity plot
