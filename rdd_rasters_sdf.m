@@ -857,6 +857,9 @@ for i=1:numplots
             elseif strcmp(tasktype, 'st_saccades')
                 delay_min = timesmat(1,1) + 300; % 300 ms after visual cue is removed
                 delay_max = timesmat(1,1) + 450; % 450 ms after visual cue is removed
+            elseif strcmp(tasktype, 'tokens')
+                delay_min = timesmat(2,1) - 400; % 300 ms after visual cue is removed
+                delay_max = timesmat(2,1) - 250; % 450 ms after visual cue is removed
             end
             
             if ~isnantrial(num_trials)
@@ -906,7 +909,6 @@ if any(h_vis) || any(h_mvmt)
             data = cat(1, data, [ num2cell(p_vis(ind)), cellstr('                   *')]);
             stat_dir = cat(1,stat_dir,datalign(ind).dir);
         end
-        
                     
     end
     
