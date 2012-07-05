@@ -903,21 +903,8 @@ if any(h_vis) || any(h_mvmt)
     
     columnNames = {'Visually Responsive', 'Movement Related'};
     
-    set(findobj('Tag','wilcoxontable'),'ColumnName',columnNames);
-    set(findobj('Tag','wilcoxontable'),'Data',data);
-    set(findobj('Tag','wilcoxontable'),'RowName',stat_dir);
-    
-%     
-% elseif find(h_mvmt,1,'first') > find(h_vis,1,'first')
-%     
-%     data = transpose(p_vis(p_vis < 0.05));
-%     stat_dir = str2mat(datalign(find(p_vis < 0.05)).dir);
-%     set(findobj('Tag','wilcoxontable'),'ColumnName',{'Visually Responsive'},'Data',data,'RowName',stat_dir);
-%     
-%     data = transpose(p_mvmt(p_mvmt < 0.05));
-%     stat_dir = str2mat(datalign(find(p_mvmt < 0.05)).dir);
-%     set(findobj('Tag','wilcoxontable'),'ColumnName',{'Movement-Related'},'Data',data,'RowName',stat_dir);
-%     
+    set(findobj('Tag','wilcoxontable'),'ColumnName',columnNames,'Data',data,'RowName',stat_dir);
+ 
 elseif ~any(h_vis) && ~any(h_mvmt)
     return
 end
