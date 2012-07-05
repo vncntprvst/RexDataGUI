@@ -838,6 +838,10 @@ for i=1:numplots
         for num_trials = 1:size(rasters,1)
             timesmat = condtimes{num_trials};
             
+            % timesmat(1,1) - target on  %% timesmat(1,2) - target off
+            % timesmat(2,1or2) - saccade
+            % timesmat(3,1) - fixation on  %% timesmat(3,2) - fixation off
+            
             vis_response_min = timesmat(1,1)+50;
             vis_response_max = timesmat(1,1)+200;
             
@@ -850,6 +854,9 @@ for i=1:numplots
             if strcmp(tasktype,'memguided') || strcmp(tasktype,'vg_saccades')
                 delay_min = timesmat(3,2) - 450;
                 delay_max = timesmat(3,2) - 300;
+            elseif strcmp(tasktype, 'st_saccades')
+                delay_min = timesmat(1,1) + 300; % 300 ms after visual cue is removed
+                delay_max = timesmat(1,1) + 450; % 450 ms after visual cue is removed
             end
             
             if ~isnantrial(num_trials)
@@ -891,13 +898,15 @@ if any(h_vis) || any(h_mvmt)
         
         if h_mvmt(ind) && h_vis(ind)
             data = cat(1, data, [ num2cell(p_vis(ind)), num2cell(p_mvmt(ind))]);
+            stat_dir = cat(1,stat_dir,datalign(ind).dir);
         elseif h_mvmt(ind) && ~h_vis(ind)
             data = cat(1, data, [ cellstr('                   *'), num2cell(p_mvmt(ind))]);
+            stat_dir = cat(1,stat_dir,datalign(ind).dir);
         elseif ~h_mvmt(ind) && h_vis(ind)
             data = cat(1, data, [ num2cell(p_vis(ind)), cellstr('                   *')]);
+            stat_dir = cat(1,stat_dir,datalign(ind).dir);
         end
         
-        stat_dir{ind} = datalign(ind).dir;
                     
     end
     
