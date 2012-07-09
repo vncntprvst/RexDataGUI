@@ -860,6 +860,10 @@ for i=1:numplots
             elseif strcmp(tasktype, 'tokens')
                 delay_min = timesmat(2,1) - 400; % 300 ms after visual cue is removed
                 delay_max = timesmat(2,1) - 250; % 450 ms after visual cue is removed
+            elseif strcmp(tasktype, 'gapstop')
+                delay_min = timesmat(3,2) - 450;
+                delay_max = timesmat(3,2) - 300; % need to design a if statement if there 
+                                                                % is a stop signal in the trial
             end
             
             if ~isnantrial(num_trials)
