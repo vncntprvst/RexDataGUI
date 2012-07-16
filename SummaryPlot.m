@@ -116,7 +116,7 @@ for i=1:numrast
     greyareas=alignedata(i).allgreyareas;
     start=alignidx - plotstart;
     stop=alignidx + plotstop;
-    
+       
     trials = size(rasters,1);
     isnantrial=zeros(1,size(rasters,1));
     
@@ -135,12 +135,13 @@ for i=1:numrast
     end
     
     % sorting rasters according greytime
-    greystarts=nan(size(greyareas,1),1);
-    for grst=1:size(greyareas,1)
-        greystarts(grst)=find(greyareas(grst,:),1);
+    viscuetimes=nan(size(greyareas,2),2);
+    for grst=1:size(greyareas,2)
+        viscuetimes(grst,:)=greyareas{grst}(1,:);
     end
-    [greystarts,sortidx]=sort(greystarts,'descend');
-    greyareas=greyareas(sortidx,:);
+    cuestarts=viscuetimes(:,1);
+    [cuestarts,sortidx]=sort(cuestarts,'descend');
+    viscuetimes=viscuetimes(sortidx,:);
     rasters=rasters(sortidx,:);
     
     %axis([0 stop-start+1 0 size(rasters,1)]);
@@ -154,23 +155,24 @@ for i=1:numrast
         
         % drawing the grey areas
         try
-            greytimes=find(greyareas(j,start:stop)); % converting from a matrix representation to a time collection,
-                                                     % within selected time range
+            greytimes=viscuetimes(j,:)-start;
+            greytimes(greytimes<0)=0;
+            greytimes(greytimes>stop)=stop;                                         
         catch %grey times out of designated period's limits
             greytimes=0;
         end
-        diffgrey = find(diff(greytimes)>1); % In case the two grey areas overlap, it doesn't discriminate.
-                                            % But that's not a problem
-        diffgreytimes = greytimes(diffgrey);
-        if greytimes
-        patch([greytimes(1) greytimes(20) greytimes(20) greytimes(1)],[j j j-1 j-1],...
-            [0 0 0], 'EdgeColor', 'none'); % 'FaceAlpha', 0.3
+%         diffgrey = find(diff(greytimes)>1); % In case the two grey areas overlap, it doesn't discriminate.
+%                                             % But that's not a problem
+%         diffgreytimes = greytimes(diffgrey);
+        if logical(sum(greytimes))
+        patch([greytimes(1) greytimes(end) greytimes(end) greytimes(1)],[j j j-1 j-1],...
+            [0 0 0], 'EdgeColor', 'none','FaceAlpha', 0.3); 
         end
-        if diffgreytimes
-            %we'll see that later
-            diffgreytimes
-            pause
-        end
+%         if diffgreytimes % multiple grey areas
+%             %we'll see that later
+%             diffgreytimes
+%             pause
+%         end
         
     end
     axis(gca, 'off', 'tight');
@@ -464,7 +466,8 @@ end
     %first change axes units to pixels, so that they don't rescale
     transferedaxes=findobj(exportfig,'Type','axes');
     set(transferedaxes,'Units','pixels')
-figuresize(4)=figuresize(4)+figuresize(4)./8;
+addspace=figuresize(4)./8;
+figuresize(4)=figuresize(4)+addspace;
 set(exportfig,'position',figuresize);
     %putting title
 axespos=cell2mat(get(transferedaxes,'Position'));
@@ -472,22 +475,28 @@ figtitleh = title(transferedaxes(find(axespos(:,2)==max(axespos(:,2)))),...
     ['File: ',filename,' - Task: ',tasktype,' - Alignment: ',alignment]);
 set(figtitleh,'Interpreter','none'); %that prevents underscores turning charcter into subscript
     % and moving everything up a bit
-axespos(:,2)=axespos(:,2)+50; %units in pixels now
+axespos(:,2)=axespos(:,2)+addspace/2; %units in pixels now
 axespos=mat2cell(axespos,ones(size(axespos,1),1)); %reconversion
 set(transferedaxes,{'Position'},axespos);
     %and the title a little bit more
 titlepos=get(figtitleh,'position');
-titlepos(2)=titlepos(2)+10;
+titlepos(2)=titlepos(2)+addspace/10;
 set(figtitleh,'position',titlepos);
     %changing units back to relative, in case we want to resize the figure
     set(transferedaxes,'Units','normalized')
+        % remove time label on sdf plot
+set(transferedaxes(2),'XTickLabel','');
 %% saving figure
     % to check if file already exists and open it: 
     % eval(['!' exportfigname '.pdf']);
 %basic png fig: 
-% saveas(exportfig,exportfigname,'png');
-%reasonably low size / good definition pdf figure:
-print(gcf, '-dpdf', '-noui', '-painters','-r300', exportfigname);
+print(gcf, '-dpng', '-noui', '-opengl','-r600', exportfigname);
+
+%reasonably low size / good definition pdf figure (but patch transparency not supported by ghostscript to generate pdf):
+print(gcf, '-dpdf', '-noui', '-painters','-r600', exportfigname); 
+plot2svg([exportfigname,'.svg'],gcf, 'png'); %only vector graphic export function that preserves alpha transparency
+
+% to preserve transparency, may use tricks with eps files. See: http://blogs.mathworks.com/loren/2007/12/11/making-pretty-graphs/
 
 % export_fig solves the font embedding problem for illustrator (not adobe reader though), but is slower. Use -nocrop
 % option to prevent border cropping

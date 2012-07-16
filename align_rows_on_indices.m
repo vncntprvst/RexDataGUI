@@ -1,7 +1,9 @@
-function [aligned] = align_rows_on_indices( rows, alignedindexlist )
+function [aligned,shift] = align_rows_on_indices( rows, alignedindexlist )
+% returns aligned rows, and shifts for each row
 
 aligned = rows;
 sz = size( rows );
+shift=zeros(sz(1),1);
 leni = length( alignedindexlist );
 if leni ~= sz( 1 )
     s1 = sprintf( 'In align_rows_on_indices, the number of rows (%d) does not match the number of indices (%d) in the index list.', ...
@@ -25,8 +27,8 @@ end;
 
 aligned = zeros( sz(1),(sz(2)+maxshift) );
 for rw = 1:sz(1)
-    shift = maxi - alignedindexlist( rw );
-    first = shift + 1;
+    shift(rw) = maxi - alignedindexlist( rw );
+    first = shift(rw) + 1;
     last = first + sz(2) - 1;
     aligned( rw, first:last ) = rows( rw, : );
 end;
