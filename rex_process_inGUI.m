@@ -411,17 +411,33 @@ for trialnumber = 1:nt
     waitbar( (trialnumber/nt)*0.9, wb, 'Converting Rex data...' );
 end;
 %%
-if strcmp(rawdir,'B:\data\Recordings\Rigel\')
-procdir='B:\data\Recordings\processed\Rigel\';
-    if ~strcmp(rexname(1),'R')
-        rexname=cat(2,'R',rexname);
-    end
-elseif strcmp(rawdir,'B:\data\Recordings\Sixx\')
-procdir='B:\data\Recordings\processed\Sixx\';
+archst  = computer('arch');
+if strcmp(archst, 'maci64')
+    if strcmp(rawdir,'/Users/nick/Dropbox/filesforNick/Rigel/')
+        procdir='/Users/nick/Dropbox/filesforNick/processed/Rigel/';
+        if ~strcmp(rexname(1),'R')
+            rexname=cat(2,'R',rexname);
+        end
+    elseif strcmp(rawdir,'/Users/nick/Dropbox/filesforNick/Sixx/')
+        procdir='/Users/nick/Dropbox/filesforNick/processed/Sixx/';
     if ~strcmp(rexname(1),'S')
         rexname=cat(2,'S',rexname);
     end
+    end
+else
+    if strcmp(rawdir,'B:\data\Recordings\Rigel\')
+        procdir='B:\data\Recordings\processed\Rigel\';
+        if ~strcmp(rexname(1),'R')
+            rexname=cat(2,'R',rexname);
+        end
+    elseif strcmp(rawdir,'B:\data\Recordings\Sixx\')
+        procdir='B:\data\Recordings\processed\Sixx\';
+        if ~strcmp(rexname(1),'S')
+            rexname=cat(2,'S',rexname);
+        end
+    end
 end
+
 newname = cat( 2, procdir, rexname, '.mat' );
 s = sprintf('Writing converted Rex data to %s.', cat(2,rexname,'.mat'));
 waitbar( 0.9, wb, s );
