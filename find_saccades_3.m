@@ -17,6 +17,8 @@ function [saccadeInfo, saccadeIdx] = find_saccades_3(trialnb,Saccvel,Saccacc,vel
 % VP 11/2011
 global saccadeInfo;
 
+verbose=0;
+
 len = length(Saccvel);
 
 % Preallocate memory
@@ -31,7 +33,9 @@ saccadeInfo(trialnb,1).status='inprocess';
 
 % If no saccades are detected, return
 if ~logical(sum(velLabeled))
+    if verbose
     disp('find_saccades_3 says: no saccade detected');
+    end
     saccadeInfo(trialnb,1).status='no_saccade'; %still needs to fill the row with some info, otherwise
                                                 %calls to this index value of saccadeInfo will return error    
 else
@@ -51,7 +55,9 @@ for k = 1:max(velLabeled)
     % noise (1/6 or the min saccade duration)
     minPeakSamples = ceil(minwidth/6); 
     if length(peakIdx) <= minPeakSamples
-        disp('find_saccades_3: length(peakIdx) <= minPeakSamples');
+            if verbose
+                disp('find_saccades_3: length(peakIdx) <= minPeakSamples');
+            end
         saccadeInfo(trialnb,peak).status='noise_or_saccade_too_short';
         continue
     end
@@ -60,7 +66,9 @@ for k = 1:max(velLabeled)
     % (can be like this for glissades)
     if peak > 1
         if ~isempty(intersect(peakIdx,[find(saccadeIdx) find(glissadesIdx)]))
-            disp('find_saccades_3: peak already included in the previous saccade');
+            if verbose
+                disp('find_saccades_3: peak already included in the previous saccade');
+            end
             saccadeInfo(trialnb,peak).status='peak_in_previous_saccade';
             continue
         end       
@@ -75,7 +83,9 @@ for k = 1:max(velLabeled)
                                                  [diff(Saccvel(peakIdx(1):-1:1)) 0] >= 0);          % acc <= 0
                                              
     if isempty(saccadeStartIdx)
-        disp('find_saccades_3: empty saccadeStartIdx');
+            if verbose
+                disp('find_saccades_3: empty saccadeStartIdx');
+            end
         saccadeInfo(trialnb,peak).status='cannot_detect_sacc_start';
         continue
 % following code was designed to avoid late detection but lead to too many artifitial early detection         
@@ -103,8 +113,10 @@ for k = 1:max(velLabeled)
     
     % Check whether the local vel. noise exceeds the peak vel. threshold.
     if localVelNoise > peakDetectionThreshold
-        disp('find_saccades_3: local velocity noise exceeds the peak velocity threshold');
-        saccadeInfo(trialnb,peak).status='high_local_velocity_noise';
+            if verbose
+                disp('find_saccades_3: local velocity noise exceeds the peak velocity threshold');
+            end
+            saccadeInfo(trialnb,peak).status='high_local_velocity_noise';
         continue
     end
               
@@ -113,8 +125,10 @@ for k = 1:max(velLabeled)
                                                   [diff(Saccvel(peakIdx(end):end)) 0] >= 0);        % acc <= 0
     
     if isempty(saccadeEndIdx)
-        disp('find_saccades_3: empty saccadeEndIdx');
-        saccadeInfo(trialnb,peak).status='cannot_detect_end_sacc';
+            if verbose
+                disp('find_saccades_3: empty saccadeEndIdx');
+            end
+            saccadeInfo(trialnb,peak).status='cannot_detect_end_sacc';
         continue
     end      
     saccadeEndIdx = peakIdx(end) + saccadeEndIdx(1) - 1;
@@ -125,8 +139,10 @@ for k = 1:max(velLabeled)
     % Make sure the saccade duration exceeds the minimum duration.
     saccadeLen = saccadeEndIdx - saccadeStartIdx;
     if saccadeLen < minwidth
-        disp('find_saccades_3: saccade duration below minimum duration');
-        saccadeInfo(trialnb,peak).status='low_sacc_duration';
+            if verbose
+                disp('find_saccades_3: saccade duration below minimum duration');
+            end
+            saccadeInfo(trialnb,peak).status='low_sacc_duration';
         continue    
     end
 %     

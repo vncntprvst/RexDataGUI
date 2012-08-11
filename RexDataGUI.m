@@ -604,12 +604,41 @@ global directory slash
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
-% monkeydir= get(get(findobj('Tag','monkeyselect'),'SelectedObject'),'Tag');
-% if strcmp(monkeydir,'rigelselect')
+monkeydir= get(get(findobj('Tag','monkeyselect'),'SelectedObject'),'Tag');
+if strcmp(monkeydir,'rigelselect')
 dirlisting = dir([directory,'processed',slash,'Rigel',slash]);%('B:\data\Recordings\processed\Rigel');
-% elseif strcmp(monkeydir,'sixxselect')
-% dirlisting = dir('B:\data\Recordings\processed\Sixx');
-% end
+idletter='R';
+elseif strcmp(monkeydir,'sixxselect')
+dirlisting = dir([directory,'processed',slash,'Sixx',slash]);
+idletter='S';
+elseif strcmp(monkeydir,'hildaselect')
+dirlisting = dir([directory,'processed',slash,'Hilda',slash]);
+idletter='H';
+end
+
+% add subject ID letter in front of file names for sessions >= 100
+    if strcmp(idletter,'R')
+        rawdir=[directory,'Rigel',slash];
+    elseif strcmp(idletter,'S')
+        rawdir=[directory,'Sixx',slash];
+    elseif strcmp(idletter,'H')
+        rawdir=[directory,'Hilda',slash];
+    end
+    olddir = cd(rawdir) %move to raw fiels directory but keep current dir in memory
+    rawdirlisting=dir(rawdir);
+    dirfileNames = {rawdirlisting.name};
+    noidfiles=regexpi(dirfileNames,'^\d+','match');
+    noidindex=find(~cellfun(@isempty,noidfiles));
+    if logical(sum(noidindex))
+        % Loop through each
+        for id = 1:length(noidindex)
+            movefile(dirfileNames{noidindex(id)}, [idletter,dirfileNames{noidindex(id)}]);
+        end
+
+    end
+    
+cd(olddir); %go back to original dir
+
     % Order by date
     filedates=cell2mat({dirlisting(:).datenum});
     [filedates,fdateidx] = sort(filedates,'descend');
@@ -618,7 +647,7 @@ dirlisting=dirlisting(fdateidx);
 dirlisting = dirlisting(~cellfun('isempty',strfind(dirlisting,'mat')));
 for i=1:length(dirlisting)
     thisfilename=cell2mat(dirlisting(i));
-    dirlisting(i)=mat2cell(thisfilename(1:end-4));
+    dirlisting(i)={thisfilename(1:end-4)};
 end
 set(hObject,'string',dirlisting);
 
@@ -987,7 +1016,7 @@ dirlisting=dirlisting(fdateidx);
 dirlisting = dirlisting(~cellfun('isempty',strfind(dirlisting,'mat')));
 for i=1:length(dirlisting)
     thisfilename=cell2mat(dirlisting(i));
-    dirlisting(i)=mat2cell(thisfilename(1:end-4));
+    dirlisting(i)={thisfilename(1:end-4)};
 end
 set(findobj('Tag','displaymfiles'),'string',dirlisting);
 
@@ -1108,11 +1137,12 @@ if get(findobj('Tag','process_checkbox'),'Value')
     end
     
     if ~isempty(sessionNumbers)
-        b = cat(1,sessionNumbers{:});
-        b = unique(b); % finds unique session numbers
-        b = sortrows(b,-1); %sort cell arrays descending
-        b = strcat('Session', b);
-        set(findobj('Tag','displaymfiles'),'string', b);
+        dispsession = cat(1,sessionNumbers{:});
+        dispsession = unique(dispsession); % finds unique session numbers
+        [~,sessionidx]=sort(str2double(dispsession),'descend');
+        dispsession = dispsession(sessionidx); %sort cell arrays descending
+        dispsession = strcat('Session', dispsession);
+        set(findobj('Tag','displaymfiles'),'string', dispsession);
     else
         set(findobj('Tag','displaymfiles'),'string','');
     end                                                               
