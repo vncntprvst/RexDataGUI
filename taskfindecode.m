@@ -26,12 +26,12 @@ if strcmp(tasktype,'vg_saccades') %change in num_rex_trial the vg sac to differe
     tgtoffcode=103;
     saccode=701;
 elseif strcmp(tasktype,'base2rem50')
-    basecode=[602;604,608];
-    fixcode=[622,624,628];
-    fixoffcode=[702,664,688];
-    tgtcode=[662,684,668];
-    tgtoffcode=[662,103,103];
-    saccode=[722,704,708];
+    basecode=[602,604,608];
+    fixcode=[622;624;628];
+    fixoffcode=[702;664;688];
+    tgtcode=[662;684;668];
+    tgtoffcode=[662;103;103];
+    saccode=[722;704;708];
 elseif strcmp(tasktype,'st_saccades')
     basecode=602;
     fixcode=622;
@@ -44,7 +44,7 @@ elseif strcmp(tasktype,'gapstop')
     fixcode=[624,427];
     fixoffcode=[664,467];
     tgtcode=[684,487];
-    tgtoffcode=[103 103];
+    tgtoffcode=[103,103];
     saccode=[704];
     stopcode=[507];
 elseif strcmp(tasktype,'tokens')

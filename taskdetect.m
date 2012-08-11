@@ -123,8 +123,14 @@ if ~isempty(curtasktype) && ~sum(find(codes==17385))
             ecodesacstart=8;
             ecodesacend=9;
         case 'gapstop'
-            ecodecueon=6;
+            ecodecueon=7;
+            if ~isempty(find(codes==1503)) 
+            ecodesacstart=9;
+%               ecode to control for stop signal delay value, introduced between target code and stop code
+%               stopcode is at 9, not 8 anymore 
+            else
             ecodesacstart=8;
+            end
             ecodesacend=9;
         case 'memguided'
             disp('check task ecodes in taskdetect');

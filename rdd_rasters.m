@@ -125,12 +125,26 @@ while ~islast
     
     [ecodeout, etimeout, spkchan, spk, arate, h, v, start_time, isbadtrial, curtrialsacInfo] = rdd_rex_trial(name, d);%, rdt_includeaborted);
     
+    %if ~isbadtrial
+    	if logical(sum((ecodeout==2222)))  % had a weird case of a trial with ecode 2222. Don't know what that was. See file S110L4A5_12951
+            ecodeout(find(ecodeout==1035))=17385; % replace 1035 code by error code, to false positive on 1030
+            isbadtrial=1;
+        end
+    %end
     %curdir=ecodeout(2)-floor(ecodeout(2)/10)*10;
     
+%     if strcmp(tasktype,'gapstop') || strcmp(tasktype,'base2rem50')
+%         multicode=1;
+%     else
+%         multicode=0;
+%     end
+%     
+
     if isempty(h) || isempty(ecodeout)
         cond_disp( 'Something wrong with trial, no data.' );
     else
         if  collapse %for collapsed alignements
+%             || multicode
             anyof = has_any_of( ecodeout, alignto );
             allof = 1;
         else
@@ -140,6 +154,7 @@ while ~islast
     if logical(sum(find(noneofcodes==alignto(1)))) ... %in case the purpose IS to align to a noneof code
             || allowbadtrials % or if we want the bad trials too
         noneof = 1;
+        isbadtrial=~has_none_of(ecodeout, noneofcodes); %make sure trials with noneofcodes other than 17385 are tagged is bad
     else
         noneof = has_none_of( ecodeout, noneofcodes );
     end
@@ -199,8 +214,10 @@ while ~islast
                     end
                      if strcmp(tasktype,'st_saccades')  
                                if nwsacstart(find(sacofint,1))-etimeout(7)<600 %there was a saccade during the delay period that went unnoticed by Rex saccade detection 
+                                   if abs(curtrialsacInfo(find(sacofint,1)).amplitude)>2 % keeping trials with saccades under 2 degrees, which happens pretty frequently with Sixx. 
                                    sacofint=0;
                                    alignmentfound = 0;
+                                   end
                                end
                      end
                     for k=find(sacofint,1):length(sacofint)
@@ -241,7 +258,7 @@ while ~islast
                         end
                  end
                 
-                %% now get the time of "greying" ecodes
+                %% now get the time of "grey area" ecodes
                 % used to get only times for selected conditions. Now get
                 % all, and just displaying the requested ones in
                 % rdd_rasters_sdf. VP 7/14/2012
@@ -259,7 +276,7 @@ while ~islast
                             if strcmp(greytypes(i),'eyemvt') %adjust times to real saccade times
                                 % find which saccade is the "good" one (if any) in this trial
                                 try goodsacnum=find(~cellfun(@isempty,{curtrialsacInfo.latency}));  catch goodsacnum=0; end 
-                                if ~logical(sum(goodsacnum)) 
+                                if ~logical(sum(goodsacnum)) && ~strcmp(aligntype,'stop')
                                     s = sprintf('cannot display grey area for trial %d because saccade cannot be found. Removing erroneous trial',d);
                                     disp(s);
                                     alignmentfound = 0;
@@ -310,9 +327,6 @@ while ~islast
                 
                 if alignmentfound
                     nummatch = nummatch + 1;
-                    if nummatch == 4
-                        nummatch
-                    end
                     alignindexlist( nummatch ) = aligntime;
                     trialindex(nummatch)=d;
                     badidx(nummatch)=isbadtrial;
@@ -320,7 +334,12 @@ while ~islast
                         if ecodeout(9)==17385 || ecodeout(9)==16386
                              badidx(nummatch)=2; %non-cancelled trials
                         end
-                    allssd(nummatch)=etimeout(:,8)-etimeout(:,7);
+                        if ecodeout(8)==1503 %with photodiode state timestamp
+                            allssd(nummatch,1)=etimeout(:,9)-etimeout(:,7);
+                            allssd(nummatch,2)=etimeout(:,8)-etimeout(:,7);
+                        else
+                            allssd(nummatch)=etimeout(:,8)-etimeout(:,7);
+                        end
                     end
                                         
                     % trigger times
@@ -390,7 +409,10 @@ while ~islast
 %                     trialonofftime(onoffkeepcode(1):onoffkeepcode(2))=i;
 %                     end
 %                     oldallonoffcodetime=cat_variable_size_row(oldallonoffcodetime, trialonofftime);
-                    
+                    if  ~(size(onoffcodetime,2)==2 && codepairnb==1)
+                    onoffkeepcode=[find(~isnan(onoffcodetime(1,:)),1) find(~isnan(onoffcodetime(1,:)),1)+codepairnb];
+                    onoffcodetime=onoffcodetime(:,onoffkeepcode);
+                    end
                     allonoffcodetime=[allonoffcodetime {onoffcodetime}];
                     
                     %and collect trigger alignments

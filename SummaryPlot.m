@@ -164,7 +164,7 @@ for i=1:numrast
 %         diffgrey = find(diff(greytimes)>1); % In case the two grey areas overlap, it doesn't discriminate.
 %                                             % But that's not a problem
 %         diffgreytimes = greytimes(diffgrey);
-        if logical(sum(greytimes))
+        if ~sum(isnan(greytimes)) && logical(sum(greytimes))
         patch([greytimes(1) greytimes(end) greytimes(end) greytimes(1)],[j j j-1 j-1],...
             [0 0 0], 'EdgeColor', 'none','FaceAlpha', 0.3); 
         end
@@ -178,11 +178,15 @@ for i=1:numrast
     axis(gca, 'off', 'tight');
     
     %Plot sdf
-    subplot(numsubplot,1,(numsubplot/3)+1:(numsubplot/3)+(numsubplot/3),'Layer','top','Parent', handles.mainfig);
+    sdfplot=subplot(numsubplot,1,(numsubplot/3)+1:(numsubplot/3)+(numsubplot/3),'Layer','top','Parent', handles.mainfig);
     %sdfh = axes('Position', [.15 .65 .2 .2], 'Layer','top');
     title('Spike Density Function','FontName','calibri','FontSize',11);
     hold on;
-    sumall=sum(rasters(~isnantrial,start:stop));
+    if size(rasters,1)==1 %if only one good trial
+        sumall=rasters(~isnantrial,start:stop);
+    else
+        sumall=sum(rasters(~isnantrial,start:stop));
+    end
     sdf=spike_density(sumall,fsigma)./length(find(~isnantrial)); %instead of number of trials
     
     plot(sdf,'Color',cc(i,:),'LineWidth',1.8);
@@ -193,10 +197,11 @@ for i=1:numrast
 %     hxlabel=xlabel(gca,'Time (ms)','FontName','calibri','FontSize',8);
 %     set(hxlabel,'Position',get(hxlabel,'Position') - [180 -0.2 0]); %doesn't stay there when export !
     hylabel=ylabel(gca,'Firing rate (spikes/s)','FontName','calibri','FontSize',8);
+    currylim=get(gca,'YLim');
     
     % drawing the alignment bar
     patch([repmat((alignidx-start)-2,1,2) repmat((alignidx-start)+2,1,2)], ...
-        [get(gca,'YLim') fliplr(get(gca,'YLim'))], ...
+        [[0 currylim(2)] fliplr([0 currylim(2)])], ...
         [0 0 0 0],[1 0 0],'EdgeColor','none','FaceAlpha',0.5);
     
     %Plot eye velocities
@@ -257,11 +262,10 @@ spacer(1:numrast,1)={' '};
 hlegdir = legend(heyevelline, strcat(aligntype',spacer,curdir'),'Location','NorthWest');
 set(hlegdir,'Interpreter','none', 'Box', 'off','LineWidth',1.5,'FontName','calibri','FontSize',9);
 
+% setting sdf plot y axis
+newylim=[0, ceil(max(max(cell2mat(get(findobj(sdfplot,'Type','line'),'YDATA'))))/10)*10]; %rounding up to the decimal
+set(sdfplot,'YLim',newylim);
 
-
-
-%Plot eye velocities
-%eyevelploth =
 
 % UIWAIT makes SummaryPlot wait for user response (see UIRESUME)
 % uiwait(handles.figure1);
@@ -478,10 +482,12 @@ set(figtitleh,'Interpreter','none'); %that prevents underscores turning charcter
 axespos(:,2)=axespos(:,2)+addspace/2; %units in pixels now
 axespos=mat2cell(axespos,ones(size(axespos,1),1)); %reconversion
 set(transferedaxes,{'Position'},axespos);
-    %and the title a little bit more
-titlepos=get(figtitleh,'position');
-titlepos(2)=titlepos(2)+addspace/10;
-set(figtitleh,'position',titlepos);
+    %and the title a little bit more if needed
+    if size(subplots,1)>5
+        titlepos=get(figtitleh,'position');
+        titlepos(2)=titlepos(2)+addspace/10;
+        set(figtitleh,'position',titlepos);
+    end
     %changing units back to relative, in case we want to resize the figure
     set(transferedaxes,'Units','normalized')
         % remove time label on sdf plot
@@ -493,7 +499,8 @@ set(transferedaxes(2),'XTickLabel','');
 print(gcf, '-dpng', '-noui', '-opengl','-r600', exportfigname);
 
 %reasonably low size / good definition pdf figure (but patch transparency not supported by ghostscript to generate pdf):
-print(gcf, '-dpdf', '-noui', '-painters','-r600', exportfigname); 
+%print(gcf, '-dpdf', '-noui', '-painters','-r600', exportfigname); 
+%svg format
 plot2svg([exportfigname,'.svg'],gcf, 'png'); %only vector graphic export function that preserves alpha transparency
 
 % to preserve transparency, may use tricks with eps files. See: http://blogs.mathworks.com/loren/2007/12/11/making-pretty-graphs/

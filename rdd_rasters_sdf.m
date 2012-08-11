@@ -139,6 +139,7 @@ elseif ATPbuttonnb==9 % other sac align
     %then there should be the error code button, and then listbox ecodes
 end
 
+
 %% second code: allow selection of second align time. For example, for gapstop
 % task, one may want to display the gap trial and the stop trials together.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -290,6 +291,10 @@ elseif strcmp(get(get(findobj('Tag','showdirpanel'),'SelectedObject'),'Tag'),'se
     alignseccodes= alignseccodes'; %secondcode;
 else
     disp('Selected option: all directions'); %that's the 'selecalldir' tag
+    if strcmp(tasktype,'base2rem50')
+        aligncodes=aligncodes'; 
+        alignseccodes= alignseccodes';
+    end
 end
 
 %% Grey area in raster
@@ -375,14 +380,14 @@ end
 allaligncodes=[];
 
 if ~sum(alignseccodes) %only one align code
-    numcodes=length(aligncodes);
+    numcodes=size(aligncodes,1);
     allaligncodes=aligncodes;
     rotaterow=0;
 else
     if collapsecode
-        numcodes=max(length(aligncodes),length(alignseccodes)); %if collapsed ecodes
+        numcodes=size(aligncodes,1)+size(alignseccodes,1); %if collapsed ecodes
     else
-        numcodes=2*max(length(aligncodes),length(alignseccodes)); %not collapsed together
+        numcodes=2*max(size(aligncodes,1),size(alignseccodes,1)); %not collapsed together
     end
     if length(aligncodes)==length(alignseccodes)
         allaligncodes=[aligncodes;alignseccodes];
@@ -417,16 +422,19 @@ end
 % align trials
 for i=1:numcodes
     aligntype=datalign(i).alignlabel;
+    adjconditions=conditions;
     if strcmp(aligntype,'stop')
         includebad=1; %we want to compare cancelled with non-cancelled
         numplots=numcodes+1;
+    elseif strcmp(tasktype,'base2rem50')
+        adjconditions=[conditions(i,:);conditions(i+numcodes,:);conditions(i+2*numcodes,:)];
     else
         includebad=0;
         numplots=numcodes;
     end
     [rasters,aidx, trialidx, timefromtrigs, timetotrigs, eyeh,eyev,eyevel,...
         amplitudes,peakvels,peakaccs,allgreyareas,badidx,ssd] = rdd_rasters( rdd_filename, spikechannel,...
-        allaligncodes(i,:), nonecodes, includebad, alignsacnum, aligntype, collapsecode, conditions);
+        allaligncodes(i,:), nonecodes, includebad, alignsacnum, aligntype, collapsecode, adjconditions);
     
     
     if isempty( rasters )
@@ -443,12 +451,12 @@ for i=1:numcodes
         datalign(i).eyeh=eyeh(canceledtrials,:);
         datalign(i).eyev=eyev(canceledtrials,:);
         datalign(i).eyevel=eyevel(canceledtrials,:);
-        datalign(i).allgreyareas=allgreyareas(canceledtrials,:);
+        datalign(i).allgreyareas=allgreyareas(:,canceledtrials);
         datalign(i).amplitudes=amplitudes(canceledtrials);
         datalign(i).peakvels=peakvels(canceledtrials);
         datalign(i).peakaccs=peakaccs(canceledtrials);
         datalign(i).bad=badidx(canceledtrials);
-        datalign(i).ssd=ssd(canceledtrials);
+        datalign(i).ssd=ssd(canceledtrials,:);
         
         canceledtrials=~canceledtrials;
         datalign(i+1).alignlabel='stop_non_cancel';
@@ -460,12 +468,12 @@ for i=1:numcodes
         datalign(i+1).eyeh=eyeh(canceledtrials,:);
         datalign(i+1).eyev=eyev(canceledtrials,:);
         datalign(i+1).eyevel=eyevel(canceledtrials,:);
-        datalign(i+1).allgreyareas=allgreyareas(canceledtrials,:);
+        datalign(i+1).allgreyareas=allgreyareas(:,canceledtrials);
         datalign(i+1).amplitudes=amplitudes(canceledtrials);
         datalign(i+1).peakvels=peakvels(canceledtrials);
         datalign(i+1).peakaccs=peakaccs(canceledtrials);
         datalign(i+1).bad=badidx(canceledtrials);
-        datalign(i+1).ssd=ssd(canceledtrials);;
+        datalign(i+1).ssd=ssd(canceledtrials,:);
         %             datalign(i+1).condtimes=condtimes(canceledtrials);
     else
         datalign(i).rasters=rasters;
@@ -484,100 +492,6 @@ for i=1:numcodes
         %             datalign(i).condtimes=condtimes;
     end
     
-    
-end
-
-%% calculate ssrt
-if strcmp(aligntype,'stop')
-    % saccade delay for non-stop trials
-    cuetimes=datalign(1,1).allgreyareas;
-    sactime=datalign(1,1).alignidx;
-    sacdelay=nan(size(cuetimes,1),1);
-    for nbtr=1:size(cuetimes,1)
-        sacdelay(nbtr)=sactime-find(cuetimes(nbtr,1:sactime),1);
-    end
-    
-    % calculating probabilities
-    delaybincenters=[69   117   169   217]; %based on Boucher et al values
-    nccssdhist=hist(datalign(end).ssd,delaybincenters);
-    ccssdhist=hist(datalign(end-1).ssd,delaybincenters);
-    probastop=nccssdhist./(nccssdhist+ccssdhist);
-    
-    %finding ssrt - first method
-    
-    % mean inhibition function
-    mininhibfun=(sum((probastop(2:4)-probastop(1:3)).*delaybincenters(2:4)))./(max(probastop)-min(probastop));
-    inhibfunssrt(1)=mean(sacdelay)-mininhibfun;
-    % fitting weibull function
-    if ~(length(find(probastop))<length(probastop))
-        weibullcdfparam=wblfit(probastop);
-        weibullcdf=wblcdf(probastop,weibullcdfparam(1),weibullcdfparam(2));
-        %plot(weibullcdf)
-        mininhibfunwb=(sum((weibullcdf(2:4)-weibullcdf(1:3)).*delaybincenters(2:4)))...
-            ./(max(weibullcdf)-min(weibullcdf));
-        inhibfunssrt(2)=mean(sacdelay)-mininhibfunwb;
-    end
-    
-    %finding ssrt - second method
-    delaydistribedges=min(sacdelay)-1:10:max(sacdelay)+1;
-    delaydistribpdf=histc(sort(sacdelay),delaydistribedges);
-    emptyvalues=find(~delaydistribpdf);
-    if emptyvalues(1)==1
-        emptyvalues=emptyvalues(2:end);
-    end
-    if emptyvalues(end)==length(delaydistribpdf)
-        emptyvalues=emptyvalues(1:end-1);
-    end
-    for empt=1:length(emptyvalues)
-        delaydistribpdf(emptyvalues(empt))=mean([delaydistribpdf(emptyvalues(empt)-1)...
-            delaydistribpdf(emptyvalues(empt)+1)]);
-    end
-    %interpdelaydistribpdf=interp1(delaydistribedges,delaydistribpdf,min(totsadelay)-1:1:max(totsadelay)+1);
-    delayfreq=delaydistribpdf./sum(delaydistribpdf);
-    %plot(cumtrapz(delayfreq));
-    
-    %interpdelfrq=interpdelaydistribpdf./sum(interpdelaydistribpdf);
-    %     wbfitparam=wblfit(delayfreq);
-    %     delaywbfit=wblcdf(delayfreq,wbfitparam(1),wbfitparam(2));
-    
-    % finding SSRT for each SSD
-    sufficientdelay=find(probastop(1)<=cumtrapz(delayfreq),1);
-    intssrt(1)=delaydistribedges(sufficientdelay);
-    sufficientdelay=find(probastop(2)<=cumtrapz(delayfreq),1);
-    intssrt(2)=delaydistribedges(sufficientdelay);
-    sufficientdelay=find(probastop(3)<=cumtrapz(delayfreq),1);
-    intssrt(3)=delaydistribedges(sufficientdelay);
-    sufficientdelay=find(probastop(4)<=cumtrapz(delayfreq),1);
-    intssrt(4)=delaydistribedges(sufficientdelay);
-    
-    if inhibfunssrt>=(mean(intssrt)+std(intssrt))
-        ssrt=mean(intssrt);
-    else
-        ssrt=mean([intssrt inhibfunssrt]);
-    end
-    
-    % finally, adding SSRT to canceled trials alignment time, and selecting
-    % latency matched no-stop trials
-    
-    alignnum=find(strcmp({datalign.alignlabel},'stop_cancel'));
-    datalign(1,alignnum).alignidx=datalign(alignnum).alignidx+ssrt; %using a single value for ssrt
-    ssd=datalign(1,alignnum).ssd;
-    alignnum=find(strcmp({datalign.alignlabel},'sac'));
-    latmatch=sacdelay>=mean(ssd)+ssrt;
-    
-    datalign(1,alignnum).rasters=datalign(1,alignnum).rasters(latmatch,:);
-    %          datalign(1,alignnum).alignidx=datalign(1,alignnum).alignidx; %    doesn't change
-    datalign(1,alignnum).trials=datalign(1,alignnum).trials(latmatch);
-    datalign(1,alignnum).timefromtrig=datalign(1,alignnum).timefromtrig(latmatch);
-    datalign(1,alignnum).timetotrig=datalign(1,alignnum).timetotrig(latmatch);
-    datalign(1,alignnum).eyeh=datalign(1,alignnum).eyeh(latmatch,:);
-    datalign(1,alignnum).eyev=datalign(1,alignnum).eyev(latmatch,:);
-    datalign(1,alignnum).eyevel=datalign(1,alignnum).eyevel(latmatch,:);
-    datalign(1,alignnum).allgreyareas=datalign(1,alignnum).allgreyareas(latmatch,:);
-    datalign(1,alignnum).amplitudes=datalign(1,alignnum).amplitudes(latmatch);
-    datalign(1,alignnum).peakvels=datalign(1,alignnum).peakvels(latmatch);
-    datalign(1,alignnum).peakaccs=datalign(1,alignnum).peakaccs(latmatch);
-    datalign(1,alignnum).bad=datalign(1,alignnum).bad(latmatch);
 end
 
 %% Now plotting rasters
@@ -641,6 +555,11 @@ for i=1:numplots
         ssd=datalign(i).ssd;
     end
     
+    if isempty(rasters)
+        continue
+    end
+    
+    
     % adjust temporal axis
     start = aidx - mstart;
     stop = aidx + mstop;
@@ -650,7 +569,6 @@ for i=1:numplots
     if stop > length( rasters )
         stop = length( rasters );
     end;
-    
     
     %get the current axes
     axes(rasterh(i));
@@ -672,8 +590,8 @@ for i=1:numplots
 
         for num_trials=1:size(allgreyareas,2) %plotting grey area trial by trial
             try
-                greytimes=allgreyareas{num_trials}-start; %converting from a matrix representation to a time collection, within selected time range
-                if greytimes(2,1)~=mstart %just a control for unnoticed incorrect trials
+                greytimes=allgreyareas{num_trials}-start; 
+                if greytimes(2,1)~=mstart && ~(strcmp(aligntype,'stop') && i==2) %just a control for unnoticed incorrect trials
                     num_trials
                     greytimes(2,1)
                 end
