@@ -64,23 +64,24 @@ set(hObject,'DefaultTextFontName','Calibri'); %'Color',[0.9 .9 .8]
 % Update handles structure
 guidata(hObject, handles);
 
-% determines computer type
-archst  = computer('arch');
-
-global directory slash;
-
-if strcmp(archst, 'maci64')
-    name = getenv('USER'); 
-    if strcmp(name, 'nick')
-        directory = '/Users/nick/Dropbox/filesforNick/';
-    elseif strcmp(name, 'Frank')
-        directory = '/Users/Frank/Desktop/monkeylab/data/';
-    end
-    slash = '/';
-elseif strcmp(archst, 'win32')
-    directory = 'B:\data\Recordings\';
-    slash = '\';
-end
+% % determines computer type  % moved it to displaym_files_create
+% archst  = computer('arch');
+% 
+% global directory slash;
+% 
+% if strcmp(archst, 'maci64')
+%     name = getenv('USER'); 
+%     if strcmp(name, 'nick')
+%         directory = '/Users/nick/Dropbox/filesforNick/';
+%     elseif strcmp(name, 'Frank')
+%         directory = '/Users/Frank/Desktop/monkeylab/data/';
+%     end
+%     slash = '/';
+% elseif strcmp(archst, 'win32') || strcmp(archst, 'win64')
+%     % for future users, make it name = getenv('username'); 
+%     directory = 'B:\data\Recordings\';
+%     slash = '\';
+% end
 
 
 % UIWAIT makes RexDataGUI wait for user response (see UIRESUME)
@@ -606,6 +607,27 @@ global directory slash
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
+% determines computer type
+archst  = computer('arch');
+
+global directory slash;
+
+if strcmp(archst, 'maci64')
+    name = getenv('USER'); 
+    if strcmp(name, 'nick')
+        directory = '/Users/nick/Dropbox/filesforNick/';
+    elseif strcmp(name, 'Frank')
+        directory = '/Users/Frank/Desktop/monkeylab/data/';
+    end
+    slash = '/';
+elseif strcmp(archst, 'win32') || strcmp(archst, 'win64')
+    % for future users, make it name = getenv('username'); 
+    directory = 'B:\data\Recordings\';
+    slash = '\';
+end
+
+%setting process directory
 monkeydir= get(get(findobj('Tag','monkeyselect'),'SelectedObject'),'Tag');
 if strcmp(monkeydir,'rigelselect')
 dirlisting = dir([directory,'processed',slash,'Rigel',slash]);%('B:\data\Recordings\processed\Rigel');

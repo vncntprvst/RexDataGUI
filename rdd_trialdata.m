@@ -226,17 +226,22 @@ AccThreshold = 0.1;          %if acc > 100000 degrees/s^2, that is 0.1 deg/ms^2,
                 ampsacofint(1,k)=abs(getfield(curtrialsacInfo, {k}, 'amplitude'));
             end       
             
-            if strcmp(tasktype,'gapstop') && (floor(ecodeout(2)./10))*10==4070 && ~exist('ampsacofint')
+            if (strcmp(tasktype,'gapstop') && (floor(ecodeout(2)./10))*10==4070) || ~exist('ampsacofint')
             % stop trial, might not have saccades at all
             ampsacofint=0;
             end            
-            
+            if strcmp(tasktype,'vg_saccades') %to replace with optiloc when changes have been made
+                winlim=1.5;
+            else
+                winlim=3;
+            end
             %start time of first saccade greater than 3 degrees (typical
             %restriction window) after relevant ecode (ecodesacstart-1)
-            if logical(sum(ampsacofint>3))
-            mainsacs=getfield(curtrialsacInfo, {find(ampsacofint>3,1,'first')}, 'starttime');
+            
+            if logical(sum(ampsacofint>winlim))
+            mainsacs=getfield(curtrialsacInfo, {find(ampsacofint>winlim,1,'first')}, 'starttime');
             %end time of that saccade
-            mainsace=getfield(curtrialsacInfo, {find(ampsacofint>3,1,'first')}, 'endtime');
+            mainsace=getfield(curtrialsacInfo, {find(ampsacofint>winlim,1,'first')}, 'endtime');
                         
             %define boundaries for cropped display based on this saccade
             ssacbound=mainsacs-200;
