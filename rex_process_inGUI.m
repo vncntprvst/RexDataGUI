@@ -251,8 +251,8 @@ for trialnumber = 1:nt
         %then correct if possible
         noiselabels = bwlabel(noiseIdx);
         
-        str = sprintf('found %d noise periods in trial #%d', max(noiselabels), next);
-        disp(str);
+        %str = sprintf('found %d noise periods in trial #%d', max(noiselabels), next);
+        %disp(str);
         
         % Process one noise period at the time
         for k = 1:max(noiselabels)
@@ -264,9 +264,9 @@ for trialnumber = 1:nt
             if median(filtvel(noisyperiod(1):noisyperiod(end)))> VelocityThreshold && median(nativevel(noisyperiod(1):noisyperiod(end)))< VelocityThreshold
                 filtvel(noisyperiod(1):noisyperiod(end)) = median(nativevel(noisyperiod(1):noisyperiod(end)));
                 noiseIdx(noisyperiod(1):noisyperiod(end)) = 0;
-                disp('noise was in filtered velocity data, corrected');
+                %disp('noise was in filtered velocity data, corrected');
             else
-                disp('noise in raw data, left uncorrected');
+                %disp('noise in raw data, left uncorrected');
             end
         end
         
@@ -351,7 +351,7 @@ for trialnumber = 1:nt
                 ampsacofint=sqrt((h(sstarts(nwsacofint))-h(sends(nwsacofint)))^2 + ...
                     (v(sstarts(nwsacofint))-v(sends(nwsacofint)))^2);
                 %making some room
-                saccadeInfo(next,find(sacofint,1)+1:(find(sacofint,1)+sum(sacofint)))=saccadeInfo(next,find(sacofint,1):(find(sacofint,1)+sum(sacofint)-1))
+                saccadeInfo(next,find(sacofint,1)+1:(find(sacofint,1)+sum(sacofint)))=saccadeInfo(next,find(sacofint,1):(find(sacofint,1)+sum(sacofint)-1));
                 if ~isempty(find(sacofint,1))
                     newpeak=find(sacofint,1);
                 else
@@ -371,7 +371,7 @@ for trialnumber = 1:nt
                     if filth(sends(nwsacofint))>filth(sstarts(nwsacofint))%leftward negative, inverted signal
                         ampsacofint=-ampsacofint;
                     end
-                    saccadeInfo(next,newpeak).amplitude = ampsacofint
+                    saccadeInfo(next,newpeak).amplitude = ampsacofint;
                     saccadeInfo(next,newpeak).peakVelocity = max(filtvel(sstarts(nwsacofint):sends(nwsacofint)));
                     saccadeInfo(next,newpeak).peakAcceleration = max(filtacc(sstarts(nwsacofint):sends(nwsacofint)));
                     saccadeInfo(next,newpeak).status='saccade';
@@ -386,6 +386,20 @@ for trialnumber = 1:nt
                 goodsac(next)=0;
             end
         end
+        
+        %% detect actual direction of "good" sac for each trial
+            
+%         try
+%             lasac=find(~cellfun(@isempty,{saccadeInfo(next,:).latency}));
+%             lasach=allh(next,saccadeInfo(next,lasac).starttime:saccadeInfo(next,lasac).endtime);
+%             lasacv=allv(next,saccadeInfo(next,lasac).starttime:saccadeInfo(next,lasac).endtime);
+%             sacdeg=atand((lascv(end)-lascv(1))/(lasch(end)-lasch(1)));
+%             if (lasch(end)-lasch(1))<1
+%                 sacdeg=sacdeg+180;
+%             end
+%             saccadeInfo(next,lasac).direction=sacdeg;
+%         catch
+%         end
         
         
         %% back to old code, pre-processing stage, still within the loop
@@ -410,7 +424,44 @@ for trialnumber = 1:nt
     end;
     waitbar( (trialnumber/nt)*0.9, wb, 'Converting Rex data...' );
 end;
-%%
+
+%% detect ouliers
+
+%first make sure the trials as dected without good saccades are in wrong
+%trials
+if ~isequal((logical(allbad) & (~goodsac)),~goodsac)
+    disp('mismatch in saccade detection and wrong trials')
+    mismatch=find((~goodsac)~= (logical(allbad) & (~goodsac)));
+end
+
+amps=nan(size(goodsac));
+lats=amps;
+durs=amps;
+sactocomp=find(goodsac);
+
+for l=1:length(sactocomp)
+    amps(1,sactocomp(l))=getfield(saccadeInfo, {sactocomp(l),goodsac(sactocomp(l))}, 'amplitude');
+    lats(1,sactocomp(l))=getfield(saccadeInfo, {sactocomp(l),goodsac(sactocomp(l))}, 'latency');
+    durs(1,sactocomp(l))=getfield(saccadeInfo, {sactocomp(l),goodsac(sactocomp(l))}, 'duration');
+end
+
+ampoutlier=abs(amps(~isnan(amps)))>=mean(abs(amps(~isnan(amps))))+2*std(abs(amps(~isnan(amps))));
+latoutlier=lats(~isnan(lats))>=mean(lats(~isnan(lats)))+2*std(lats(~isnan(lats)));
+duroutlier=durs(~isnan(durs))>=median(durs(~isnan(durs)))+2*std(durs(~isnan(durs))); %WARNING: works here because very typical durations
+
+%reconvert to original trial number (not discounting NaNs)
+ampoutlier=sactocomp(ampoutlier);
+latoutlier=sactocomp(latoutlier);
+duroutlier=sactocomp(duroutlier);
+
+outliers=[ampoutlier,latoutlier,duroutlier];
+outliers=sort(outliers);
+outliers=unique(outliers);
+
+outlandmismtch(1)={mismatch};
+outlandmismtch(2)={outliers};
+
+%% saving data
 archst  = computer('arch');
 if strcmp(archst, 'maci64')
     if strcmp(rawdir,'/Users/nick/Dropbox/filesforNick/Rigel/')
@@ -445,44 +496,13 @@ rexloadedname = rexname;
 rexnumtrials = next -1; %nt;
 
 allrexnotes = sprintf( '%s, converted on %s\n%d trials\n', rexloadedname, datestr( now ), rexnumtrials );
+disp(allrexnotes);
 save( newname, 'rexloadedname', 'rexnumtrials', 'alloriginaltrialnums', 'allnewtrialnums', 'allcodes', 'alltimes', 'allspkchan', 'allspk', 'allrates', ...
     'allh', 'allv', 'allstart', 'allbad', 'alltrigin', 'alltrigout', 'allrew', 'alldeleted', 'allsacstart', 'allsacend',...
-    'allspklen', 'allsaclen', 'allrexnotes', 'saccadeInfo','-v7.3'); %using '-v7.3' input arguments so that matfile loading runs well when retrieving data from file
+    'allspklen', 'allsaclen', 'allrexnotes', 'saccadeInfo','outlandmismtch','-v7.3'); %using '-v7.3' input arguments so that matfile loading runs well when retrieving data from file
 %removed allcodelen and alleyelen. allspklen should go too, and allrates be included
 %elsewhere
 
-%% detect ouliers
-
-%first make sure the trials as dected without good saccades are in wrong
-%trials
-if ~isequal((logical(allbad) & (~goodsac)),~goodsac)
-    disp('mismatch in saccade detection and wrong trials at trial')
-    find((~goodsac)~= (logical(allbad) & (~goodsac)))
-end
-
-amps=nan(size(goodsac));
-lats=amps;
-durs=amps;
-sactocomp=find(goodsac);
-
-for l=1:length(sactocomp)
-    amps(1,sactocomp(l))=getfield(saccadeInfo, {sactocomp(l),goodsac(sactocomp(l))}, 'amplitude');
-    lats(1,sactocomp(l))=getfield(saccadeInfo, {sactocomp(l),goodsac(sactocomp(l))}, 'latency');
-    durs(1,sactocomp(l))=getfield(saccadeInfo, {sactocomp(l),goodsac(sactocomp(l))}, 'duration');
-end
-
-ampoutlier=find(abs(amps(~isnan(amps)))>=mean(abs(amps(~isnan(amps))))+2*std(abs(amps(~isnan(amps)))));
-latoutlier=find(lats(~isnan(lats))>=mean(lats(~isnan(lats)))+2*std(lats(~isnan(lats))));
-duroutlier=find(durs(~isnan(durs))>=median(durs(~isnan(durs)))+2*std(durs(~isnan(durs)))); %WARNING: works here because very typical durations
-
-%reconvert to original trial number (not discounting NaNs)
-ampoutlier=sactocomp(ampoutlier);
-latoutlier=sactocomp(latoutlier);
-duroutlier=sactocomp(duroutlier);
-
-outliers=[ampoutlier,latoutlier,duroutlier];
-outliers=sort(outliers);
-outliers=unique(outliers);
 
 %%
 success = 1;

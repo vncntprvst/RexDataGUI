@@ -23,7 +23,7 @@ function varargout = RexDataGUI(varargin)
 %
 % See also: GUIDE, GUIDATA, GUIHANDLES
 
-% Last Modified by GUIDE v2.5 08-Aug-2012 17:12:19
+% Last Modified by GUIDE v2.5 11-Aug-2012 21:04:57
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -341,12 +341,13 @@ if overwrite
         dirlisting = dirlisting(~cellfun('isempty',strfind(dirlisting,'mat')));
         for i=1:length(dirlisting)
             thisfilename=cell2mat(dirlisting(i));
-            dirlisting(i)=mat2cell(thisfilename(1:end-4));
+            dirlisting(i)={thisfilename(1:end-4)};
         end
         set(findobj('Tag','displaymfiles'),'String',dirlisting);
 
         
         if outliers
+            if ~get(findobj('Tag','process_checkbox'),'Value') %show dialog only if processing individual trial
             % make dialogue to inspect ouliers
             dlgtxt=cat(2,'Found outlier saccades in trials ', num2str(outliers), '. Display them?');
             outlierbt = questdlg(dlgtxt,'Found outliers','Yes','No','Yes');
@@ -362,6 +363,7 @@ if overwrite
               set(findobj('Tag','trialnumbdisplay'),'String',num2str(outliers(1)));
               set(findobj('Tag','showoutlierstrials'),'Value',1.0);
               rdd_trialdata(rfname, outliers(1));           
+            end
             end
         end
     end
@@ -460,24 +462,24 @@ if get(findobj('Tag','process_checkbox'),'Value')
                 [success,outliers]=rex_process_inGUI(procname,monkeydir); %shouldn't need the rfpathname
                 if success
                   
-                    if outliers
-                        % make dialogue to inspect ouliers
-                        dlgtxt=cat(2,'Found outlier saccades in trials ', num2str(outliers), '. Display them?');
-                        outlierbt = questdlg(dlgtxt,'Found outliers','Yes','No','Yes');
-                        switch outlierbt
-                            case 'Yes'
-                                dispoutliers = 1;
-                            case 'No'
-                                dispoutliers = 0;
-                        end
-                        
-                        if dispoutliers
-                            set(findobj('Tag','outliertrialnb'),'String',num2str(outliers));
-                            set(findobj('Tag','trialnumbdisplay'),'String',num2str(outliers(1)));
-                            set(findobj('Tag','showoutlierstrials'),'Value',1.0);
-                            rdd_trialdata(procname, outliers(1));
-                        end
-                    end
+%                     if outliers
+%                         % make dialogue to inspect ouliers
+%                         dlgtxt=cat(2,'Found outlier saccades in trials ', num2str(outliers), '. Display them?');
+%                         outlierbt = questdlg(dlgtxt,'Found outliers','Yes','No','Yes');
+%                         switch outlierbt
+%                             case 'Yes'
+%                                 dispoutliers = 1;
+%                             case 'No'
+%                                 dispoutliers = 0;
+%                         end
+%                         
+%                         if dispoutliers
+%                             set(findobj('Tag','outliertrialnb'),'String',num2str(outliers));
+%                             set(findobj('Tag','trialnumbdisplay'),'String',num2str(outliers(1)));
+%                             set(findobj('Tag','showoutlierstrials'),'Value',1.0);
+%                             rdd_trialdata(procname, outliers(1));
+%                         end
+%                     end
                 end
             end
         end
@@ -607,24 +609,20 @@ end
 monkeydir= get(get(findobj('Tag','monkeyselect'),'SelectedObject'),'Tag');
 if strcmp(monkeydir,'rigelselect')
 dirlisting = dir([directory,'processed',slash,'Rigel',slash]);%('B:\data\Recordings\processed\Rigel');
-idletter='R';
 elseif strcmp(monkeydir,'sixxselect')
 dirlisting = dir([directory,'processed',slash,'Sixx',slash]);
-idletter='S';
 elseif strcmp(monkeydir,'hildaselect')
 dirlisting = dir([directory,'processed',slash,'Hilda',slash]);
-idletter='H';
 end
 
 % add subject ID letter in front of file names for sessions >= 100
-    if strcmp(idletter,'R')
-        rawdir=[directory,'Rigel',slash];
-    elseif strcmp(idletter,'S')
-        rawdir=[directory,'Sixx',slash];
-    elseif strcmp(idletter,'H')
-        rawdir=[directory,'Hilda',slash];
-    end
-    olddir = cd(rawdir) %move to raw fiels directory but keep current dir in memory
+        rawdirs=[{[directory,'Rigel',slash]};{[directory,'Sixx',slash]};{[directory,'Hilda',slash]}];
+        idletters=['R';'S';'H'];
+        olddir=pwd; %keep current dir in memory
+for rwadirnum=1:length(rawdirs)
+    rawdir=rawdirs{rwadirnum};
+    idletter=idletters(rwadirnum);
+    cd(rawdir); %move to raw fiels directory
     rawdirlisting=dir(rawdir);
     dirfileNames = {rawdirlisting.name};
     noidfiles=regexpi(dirfileNames,'^\d+','match');
@@ -636,6 +634,7 @@ end
         end
 
     end
+end
     
 cd(olddir); %go back to original dir
 
@@ -1080,24 +1079,6 @@ set(findobj('Tag','rasterspanel'),'visible','off')
 set(findobj('Tag','statisticspanel'),'visible','off')
 set(findobj('Tag','trialdatapanel'),'visible','on')
 
-% --- Executes on key press with focus on rastersandsdf_tab and none of its controls.
-function rastersandsdf_tab_KeyPressFcn(hObject, eventdata, handles)
-% hObject    handle to rastersandsdf_tab (see GCBO)
-% eventdata  structure with the following fields (see UICONTROL)
-%	Key: name of the key that was pressed, in lower case
-%	Character: character interpretation of the key(s) that was pressed
-%	Modifier: name(s) of the modifier key(s) (i.e., control, shift) pressed
-% handles    structure with handles and user data (see GUIDATA)
-
-
-% --- If Enable == 'on', executes on mouse press in 5 pixel border.
-% --- Otherwise, executes on mouse press in 5 pixel border or over rastersandsdf_tab.
-function rastersandsdf_tab_ButtonDownFcn(hObject, eventdata, handles)
-% hObject    handle to rastersandsdf_tab (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-
 % --- Executes on button press in statistics_tab.
 function statistics_tab_Callback(hObject, eventdata, handles)
 % hObject    handle to statistics_tab (see GCBO)
@@ -1163,7 +1144,7 @@ dirlisting=dirlisting(fdateidx);
 dirlisting = dirlisting(~cellfun('isempty',strfind(dirlisting,'mat')));
 for i=1:length(dirlisting)
     thisfilename=cell2mat(dirlisting(i));
-    dirlisting(i)=mat2cell(thisfilename(1:end-4));
+    dirlisting(i)={thisfilename(1:end-4)};
 end
 set(findobj('Tag','displaymfiles'),'string',dirlisting);
 
@@ -1182,3 +1163,28 @@ function sixxselect_CreateFcn(hObject, eventdata, handles)
 % hObject    handle to sixxselect (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
+
+
+
+% --- Executes when selected object is changed in centralpaneldisp.
+function centralpaneldisp_SelectionChangeFcn(hObject, eventdata, handles)
+% hObject    handle to the selected object in centralpaneldisp 
+% eventdata  structure with the following fields (see UIBUTTONGROUP)
+%	EventName: string 'SelectionChanged' (read only)
+%	OldValue: handle of the previously selected object or empty if none was selected
+%	NewValue: handle of the currently selected object
+% handles    structure with handles and user data (see GUIDATA)
+
+if eventdata.NewValue==findobj('Tag','rastersandsdf_tab')
+set(findobj('Tag','trialdatapanel'),'visible','off');
+set(findobj('Tag','statisticspanel'),'visible','off');
+set(findobj('Tag','rasterspanel'),'visible','on');
+elseif eventdata.NewValue==findobj('Tag','trialdata_tab')
+set(findobj('Tag','rasterspanel'),'visible','off')
+set(findobj('Tag','statisticspanel'),'visible','off')
+set(findobj('Tag','trialdatapanel'),'visible','on')
+elseif eventdata.NewValue==findobj('Tag','statistics_tab')
+set(findobj('Tag','rasterspanel'),'visible','off')
+set(findobj('Tag','trialdatapanel'),'visible','off')
+set(findobj('Tag','statisticspanel'),'visible','on')
+end

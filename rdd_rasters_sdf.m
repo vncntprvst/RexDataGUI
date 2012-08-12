@@ -214,7 +214,10 @@ if logical(secondcode)
     end
 end
 if length(trialdirs)>1
-    basecodes=(basecode*ones(length(trialdirs),1)*10)+trialdirs; %more efficient coding than above
+        basecodes=[];
+        for numbasecd=1:length(basecode)
+        basecodes=[basecodes;(basecode(numbasecd)*ones(length(trialdirs),1)*10)+trialdirs]; 
+        end
 else
     basecodes=basecode;
 end

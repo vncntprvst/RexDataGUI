@@ -196,10 +196,26 @@ for k = 1:max(velLabeled)
     % saccades leftward are negative amplitude 
     sacamp=sqrt(((heye(saccadeEndIdx)-(heye(saccadeStartIdx))))^2 + ...
                 ((veye(saccadeEndIdx)-(veye(saccadeStartIdx))))^2);  
-    if heye(saccadeEndIdx)>heye(saccadeStartIdx)%leftward amp negative, inverted signal
+            
+    sacdeg=abs(atand((veye(saccadeEndIdx)-(veye(saccadeStartIdx)))/(heye(saccadeEndIdx)-(heye(saccadeStartIdx)))));
+    
+    if heye(saccadeEndIdx)>heye(saccadeStartIdx)%inverted signal: leftward is in postive range. Correcting to negative. 
         sacamp=-sacamp;
+        if veye(saccadeEndIdx)>veye(saccadeStartIdx)
+            sacdeg=sacdeg+270;
+        else
+            sacdeg=sacdeg+180;
+        end
+    else
+        if veye(saccadeEndIdx)>veye(saccadeStartIdx)
+            % sacdeg=sacdeg; no change
+        else
+            sacdeg=sacdeg+90;
+        end
     end
-    saccadeInfo(trialnb,peak).amplitude = sacamp;
+            
+    saccadeInfo(trialnb,peak).amplitude=sacamp;
+    saccadeInfo(trialnb,peak).direction=sacdeg;
     saccadeInfo(trialnb,peak).peakVelocity = max(Saccvel(saccadeStartIdx:saccadeEndIdx)); 
     saccadeInfo(trialnb,peak).peakAcceleration = max(Saccacc(saccadeStartIdx:saccadeEndIdx)); 
     saccadeInfo(trialnb,peak).status='saccade';
