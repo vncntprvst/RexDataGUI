@@ -23,7 +23,7 @@ function varargout = RexDataGUI(varargin)
 %
 % See also: GUIDE, GUIDATA, GUIHANDLES
 
-% Last Modified by GUIDE v2.5 11-Aug-2012 21:04:57
+% Last Modified by GUIDE v2.5 13-Aug-2012 15:48:11
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -486,6 +486,93 @@ if get(findobj('Tag','process_checkbox'),'Value')
         end
     end
     
+elseif get(findobj('Tag','grid_checkbox'),'Value')
+
+    if strcmp(get(gcf,'SelectionType'),'normal') % if simple click, just higlight it, don't open
+        %set uimenu content for following rightclick
+        %SelectionType 'Alternate' (Right click) doesn't work with listbox
+        %dispmenu=(get(hObject,'UIContextMenu'));
+        listboxcontextmenu=uicontextmenu;
+        set(hObject,'UIContextMenu',listboxcontextmenu);
+        
+    elseif strcmp(get(gcf,'SelectionType'),'open')
+        
+        monkeydirselected=get(get(findobj('Tag','monkeyselect'),'SelectedObject'),'Tag');
+        if strcmp(monkeydirselected,'rigelselect')
+            monkeydir = [directory,'Rigel',slash]; %'B:\data\Recordings\Rigel';
+            procdir = [directory,'processed',slash,'Rigel',slash];
+        elseif strcmp(monkeydirselected,'sixxselect')
+            monkeydir = [directory,'Sixx',slash]; %'B:\data\Recordings\Sixx';
+            procdir = [directory,'processed',slash,'Sixx',slash];
+        end
+        
+        processedrexfiles = cellstr(get(hObject,'String')); % returns displaymfiles contents as cell array
+        rclk_gridLocation = processedrexfiles{get(hObject,'Value')}; %returns selected item from displaymfiles
+        
+        %             [rfname, rfpathname]=uigetfile({'*A','A Files';'*.*','All Files'},'raw files directory',...
+        %                 monkeydir);
+        
+        if strcmp(monkeydirselected,'rigelselect')
+            dirlisting = dir([directory,'Rigel',slash]); %('B:\data\Recordings\processed\Rigel');
+        elseif strcmp(monkeydirselected,'sixxselect')
+            dirlisting = dir([directory,'Sixx',slash]); %('B:\data\Recordings\processed\Rigel');
+        end
+        
+        fileNames = {dirlisting.name};  % Put the file names in a cell array
+        index = regexp(fileNames, rclk_gridLocation);
+        rfname = fileNames(~cellfun(@isempty,index));  % Get the names of the matching files in a cell array
+        
+        %check if file exists already
+        rfname=regexprep(rfname, '(A$)|(E$)',''); %remove A and E from end of names
+        rfname = unique(rfname);
+        overwrite = 1;
+        overwriteAll = 0;
+        
+        for i = 1:length(rfname)
+            procname=rfname{i};
+            
+            if (exist(cat(2,procdir, procname,'.mat'), 'file')==2) && ~overwriteAll %'B:\data\Recordings\processed\',
+                % Construct question dialog
+                choice = questdlg('File already processed. Overwrite?','File found','Overwrite all','Overwrite this file','Skip','Overwrite this file');
+                switch choice
+                    case 'Overwrite all'
+                        overwrite = 1;
+                        overwriteAll = 1;
+                    case 'Overwrite this file'
+                        overwrite = 1;
+                        overwriteAll = 0;
+                    case 'Skip'
+                        overwrite = 0;
+                        overwriteAll = 0;
+                end
+            end
+            if overwrite
+                [success,outliers]=rex_process_inGUI(procname,monkeydir); %shouldn't need the rfpathname
+                if success
+                  
+%                     if outliers
+%                         % make dialogue to inspect ouliers
+%                         dlgtxt=cat(2,'Found outlier saccades in trials ', num2str(outliers), '. Display them?');
+%                         outlierbt = questdlg(dlgtxt,'Found outliers','Yes','No','Yes');
+%                         switch outlierbt
+%                             case 'Yes'
+%                                 dispoutliers = 1;
+%                             case 'No'
+%                                 dispoutliers = 0;
+%                         end
+%                         
+%                         if dispoutliers
+%                             set(findobj('Tag','outliertrialnb'),'String',num2str(outliers));
+%                             set(findobj('Tag','trialnumbdisplay'),'String',num2str(outliers(1)));
+%                             set(findobj('Tag','showoutlierstrials'),'Value',1.0);
+%                             rdd_trialdata(procname, outliers(1));
+%                         end
+%                     end
+                end
+            end
+        end
+    end
+    
 else
     
     if strcmp(get(gcf,'SelectionType'),'normal') % if simple click, just higlight it, don't open
@@ -611,8 +698,6 @@ end
 % determines computer type
 archst  = computer('arch');
 
-global directory slash;
-
 if strcmp(archst, 'maci64')
     name = getenv('USER'); 
     if strcmp(name, 'nick')
@@ -671,7 +756,6 @@ for i=1:length(dirlisting)
     dirlisting(i)={thisfilename(1:end-4)};
 end
 set(hObject,'string',dirlisting);
-
 
 
 % --- Executes on button press in LoadFile.
@@ -995,14 +1079,14 @@ global directory slash
 
 if get(findobj('Tag','process_checkbox'),'Value')
     
-    if eventdata.NewValue==findobj('Tag','rigelselect')
+    if get(findobj('Tag','rigelselect'),'Value')
         dirlisting = dir([directory,'Rigel',slash]); %('B:\data\Recordings\processed\Rigel');
         fileNames = {dirlisting.name};  % Put the file names in a cell array
         index = regexpi(fileNames,...              % Match a file name if it begins
             '^R\d+','match');           % with the letter 'R' followed by a set of digits 1 or larger
         inFiles = index(~cellfun(@isempty,index));  % Get the names of the matching files in a cell array
         sessionNumbers = cellfun(@(x) strrep(x, 'R', ' '), inFiles, 'UniformOutput', false);
-    elseif eventdata.NewValue==findobj('Tag','sixxselect')
+    elseif get(findobj('Tag','sixxselect'),'Value')
         dirlisting = dir([directory,'Sixx',slash]); %('B:\data\Recordings\processed\Sixx');
         fileNames = {dirlisting.name};  % Put the file names in a cell array
         index = regexpi(fileNames,...              % Match a file name if it begins
@@ -1012,15 +1096,46 @@ if get(findobj('Tag','process_checkbox'),'Value')
     end
     
     if ~isempty(sessionNumbers)
-        b = cat(1,sessionNumbers{:});
-        b = unique(b); % finds unique session numbers
-        b = sortrows(b,-1); %sort cell arrays descending
-        b = strcat('Session', b);
-        set(findobj('Tag','displaymfiles'),'string', b);
+        dispsession = cat(1,sessionNumbers{:});
+        dispsession = unique(dispsession); % finds unique session numbers
+        [~,sessionidx]=sort(str2double(dispsession),'descend');
+        dispsession = dispsession(sessionidx); %sort cell arrays descending
+        dispsession = strcat('Session', dispsession);
+        set(findobj('Tag','displaymfiles'),'string', dispsession);
     else
         set(findobj('Tag','displaymfiles'),'string','');
-    end                                                               
+    end                
+    
+    set(findobj('Tag', 'grid_checkbox'), 'Enable', 'off');                                                             
               
+elseif get(findobj('Tag','grid_checkbox'),'Value')
+    
+    if get(findobj('Tag','rigelselect'),'Value')
+        dirlisting = dir([directory,'Rigel',slash]); %('B:\data\Recordings\processed\Rigel');
+        fileNames = {dirlisting.name};  % Put the file names in a cell array
+        index = regexpi(fileNames,...              % Match a file name if it begins
+            '[a-z]\d[a-z]\d','match');           % with the letter 'R' followed by a set of digits 1 or larger
+        gridLocations = index(~cellfun(@isempty,index));  % Get the names of the matching files in a cell array
+    elseif get(findobj('Tag','sixxselect'),'Value')
+        dirlisting = dir([directory,'Sixx',slash]); %('B:\data\Recordings\processed\Sixx');
+        fileNames = {dirlisting.name};  % Put the file names in a cell array
+        index = regexpi(fileNames,...              % Match a file name if it begins
+            '[a-z]\d[a-z]\d', 'match');           % with the letter 'S' followed by a set of digits 1 or larger
+        gridLocations = index(~cellfun(@isempty,index));  % Get the names of the matching files in a cell array
+    end
+    
+    if ~isempty(gridLocations)
+        displocation = cat(1,gridLocations{:});
+        displocation = unique(displocation); % finds unique session numbers
+        [~,sessionidx]=sort(str2double(displocation),'descend');
+        displocation = displocation(sessionidx); %sort cell arrays descending
+        set(findobj('Tag','displaymfiles'),'string', displocation);
+    else
+        set(findobj('Tag','displaymfiles'),'string','');
+    end         
+    
+    set(findobj('Tag', 'process_checkbox'), 'Enable', 'off');
+    
 else
     
     if eventdata.NewValue==findobj('Tag','rigelselect')
@@ -1148,7 +1263,9 @@ if get(findobj('Tag','process_checkbox'),'Value')
         set(findobj('Tag','displaymfiles'),'string', dispsession);
     else
         set(findobj('Tag','displaymfiles'),'string','');
-    end                                                               
+    end                
+    
+    set(findobj('Tag', 'grid_checkbox'), 'Enable', 'off');
               
 else
     
@@ -1157,6 +1274,8 @@ else
 elseif get(findobj('Tag','sixxselect'),'Value')
     dirlisting = dir([directory,'processed',slash,'Sixx',slash]); %('B:\data\Recordings\processed\Sixx');
     end
+    
+    set(findobj('Tag', 'grid_checkbox'), 'Enable', 'on');
 
     % Order by date
     filedates=cell2mat({dirlisting(:).datenum});
@@ -1172,6 +1291,67 @@ set(findobj('Tag','displaymfiles'),'string',dirlisting);
 
 end
 
+% --- Executes on button press in grid_checkbox.
+function grid_checkbox_Callback(hObject, eventdata, handles)
+% hObject    handle to grid_checkbox (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of grid_checkbox
+
+global directory slash
+
+if get(findobj('Tag','grid_checkbox'),'Value')
+    
+    if get(findobj('Tag','rigelselect'),'Value')
+        dirlisting = dir([directory,'Rigel',slash]); %('B:\data\Recordings\processed\Rigel');
+        fileNames = {dirlisting.name};  % Put the file names in a cell array
+        index = regexpi(fileNames,...              % Match a file name if it begins
+            '[a-z]\d[a-z]\d','match');           % with the letter 'R' followed by a set of digits 1 or larger
+        gridLocations = index(~cellfun(@isempty,index));  % Get the names of the matching files in a cell array
+    elseif get(findobj('Tag','sixxselect'),'Value')
+        dirlisting = dir([directory,'Sixx',slash]); %('B:\data\Recordings\processed\Sixx');
+        fileNames = {dirlisting.name};  % Put the file names in a cell array
+        index = regexpi(fileNames,...              % Match a file name if it begins
+            '[a-z]\d[a-z]\d', 'match');           % with the letter 'S' followed by a set of digits 1 or larger
+        gridLocations = index(~cellfun(@isempty,index));  % Get the names of the matching files in a cell array
+    end
+    
+    if ~isempty(gridLocations)
+        displocation = cat(1,gridLocations{:});
+        displocation = unique(displocation); % finds unique session numbers
+        [~,sessionidx]=sort(str2double(displocation),'descend');
+        displocation = displocation(sessionidx); %sort cell arrays descending
+        set(findobj('Tag','displaymfiles'),'string', displocation);
+    else
+        set(findobj('Tag','displaymfiles'),'string','');
+    end         
+    
+    set(findobj('Tag', 'process_checkbox'), 'Enable', 'off');
+              
+else
+    
+    if get(findobj('Tag','rigelselect'),'Value')
+    dirlisting = dir([directory,'processed',slash,'Rigel',slash]); %('B:\data\Recordings\processed\Rigel');
+elseif get(findobj('Tag','sixxselect'),'Value')
+    dirlisting = dir([directory,'processed',slash,'Sixx',slash]); %('B:\data\Recordings\processed\Sixx');
+    end
+    
+    set(findobj('Tag', 'process_checkbox'), 'Enable', 'on');
+
+    % Order by date
+    filedates=cell2mat({dirlisting(:).datenum});
+    [filedates,fdateidx] = sort(filedates,'descend');
+dirlisting = {dirlisting(:).name};
+dirlisting=dirlisting(fdateidx);
+dirlisting = dirlisting(~cellfun('isempty',strfind(dirlisting,'mat')));
+for i=1:length(dirlisting)
+    thisfilename=cell2mat(dirlisting(i));
+    dirlisting(i)={thisfilename(1:end-4)};
+end
+set(findobj('Tag','displaymfiles'),'string',dirlisting);
+
+end
 
 % --- Executes during object creation, after setting all properties.
 function monkeyselect_CreateFcn(hObject, eventdata, handles)
