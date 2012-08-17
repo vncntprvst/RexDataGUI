@@ -193,26 +193,31 @@ for k = 1:max(velLabeled)
     saccadeInfo(trialnb,peak).endtime = saccadeEndIdx; % in ms
     saccadeInfo(trialnb,peak).duration = saccadeInfo(trialnb,peak).endtime - saccadeInfo(trialnb,peak).starttime;
     
-    % saccades leftward are negative amplitude 
+    % saccades leftward are negative amplitude ... corrected below
     sacamp=sqrt(((heye(saccadeEndIdx)-(heye(saccadeStartIdx))))^2 + ...
                 ((veye(saccadeEndIdx)-(veye(saccadeStartIdx))))^2);  
             
-    sacdeg=abs(atand((veye(saccadeEndIdx)-(veye(saccadeStartIdx)))/(heye(saccadeEndIdx)-(heye(saccadeStartIdx)))));
+    sacdeg=abs(atand((heye(saccadeEndIdx)-(heye(saccadeStartIdx)))/(veye(saccadeEndIdx)-(veye(saccadeStartIdx)))));
+    
+%     if trialnb==104
+%         sacdeg
+%         figure(21)
+%         plot(heye(saccadeStartIdx:saccadeEndIdx));
+%         hold on;
+%         plot(veye(saccadeStartIdx:saccadeEndIdx),'r');
+%         hold off
+%     end
+    
+    % sign adjustements
+    if veye(saccadeEndIdx)<veye(saccadeStartIdx) % negative vertical amplitude -> vertical flip
+    	sacdeg=180-sacdeg;
+    end
     
     if heye(saccadeEndIdx)>heye(saccadeStartIdx)%inverted signal: leftward is in postive range. Correcting to negative. 
         sacamp=-sacamp;
-        if veye(saccadeEndIdx)>veye(saccadeStartIdx)
-            sacdeg=sacdeg+270;
-        else
-            sacdeg=sacdeg+180;
-        end
-    else
-        if veye(saccadeEndIdx)>veye(saccadeStartIdx)
-            % sacdeg=sacdeg; no change
-        else
-            sacdeg=sacdeg+90;
-        end
+        sacdeg=360-sacdeg; % mirror image;
     end
+      
             
     saccadeInfo(trialnb,peak).amplitude=sacamp;
     saccadeInfo(trialnb,peak).direction=sacdeg;
