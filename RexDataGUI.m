@@ -23,7 +23,7 @@ function varargout = RexDataGUI(varargin)
 %
 % See also: GUIDE, GUIDATA, GUIHANDLES
 
-% Last Modified by GUIDE v2.5 13-Aug-2012 15:48:11
+% Last Modified by GUIDE v2.5 21-Aug-2012 19:13:42
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -44,7 +44,6 @@ else
 end
 % End initialization code - DO NOT EDIT
 
-
 % --- Executes just before RexDataGUI is made visible.
 function RexDataGUI_OpeningFcn(hObject, eventdata, handles, varargin)
 % This function has no output args, see OutputFcn.
@@ -56,7 +55,11 @@ function RexDataGUI_OpeningFcn(hObject, eventdata, handles, varargin)
 % Choose default command line output for RexDataGUI
 handles.output = hObject;
 
+% tiny design changes
 set(hObject,'DefaultTextFontName','Calibri'); %'Color',[0.9 .9 .8]
+% unprocfilebtxt=sprintf('Unprocessed\rfiles');
+% uibutton(findobj('tag','unprocfilebutton'),'string',unprocfilebtxt);
+
 
 % use varargin to allow for direct input of the name of the file to be analyzed. 
 % see http://www.mathworks.com/help/techdoc/creating_guis/f10-998580.html
@@ -88,8 +91,6 @@ guidata(hObject, handles);
 % uiwait(handles.rdd);
 
 
-
-
 % --- Outputs from this function are returned to the command line.
 function varargout = RexDataGUI_OutputFcn(hObject, eventdata, handles) 
 % varargout  cell array for returning output args (see VARARGOUT);
@@ -99,7 +100,6 @@ function varargout = RexDataGUI_OutputFcn(hObject, eventdata, handles)
 
 % Get default command line output from handles structure
 varargout{1} = handles.output;
-
 
 
 function filenamedisplay_Callback(hObject, eventdata, handles)
@@ -124,7 +124,6 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
 end
 
 
-
 function taskdisplay_Callback(hObject, eventdata, handles)
 % hObject    handle to taskdisplay (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -132,7 +131,6 @@ function taskdisplay_Callback(hObject, eventdata, handles)
 
 % Hints: get(hObject,'String') returns contents of taskdisplay as text
 %        str2double(get(hObject,'String')) returns contents of taskdisplay as a double
-
 
 % --- Executes during object creation, after setting all properties.
 function taskdisplay_CreateFcn(hObject, eventdata, handles)
@@ -170,7 +168,6 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
 end
 
 
-
 function trialnumbdisplay_Callback(hObject, eventdata, handles)
 % hObject    handle to trialnumbdisplay (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -191,7 +188,6 @@ function trialnumbdisplay_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
-
 
 % --- Executes on button press in arrowbackw.
 function arrowbackw_Callback(hObject, eventdata, handles)
@@ -348,7 +344,7 @@ if overwrite
 
         
         if outliers
-            if ~get(findobj('Tag','process_checkbox'),'Value') %show dialog only if processing individual trial
+            if ~get(findobj('Tag','session_checkbox'),'Value') %show dialog only if processing individual trial
             % make dialogue to inspect ouliers
             dlgtxt=cat(2,'Found outlier saccades in trials ', num2str(outliers), '. Display them?');
             outlierbt = questdlg(dlgtxt,'Found outliers','Yes','No','Yes');
@@ -370,7 +366,6 @@ if overwrite
     end
 end
       
-
 
 % --- If Enable == 'on', executes on mouse press in 5 pixel border.
 % --- Otherwise, executes on mouse press in 5 pixel border or over OpenRawFile.
@@ -396,7 +391,7 @@ function displaymfiles_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 global directory slash
         
-if get(findobj('Tag','process_checkbox'),'Value')
+if get(findobj('Tag','session_checkbox'),'Value')
 
     if strcmp(get(gcf,'SelectionType'),'normal') % if simple click, just higlight it, don't open
         %set uimenu content for following rightclick
@@ -716,10 +711,13 @@ end
 monkeydir= get(get(findobj('Tag','monkeyselect'),'SelectedObject'),'Tag');
 if strcmp(monkeydir,'rigelselect')
 dirlisting = dir([directory,'processed',slash,'Rigel',slash]);%('B:\data\Recordings\processed\Rigel');
+monknum=1;
 elseif strcmp(monkeydir,'sixxselect')
 dirlisting = dir([directory,'processed',slash,'Sixx',slash]);
+monknum=2;
 elseif strcmp(monkeydir,'hildaselect')
 dirlisting = dir([directory,'processed',slash,'Hilda',slash]);
+monknum=3;
 end
 
 % add subject ID letter in front of file names for sessions >= 100
@@ -732,15 +730,18 @@ for rwadirnum=1:length(rawdirs)
     cd(rawdir); %move to raw fiels directory
     rawdirlisting=dir(rawdir);
     dirfileNames = {rawdirlisting.name};
-    noidfiles=regexpi(dirfileNames,'^\d+','match');
+    noidfiles=regexpi(dirfileNames,'^\d+','match'); % output file names that start with digits
     noidindex=find(~cellfun(@isempty,noidfiles));
     if logical(sum(noidindex))
         % Loop through each
         for id = 1:length(noidindex)
             movefile(dirfileNames{noidindex(id)}, [idletter,dirfileNames{noidindex(id)}]);
         end
-
     end
+    [rawfilenames,filematch]=regexpi(dirfileNames,'\w*A$','match'); % output file names that end with A
+    rawfilenames=rawfilenames(~cellfun('isempty',filematch));
+    rawfilenames=cellfun(@(x) x{:}, rawfilenames, 'UniformOutput', false);
+    indfilenames{rwadirnum}=cellfun(@(x) x(1:end-1), rawfilenames, 'UniformOutput', false);
 end
     
 cd(olddir); %go back to original dir
@@ -750,13 +751,17 @@ cd(olddir); %go back to original dir
     [filedates,fdateidx] = sort(filedates,'descend');
 dirlisting = {dirlisting(:).name};
 dirlisting=dirlisting(fdateidx);
-dirlisting = dirlisting(~cellfun('isempty',strfind(dirlisting,'mat')));
-for i=1:length(dirlisting)
-    thisfilename=cell2mat(dirlisting(i));
-    dirlisting(i)={thisfilename(1:end-4)};
+dirlisting=dirlisting(~cellfun('isempty',strfind(dirlisting,'mat')));
+dirlisting=cellfun(@(x) x(1:end-4), dirlisting, 'UniformOutput', false);
+% for i=1:length(dirlisting)
+%     thisfilename=cell2mat(dirlisting(i));
+%     dirlisting(i)={thisfilename(1:end-4)};
+% end
+if sum(~ismember(indfilenames{monknum},dirlisting))
+    global unprocfiles;
+    unprocfiles=indfilenames{1,monknum}([~ismember(indfilenames{monknum},dirlisting)]);
 end
 set(hObject,'string',dirlisting);
-
 
 % --- Executes on button press in LoadFile.
 function LoadFile_Callback(hObject, eventdata, handles)
@@ -797,7 +802,6 @@ function secaligntimepanel_SelectionChangeFcn(hObject, eventdata, handles)
     set(eventdata.NewValue, 'BackgroundColor', [0.73 0.83 0.96]);
 % end
 
-
 function msbefore_Callback(hObject, eventdata, handles)
 % hObject    handle to msbefore (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -818,8 +822,6 @@ function msbefore_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
-
-
 
 function msafter_Callback(hObject, eventdata, handles)
 % hObject    handle to msafter (see GCBO)
@@ -842,8 +844,6 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
     set(hObject,'BackgroundColor','white');
 end
 
-
-
 function binwidth_Callback(hObject, eventdata, handles)
 % hObject    handle to binwidth (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -851,7 +851,6 @@ function binwidth_Callback(hObject, eventdata, handles)
 
 % Hints: get(hObject,'String') returns contents of binwidth as text
 %        str2double(get(hObject,'String')) returns contents of binwidth as a double
-
 
 % --- Executes during object creation, after setting all properties.
 function binwidth_CreateFcn(hObject, eventdata, handles)
@@ -865,8 +864,6 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
     set(hObject,'BackgroundColor','white');
 end
 
-
-
 function sigma_Callback(hObject, eventdata, handles)
 % hObject    handle to sigma (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -874,7 +871,6 @@ function sigma_Callback(hObject, eventdata, handles)
 
 % Hints: get(hObject,'String') returns contents of sigma as text
 %        str2double(get(hObject,'String')) returns contents of sigma as a double
-
 
 % --- Executes during object creation, after setting all properties.
 function sigma_CreateFcn(hObject, eventdata, handles)
@@ -888,7 +884,6 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
     set(hObject,'BackgroundColor','white');
 end
 
-
 % --- Executes on selection change in alignspececodes.
 function alignspececodes_Callback(hObject, eventdata, handles)
 % hObject    handle to alignspececodes (see GCBO)
@@ -897,7 +892,6 @@ function alignspececodes_Callback(hObject, eventdata, handles)
 
 % Hints: contents = cellstr(get(hObject,'String')) returns alignspececodes contents as cell array
 %        contents{get(hObject,'Value')} returns selected item from alignspececodes
-
 
 % --- Executes during object creation, after setting all properties.
 function alignspececodes_CreateFcn(hObject, eventdata, handles)
@@ -921,7 +915,6 @@ function binwidthval_Callback(hObject, eventdata, handles)
 % Hints: get(hObject,'String') returns contents of binwidthval as text
 %        str2double(get(hObject,'String')) returns contents of binwidthval as a double
 
-
 % --- Executes during object creation, after setting all properties.
 function binwidthval_CreateFcn(hObject, eventdata, handles)
 % hObject    handle to binwidthval (see GCBO)
@@ -934,8 +927,6 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
     set(hObject,'BackgroundColor','white');
 end
 
-
-
 function sigmaval_Callback(hObject, eventdata, handles)
 % hObject    handle to sigmaval (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -943,7 +934,6 @@ function sigmaval_Callback(hObject, eventdata, handles)
 
 % Hints: get(hObject,'String') returns contents of sigmaval as text
 %        str2double(get(hObject,'String')) returns contents of sigmaval as a double
-
 
 % --- Executes during object creation, after setting all properties.
 function sigmaval_CreateFcn(hObject, eventdata, handles)
@@ -966,7 +956,6 @@ function greycue_Callback(hObject, eventdata, handles)
 
 % Hint: get(hObject,'Value') returns toggle state of greycue
 
-
 % --- Executes on button press in greyemvt.
 function greyemvt_Callback(hObject, eventdata, handles)
 % hObject    handle to greyemvt (see GCBO)
@@ -974,7 +963,6 @@ function greyemvt_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of greyemvt
-
 
 % --- Executes on button press in greyfix.
 function greyfix_Callback(hObject, eventdata, handles)
@@ -984,13 +972,11 @@ function greyfix_Callback(hObject, eventdata, handles)
 
 % Hint: get(hObject,'Value') returns toggle state of greyfix
 
-
 % --------------------------------------------------------------------
 function analysis_menu_Callback(hObject, eventdata, handles)
 % hObject    handle to analysis_menu (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-
 
 % --- Executes on button press in disprastsdf.
 function disprastsdf_Callback(hObject, eventdata, handles)
@@ -998,13 +984,11 @@ function disprastsdf_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-
 % --- Executes on button press in dispeyevel.
 function dispeyevel_Callback(hObject, eventdata, handles)
 % hObject    handle to dispeyevel (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-
 
 
 function outliertrialnb_Callback(hObject, eventdata, handles)
@@ -1014,7 +998,6 @@ function outliertrialnb_Callback(hObject, eventdata, handles)
 
 % Hints: get(hObject,'String') returns contents of outliertrialnb as text
 %        str2double(get(hObject,'String')) returns contents of outliertrialnb as a double
-
 
 % --- Executes during object creation, after setting all properties.
 function outliertrialnb_CreateFcn(hObject, eventdata, handles)
@@ -1027,7 +1010,6 @@ function outliertrialnb_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
-
 
 % --- Executes on button press in marktrialg.
 function marktrialg_Callback(hObject, eventdata, handles)
@@ -1052,20 +1034,17 @@ recfile.allbad(1,str2num(get(findobj('Tag','trialnumbdisplay'),'String')))=1;
 rdd_trialdata(get(findobj('Tag','filenamedisplay'),'String'),...
                 str2num(get(findobj('Tag','trialnumbdisplay'),'String')),1);
 
-
 % --- Executes on button press in pushbutton14.
 function pushbutton14_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton14 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-
 % --- Executes on button press in pushbutton15.
 function pushbutton15_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton15 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-
 
 % --- Executes when selected object is changed in monkeyselect.
 function monkeyselect_SelectionChangeFcn(hObject, eventdata, handles)
@@ -1077,7 +1056,7 @@ function monkeyselect_SelectionChangeFcn(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 global directory slash
 
-if get(findobj('Tag','process_checkbox'),'Value')
+if get(findobj('Tag','session_checkbox'),'Value')
     
     if get(findobj('Tag','rigelselect'),'Value')
         dirlisting = dir([directory,'Rigel',slash]); %('B:\data\Recordings\processed\Rigel');
@@ -1134,7 +1113,7 @@ elseif get(findobj('Tag','grid_checkbox'),'Value')
         set(findobj('Tag','displaymfiles'),'string','');
     end         
     
-    set(findobj('Tag', 'process_checkbox'), 'Enable', 'off');
+    set(findobj('Tag', 'session_checkbox'), 'Enable', 'off');
     
 else
     
@@ -1158,8 +1137,6 @@ set(findobj('Tag','displaymfiles'),'string',dirlisting);
 
 end
     
-
-
 % --- Executes on button press in sumplotrast.
 function sumplotrast_Callback(hObject, eventdata, handles)
 % hObject    handle to sumplotrast (see GCBO)
@@ -1167,7 +1144,6 @@ function sumplotrast_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of sumplotrast
-
 
 % --- Executes on button press in sumplotsdf.
 function sumplotsdf_Callback(hObject, eventdata, handles)
@@ -1177,7 +1153,6 @@ function sumplotsdf_Callback(hObject, eventdata, handles)
 
 % Hint: get(hObject,'Value') returns toggle state of sumplotsdf
 
-
 % --- Executes on button press in sumploteyevel.
 function sumploteyevel_Callback(hObject, eventdata, handles)
 % hObject    handle to sumploteyevel (see GCBO)
@@ -1185,7 +1160,6 @@ function sumploteyevel_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of sumploteyevel
-
 
 % --- Executes on button press in plotsummary.
 function plotsummary_Callback(hObject, eventdata, handles)
@@ -1196,7 +1170,6 @@ filename=get(findobj('Tag','filenamedisplay'),'String');
 tasktype=get(findobj('Tag','taskdisplay'),'String');
 dataaligned=guidata(findobj('Tag','exportdata'));
 SummaryPlot(dataaligned,filename,tasktype);
-
 
 % --- Executes on button press in rastersandsdf_tab.
 function rastersandsdf_tab_Callback(hObject, eventdata, handles)
@@ -1226,147 +1199,17 @@ set(findobj('Tag','rasterspanel'),'visible','off')
 set(findobj('Tag','trialdatapanel'),'visible','off')
 set(findobj('Tag','statisticspanel'),'visible','on')
 
-% --- Executes on button press in process_checkbox.
-function process_checkbox_Callback(hObject, eventdata, handles)
-% hObject    handle to process_checkbox (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hint: get(hObject,'Value') returns toggle state of process_checkbox
-
-global directory slash
-
-if get(findobj('Tag','process_checkbox'),'Value')
-    
-    if get(findobj('Tag','rigelselect'),'Value')
-        dirlisting = dir([directory,'Rigel',slash]); %('B:\data\Recordings\processed\Rigel');
-        fileNames = {dirlisting.name};  % Put the file names in a cell array
-        index = regexpi(fileNames,...              % Match a file name if it begins
-            '^R\d+','match');           % with the letter 'R' followed by a set of digits 1 or larger
-        inFiles = index(~cellfun(@isempty,index));  % Get the names of the matching files in a cell array
-        sessionNumbers = cellfun(@(x) strrep(x, 'R', ' '), inFiles, 'UniformOutput', false);
-    elseif get(findobj('Tag','sixxselect'),'Value')
-        dirlisting = dir([directory,'Sixx',slash]); %('B:\data\Recordings\processed\Sixx');
-        fileNames = {dirlisting.name};  % Put the file names in a cell array
-        index = regexpi(fileNames,...              % Match a file name if it begins
-            '^S\d+', 'match');           % with the letter 'S' followed by a set of digits 1 or larger
-        inFiles = index(~cellfun(@isempty,index));  % Get the names of the matching files in a cell array
-        sessionNumbers = cellfun(@(x) strrep(x, 'S', ' '), inFiles, 'UniformOutput', false);
-    end
-    
-    if ~isempty(sessionNumbers)
-        dispsession = cat(1,sessionNumbers{:});
-        dispsession = unique(dispsession); % finds unique session numbers
-        [~,sessionidx]=sort(str2double(dispsession),'descend');
-        dispsession = dispsession(sessionidx); %sort cell arrays descending
-        dispsession = strcat('Session', dispsession);
-        set(findobj('Tag','displaymfiles'),'string', dispsession);
-    else
-        set(findobj('Tag','displaymfiles'),'string','');
-    end                
-    
-    set(findobj('Tag', 'grid_checkbox'), 'Enable', 'off');
-              
-else
-    
-    if get(findobj('Tag','rigelselect'),'Value')
-    dirlisting = dir([directory,'processed',slash,'Rigel',slash]); %('B:\data\Recordings\processed\Rigel');
-elseif get(findobj('Tag','sixxselect'),'Value')
-    dirlisting = dir([directory,'processed',slash,'Sixx',slash]); %('B:\data\Recordings\processed\Sixx');
-    end
-    
-    set(findobj('Tag', 'grid_checkbox'), 'Enable', 'on');
-
-    % Order by date
-    filedates=cell2mat({dirlisting(:).datenum});
-    [filedates,fdateidx] = sort(filedates,'descend');
-dirlisting = {dirlisting(:).name};
-dirlisting=dirlisting(fdateidx);
-dirlisting = dirlisting(~cellfun('isempty',strfind(dirlisting,'mat')));
-for i=1:length(dirlisting)
-    thisfilename=cell2mat(dirlisting(i));
-    dirlisting(i)={thisfilename(1:end-4)};
-end
-set(findobj('Tag','displaymfiles'),'string',dirlisting);
-
-end
-
-% --- Executes on button press in grid_checkbox.
-function grid_checkbox_Callback(hObject, eventdata, handles)
-% hObject    handle to grid_checkbox (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hint: get(hObject,'Value') returns toggle state of grid_checkbox
-
-global directory slash
-
-if get(findobj('Tag','grid_checkbox'),'Value')
-    
-    if get(findobj('Tag','rigelselect'),'Value')
-        dirlisting = dir([directory,'Rigel',slash]); %('B:\data\Recordings\processed\Rigel');
-        fileNames = {dirlisting.name};  % Put the file names in a cell array
-        index = regexpi(fileNames,...              % Match a file name if it begins
-            '[a-z]\d[a-z]\d','match');           % with the letter 'R' followed by a set of digits 1 or larger
-        gridLocations = index(~cellfun(@isempty,index));  % Get the names of the matching files in a cell array
-    elseif get(findobj('Tag','sixxselect'),'Value')
-        dirlisting = dir([directory,'Sixx',slash]); %('B:\data\Recordings\processed\Sixx');
-        fileNames = {dirlisting.name};  % Put the file names in a cell array
-        index = regexpi(fileNames,...              % Match a file name if it begins
-            '[a-z]\d[a-z]\d', 'match');           % with the letter 'S' followed by a set of digits 1 or larger
-        gridLocations = index(~cellfun(@isempty,index));  % Get the names of the matching files in a cell array
-    end
-    
-    if ~isempty(gridLocations)
-        displocation = cat(1,gridLocations{:});
-        displocation = unique(displocation); % finds unique session numbers
-        [~,sessionidx]=sort(str2double(displocation),'descend');
-        displocation = displocation(sessionidx); %sort cell arrays descending
-        set(findobj('Tag','displaymfiles'),'string', displocation);
-    else
-        set(findobj('Tag','displaymfiles'),'string','');
-    end         
-    
-    set(findobj('Tag', 'process_checkbox'), 'Enable', 'off');
-              
-else
-    
-    if get(findobj('Tag','rigelselect'),'Value')
-    dirlisting = dir([directory,'processed',slash,'Rigel',slash]); %('B:\data\Recordings\processed\Rigel');
-elseif get(findobj('Tag','sixxselect'),'Value')
-    dirlisting = dir([directory,'processed',slash,'Sixx',slash]); %('B:\data\Recordings\processed\Sixx');
-    end
-    
-    set(findobj('Tag', 'process_checkbox'), 'Enable', 'on');
-
-    % Order by date
-    filedates=cell2mat({dirlisting(:).datenum});
-    [filedates,fdateidx] = sort(filedates,'descend');
-dirlisting = {dirlisting(:).name};
-dirlisting=dirlisting(fdateidx);
-dirlisting = dirlisting(~cellfun('isempty',strfind(dirlisting,'mat')));
-for i=1:length(dirlisting)
-    thisfilename=cell2mat(dirlisting(i));
-    dirlisting(i)={thisfilename(1:end-4)};
-end
-set(findobj('Tag','displaymfiles'),'string',dirlisting);
-
-end
-
 % --- Executes during object creation, after setting all properties.
 function monkeyselect_CreateFcn(hObject, eventdata, handles)
 % hObject    handle to monkeyselect (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
-
 % --- Executes during object creation, after setting all properties.
 function sixxselect_CreateFcn(hObject, eventdata, handles)
 % hObject    handle to sixxselect (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
-
-
 
 % --- Executes when selected object is changed in centralpaneldisp.
 function centralpaneldisp_SelectionChangeFcn(hObject, eventdata, handles)
@@ -1389,4 +1232,93 @@ elseif eventdata.NewValue==findobj('Tag','statistics_tab')
 set(findobj('Tag','rasterspanel'),'visible','off')
 set(findobj('Tag','trialdatapanel'),'visible','off')
 set(findobj('Tag','statisticspanel'),'visible','on')
+end
+
+
+% --- Executes on button press in unprocfilebutton.
+function unprocfilebutton_Callback(hObject, eventdata, handles)
+% hObject    handle to unprocfilebutton (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes when selected object is changed in displayfbox.
+function displayfbox_SelectionChangeFcn(hObject, eventdata, handles)
+% hObject    handle to the selected object in displayfbox 
+% eventdata  structure with the following fields (see UIBUTTONGROUP)
+%	EventName: string 'SelectionChanged' (read only)
+%	OldValue: handle of the previously selected object or empty if none was selected
+%	NewValue: handle of the currently selected object
+% handles    structure with handles and user data (see GUIDATA)
+global directory slash;
+
+   % set(eventdata.OldValue, 'BackgroundColor', [0.9608    0.9216    0.9216]);
+    
+    if get(findobj('Tag','rigelselect'),'Value')
+        dirlisting = dir([directory,'processed',slash,'Rigel',slash]); %('B:\data\Recordings\processed\Rigel');
+ 	elseif get(findobj('Tag','sixxselect'),'Value')
+        dirlisting = dir([directory,'processed',slash,'Sixx',slash]); %('B:\data\Recordings\processed\Sixx');\
+    elseif get(findobj('Tag','hildaselect'),'Value')
+        dirlisting = dir([directory,'processed',slash,'Hilda',slash]); %('B:\data\Recordings\processed\Sixx');
+    end
+    fileNames = {dirlisting.name};  % Put the file names in a cell array
+
+    if hObject==findobj('Tag','displayfbt_files')
+
+    % Order by date
+    filedates=cell2mat({dirlisting(:).datenum});
+    [filedates,fdateidx] = sort(filedates,'descend');
+    dirlisting = {dirlisting(:).name};
+    dirlisting = dirlisting(fdateidx);
+    dirlisting = dirlisting(~cellfun('isempty',strfind(dirlisting,'mat')));
+    dirlisting = dirlisting(cellfun('isempty',strfind(dirlisting,'myBreakpoints')));
+    dirlisting = cellfun(@(x) x(1:end-4), dirlisting, 'UniformOutput', false);
+    set(findobj('Tag','displaymfiles'),'string',dirlisting);
+    
+    elseif hObject==findobj('Tag','session_checkbox')
+   
+    if get(findobj('Tag','rigelselect'),'Value')
+        index = regexpi(fileNames,...              % Match a file name if it begins
+            '^R\d+','match');           % with the letter 'R' followed by a set of digits 1 or larger
+        inFiles = index(~cellfun(@isempty,index));  % Get the names of the matching files in a cell array
+        sessionNumbers = cellfun(@(x) strrep(x, 'R', ' '), inFiles, 'UniformOutput', false);
+ 	elseif get(findobj('Tag','sixxselect'),'Value')
+        index = regexpi(fileNames,...              % Match a file name if it begins
+            '^S\d+', 'match');           % with the letter 'S' followed by a set of digits 1 or larger
+        inFiles = index(~cellfun(@isempty,index));  % Get the names of the matching files in a cell array
+        sessionNumbers = cellfun(@(x) strrep(x, 'S', ' '), inFiles, 'UniformOutput', false);
+    elseif get(findobj('Tag','hildaselect'),'Value')
+        index = regexpi(fileNames,...              % Match a file name if it begins
+            '^H\d+', 'match');           % with the letter 'S' followed by a set of digits 1 or larger
+        inFiles = index(~cellfun(@isempty,index));  % Get the names of the matching files in a cell array
+        sessionNumbers = cellfun(@(x) strrep(x, 'H', ' '), inFiles, 'UniformOutput', false);
+    end
+    
+    if ~isempty(sessionNumbers)
+        dispsession = cat(1,sessionNumbers{:});
+        dispsession = unique(dispsession); % finds unique session numbers
+        [~,sessionidx]=sort(str2double(dispsession),'descend');
+        dispsession = dispsession(sessionidx); %sort cell arrays descending
+        dispsession = strcat('Session', dispsession);
+        set(findobj('Tag','displaymfiles'),'string', dispsession);
+    else
+        set(findobj('Tag','displaymfiles'),'string','');
+    end                         
+
+elseif hObject==findobj('Tag','grid_checkbox') 
+
+        index = regexpi(fileNames,...              % Match a file name if it begins
+            '[a-z]\d[a-z]\d','match');           % with the letter 'R' followed by a set of digits 1 or larger
+        gridLocations = index(~cellfun(@isempty,index));  % Get the names of the matching files in a cell array
+        
+    if ~isempty(gridLocations)
+        displocation = cat(1,gridLocations{:});
+        displocation = unique(displocation); % finds unique session numbers
+        [~,sessionidx]=sort(str2double(displocation),'descend');
+        displocation = displocation(sessionidx); %sort cell arrays descending
+        set(findobj('Tag','displaymfiles'),'string', displocation);
+    else
+        set(findobj('Tag','displaymfiles'),'string','');
+    end         
+    
 end
