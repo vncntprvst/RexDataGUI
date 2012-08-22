@@ -23,16 +23,16 @@ function varargout = RexDataGUI(varargin)
 %
 % See also: GUIDE, GUIDATA, GUIHANDLES
 
-% Last Modified by GUIDE v2.5 21-Aug-2012 19:13:42
+% Last Modified by GUIDE v2.5 21-Aug-2012 21:57:01
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
 gui_State = struct('gui_Name',       mfilename, ...
-                   'gui_Singleton',  gui_Singleton, ...
-                   'gui_OpeningFcn', @RexDataGUI_OpeningFcn, ...
-                   'gui_OutputFcn',  @RexDataGUI_OutputFcn, ...
-                   'gui_LayoutFcn',  [] , ...
-                   'gui_Callback',   []);
+    'gui_Singleton',  gui_Singleton, ...
+    'gui_OpeningFcn', @RexDataGUI_OpeningFcn, ...
+    'gui_OutputFcn',  @RexDataGUI_OutputFcn, ...
+    'gui_LayoutFcn',  [] , ...
+    'gui_Callback',   []);
 if nargin && ischar(varargin{1})
     gui_State.gui_Callback = str2func(varargin{1});
 end
@@ -61,7 +61,7 @@ set(hObject,'DefaultTextFontName','Calibri'); %'Color',[0.9 .9 .8]
 % uibutton(findobj('tag','unprocfilebutton'),'string',unprocfilebtxt);
 
 
-% use varargin to allow for direct input of the name of the file to be analyzed. 
+% use varargin to allow for direct input of the name of the file to be analyzed.
 % see http://www.mathworks.com/help/techdoc/creating_guis/f10-998580.html
 
 % Update handles structure
@@ -69,11 +69,11 @@ guidata(hObject, handles);
 
 % % determines computer type  % moved it to displaym_files_create
 % archst  = computer('arch');
-% 
+%
 % global directory slash;
-% 
+%
 % if strcmp(archst, 'maci64')
-%     name = getenv('USER'); 
+%     name = getenv('USER');
 %     if strcmp(name, 'nick')
 %         directory = '/Users/nick/Dropbox/filesforNick/';
 %     elseif strcmp(name, 'Frank')
@@ -81,7 +81,7 @@ guidata(hObject, handles);
 %     end
 %     slash = '/';
 % elseif strcmp(archst, 'win32') || strcmp(archst, 'win64')
-%     % for future users, make it name = getenv('username'); 
+%     % for future users, make it name = getenv('username');
 %     directory = 'B:\data\Recordings\';
 %     slash = '\';
 % end
@@ -92,7 +92,7 @@ guidata(hObject, handles);
 
 
 % --- Outputs from this function are returned to the command line.
-function varargout = RexDataGUI_OutputFcn(hObject, eventdata, handles) 
+function varargout = RexDataGUI_OutputFcn(hObject, eventdata, handles)
 % varargout  cell array for returning output args (see VARARGOUT);
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -270,7 +270,7 @@ function OpenRawFile_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 global directory slash
-monkeydirselected=get(get(findobj('Tag','monkeyselect'),'SelectedObject'),'Tag'); 
+monkeydirselected=get(get(findobj('Tag','monkeyselect'),'SelectedObject'),'Tag');
 if strcmp(monkeydirselected,'rigelselect')
     monkeydir = [directory,'Rigel',slash]; %'B:\data\Recordings\Rigel';
     procdir = [directory,'processed',slash,'Rigel',slash];
@@ -282,11 +282,11 @@ end
 % determines computer type
 archst  = computer('arch');
 if strcmp(archst, 'maci64')
-[rfname, rfpathname]=uigetfile({'*.*','All Files';'*A','A Files'},'raw files directory',...
-    monkeydir);
+    [rfname, rfpathname]=uigetfile({'*.*','All Files';'*A','A Files'},'raw files directory',...
+        monkeydir);
 else
-[rfname, rfpathname]=uigetfile({'*A','A Files';'*.*','All Files'},'raw files directory',...
-    monkeydir);
+    [rfname, rfpathname]=uigetfile({'*A','A Files';'*.*','All Files'},'raw files directory',...
+        monkeydir);
 end
 
 %check if file exists already
@@ -323,7 +323,7 @@ if overwrite
     [success,outliers]=rex_process_inGUI(rfname,monkeydir); %shouldn't need the rfpathname
     if success
         %then update the directory listing
-  
+        
         if strcmp(monkeydirselected,'rigelselect')
             dirlisting = dir([directory,'processed',slash,'Rigel',slash]); %('B:\data\Recordings\processed');
         elseif strcmp(monkeydirselected,'sixxselect')
@@ -341,31 +341,31 @@ if overwrite
             dirlisting(i)={thisfilename(1:end-4)};
         end
         set(findobj('Tag','displaymfiles'),'String',dirlisting);
-
+        
         
         if outliers
-            if ~get(findobj('Tag','session_checkbox'),'Value') %show dialog only if processing individual trial
-            % make dialogue to inspect ouliers
-            dlgtxt=cat(2,'Found outlier saccades in trials ', num2str(outliers), '. Display them?');
-            outlierbt = questdlg(dlgtxt,'Found outliers','Yes','No','Yes');
-            switch outlierbt
-                case 'Yes'
-                    dispoutliers = 1;
-                case 'No'
-                    dispoutliers = 0;
-            end
-            
-            if dispoutliers 
-              set(findobj('Tag','outliertrialnb'),'String',num2str(outliers));
-              set(findobj('Tag','trialnumbdisplay'),'String',num2str(outliers(1)));
-              set(findobj('Tag','showoutlierstrials'),'Value',1.0);
-              rdd_trialdata(rfname, outliers(1));           
-            end
+            if ~get(findobj('Tag','displayfbt_session'),'Value') %show dialog only if processing individual trial
+                % make dialogue to inspect ouliers
+                dlgtxt=cat(2,'Found outlier saccades in trials ', num2str(outliers), '. Display them?');
+                outlierbt = questdlg(dlgtxt,'Found outliers','Yes','No','Yes');
+                switch outlierbt
+                    case 'Yes'
+                        dispoutliers = 1;
+                    case 'No'
+                        dispoutliers = 0;
+                end
+                
+                if dispoutliers
+                    set(findobj('Tag','outliertrialnb'),'String',num2str(outliers));
+                    set(findobj('Tag','trialnumbdisplay'),'String',num2str(outliers(1)));
+                    set(findobj('Tag','showoutlierstrials'),'Value',1.0);
+                    rdd_trialdata(rfname, outliers(1));
+                end
             end
         end
     end
 end
-      
+
 
 % --- If Enable == 'on', executes on mouse press in 5 pixel border.
 % --- Otherwise, executes on mouse press in 5 pixel border or over OpenRawFile.
@@ -389,195 +389,29 @@ function displaymfiles_Callback(hObject, eventdata, handles)
 % hObject    handle to displaymfiles (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-global directory slash
-        
-if get(findobj('Tag','session_checkbox'),'Value')
+global directory slash;
 
-    if strcmp(get(gcf,'SelectionType'),'normal') % if simple click, just higlight it, don't open
-        %set uimenu content for following rightclick
-        %SelectionType 'Alternate' (Right click) doesn't work with listbox
-        %dispmenu=(get(hObject,'UIContextMenu'));
-        listboxcontextmenu=uicontextmenu;
-        set(hObject,'UIContextMenu',listboxcontextmenu);
-        
-    elseif strcmp(get(gcf,'SelectionType'),'open')
-        
-        monkeydirselected=get(get(findobj('Tag','monkeyselect'),'SelectedObject'),'Tag');
-        if strcmp(monkeydirselected,'rigelselect')
-            monkeydir = [directory,'Rigel',slash]; %'B:\data\Recordings\Rigel';
-            procdir = [directory,'processed',slash,'Rigel',slash];
-        elseif strcmp(monkeydirselected,'sixxselect')
-            monkeydir = [directory,'Sixx',slash]; %'B:\data\Recordings\Sixx';
-            procdir = [directory,'processed',slash,'Sixx',slash];
-        end
-        
-        processedrexfiles = cellstr(get(hObject,'String')); % returns displaymfiles contents as cell array
-        rclk_sessionName = processedrexfiles{get(hObject,'Value')}; %returns selected item from displaymfiles
-        
-        %             [rfname, rfpathname]=uigetfile({'*A','A Files';'*.*','All Files'},'raw files directory',...
-        %                 monkeydir);
-        
-        rclk_sessionNumber = rclk_sessionName(9:end);
-        if strcmp(monkeydirselected,'rigelselect')
-            rfname = strcat('R',rclk_sessionNumber);
-            dirlisting = dir([directory,'Rigel',slash]); %('B:\data\Recordings\processed\Rigel');
-        elseif strcmp(monkeydirselected,'sixxselect')
-            rfname = strcat('S',rclk_sessionNumber);
-            dirlisting = dir([directory,'Sixx',slash]); %('B:\data\Recordings\processed\Rigel');
-        end
-        
-        fileNames = {dirlisting.name};  % Put the file names in a cell array
-        index = regexp(fileNames, strcat('^',rfname));
-        rfname = fileNames(~cellfun(@isempty,index));  % Get the names of the matching files in a cell array
-        
-        %check if file exists already
-        rfname=regexprep(rfname, '(A$)|(E$)',''); %remove A and E from end of names
-        rfname = unique(rfname);
-        overwrite = 1;
-        overwriteAll = 0;
-        
-        for i = 1:length(rfname)
-            procname=rfname{i};
-            
-            if (exist(cat(2,procdir, procname,'.mat'), 'file')==2) && ~overwriteAll %'B:\data\Recordings\processed\',
-                % Construct question dialog
-                choice = questdlg('File already processed. Overwrite?','File found','Overwrite all','Overwrite this file','Skip','Overwrite this file');
-                switch choice
-                    case 'Overwrite all'
-                        overwrite = 1;
-                        overwriteAll = 1;
-                    case 'Overwrite this file'
-                        overwrite = 1;
-                        overwriteAll = 0;
-                    case 'Skip'
-                        overwrite = 0;
-                        overwriteAll = 0;
-                end
-            end
-            if overwrite
-                [success,outliers]=rex_process_inGUI(procname,monkeydir); %shouldn't need the rfpathname
-                if success
-                  
-%                     if outliers
-%                         % make dialogue to inspect ouliers
-%                         dlgtxt=cat(2,'Found outlier saccades in trials ', num2str(outliers), '. Display them?');
-%                         outlierbt = questdlg(dlgtxt,'Found outliers','Yes','No','Yes');
-%                         switch outlierbt
-%                             case 'Yes'
-%                                 dispoutliers = 1;
-%                             case 'No'
-%                                 dispoutliers = 0;
-%                         end
-%                         
-%                         if dispoutliers
-%                             set(findobj('Tag','outliertrialnb'),'String',num2str(outliers));
-%                             set(findobj('Tag','trialnumbdisplay'),'String',num2str(outliers(1)));
-%                             set(findobj('Tag','showoutlierstrials'),'Value',1.0);
-%                             rdd_trialdata(procname, outliers(1));
-%                         end
-%                     end
-                end
-            end
-        end
+    monkeydirselected=get(get(findobj('Tag','monkeyselect'),'SelectedObject'),'Tag');
+    if strcmp(monkeydirselected,'rigelselect')
+        monkeydir = [directory,'Rigel',slash]; %'B:\data\Recordings\Rigel';
+        procdir = [directory,'processed',slash,'Rigel',slash];
+    elseif strcmp(monkeydirselected,'sixxselect')
+        monkeydir = [directory,'Sixx',slash]; %'B:\data\Recordings\Sixx';
+        procdir = [directory,'processed',slash,'Sixx',slash];
+    elseif strcmp(monkeydirselected,'hildaselect')
+        monkeydir = [directory,'Hilda',slash]; %'B:\data\Recordings\Sixx';
+        procdir = [directory,'processed',slash,'Hilda',slash];
     end
-    
-elseif get(findobj('Tag','grid_checkbox'),'Value')
 
-    if strcmp(get(gcf,'SelectionType'),'normal') % if simple click, just higlight it, don't open
-        %set uimenu content for following rightclick
-        %SelectionType 'Alternate' (Right click) doesn't work with listbox
-        %dispmenu=(get(hObject,'UIContextMenu'));
-        listboxcontextmenu=uicontextmenu;
-        set(hObject,'UIContextMenu',listboxcontextmenu);
-        
-    elseif strcmp(get(gcf,'SelectionType'),'open')
-        
-        monkeydirselected=get(get(findobj('Tag','monkeyselect'),'SelectedObject'),'Tag');
-        if strcmp(monkeydirselected,'rigelselect')
-            monkeydir = [directory,'Rigel',slash]; %'B:\data\Recordings\Rigel';
-            procdir = [directory,'processed',slash,'Rigel',slash];
-        elseif strcmp(monkeydirselected,'sixxselect')
-            monkeydir = [directory,'Sixx',slash]; %'B:\data\Recordings\Sixx';
-            procdir = [directory,'processed',slash,'Sixx',slash];
-        end
-        
-        processedrexfiles = cellstr(get(hObject,'String')); % returns displaymfiles contents as cell array
-        rclk_gridLocation = processedrexfiles{get(hObject,'Value')}; %returns selected item from displaymfiles
-        
-        %             [rfname, rfpathname]=uigetfile({'*A','A Files';'*.*','All Files'},'raw files directory',...
-        %                 monkeydir);
-        
-        if strcmp(monkeydirselected,'rigelselect')
-            dirlisting = dir([directory,'Rigel',slash]); %('B:\data\Recordings\processed\Rigel');
-        elseif strcmp(monkeydirselected,'sixxselect')
-            dirlisting = dir([directory,'Sixx',slash]); %('B:\data\Recordings\processed\Rigel');
-        end
-        
-        fileNames = {dirlisting.name};  % Put the file names in a cell array
-        index = regexp(fileNames, rclk_gridLocation);
-        rfname = fileNames(~cellfun(@isempty,index));  % Get the names of the matching files in a cell array
-        
-        %check if file exists already
-        rfname=regexprep(rfname, '(A$)|(E$)',''); %remove A and E from end of names
-        rfname = unique(rfname);
-        overwrite = 1;
-        overwriteAll = 0;
-        
-        for i = 1:length(rfname)
-            procname=rfname{i};
-            
-            if (exist(cat(2,procdir, procname,'.mat'), 'file')==2) && ~overwriteAll %'B:\data\Recordings\processed\',
-                % Construct question dialog
-                choice = questdlg('File already processed. Overwrite?','File found','Overwrite all','Overwrite this file','Skip','Overwrite this file');
-                switch choice
-                    case 'Overwrite all'
-                        overwrite = 1;
-                        overwriteAll = 1;
-                    case 'Overwrite this file'
-                        overwrite = 1;
-                        overwriteAll = 0;
-                    case 'Skip'
-                        overwrite = 0;
-                        overwriteAll = 0;
-                end
-            end
-            if overwrite
-                [success,outliers]=rex_process_inGUI(procname,monkeydir); %shouldn't need the rfpathname
-                if success
-                  
-%                     if outliers
-%                         % make dialogue to inspect ouliers
-%                         dlgtxt=cat(2,'Found outlier saccades in trials ', num2str(outliers), '. Display them?');
-%                         outlierbt = questdlg(dlgtxt,'Found outliers','Yes','No','Yes');
-%                         switch outlierbt
-%                             case 'Yes'
-%                                 dispoutliers = 1;
-%                             case 'No'
-%                                 dispoutliers = 0;
-%                         end
-%                         
-%                         if dispoutliers
-%                             set(findobj('Tag','outliertrialnb'),'String',num2str(outliers));
-%                             set(findobj('Tag','trialnumbdisplay'),'String',num2str(outliers(1)));
-%                             set(findobj('Tag','showoutlierstrials'),'Value',1.0);
-%                             rdd_trialdata(procname, outliers(1));
-%                         end
-%                     end
-                end
-            end
-        end
-    end
-    
-else
-    
-    if strcmp(get(gcf,'SelectionType'),'normal') % if simple click, just higlight it, don't open
+if strcmp(get(gcf,'SelectionType'),'normal') % if simple click, just higlight it, don't open
+    if get(findobj('Tag','displayfbt_files'),'Value') % works only with individual file display
         %set uimenu content for following rightclick
         %SelectionType 'Alternate' (Right click) doesn't work with listbox
         %dispmenu=(get(hObject,'UIContextMenu'));
         listboxcontextmenu=uicontextmenu;
         processedrexfiles = cellstr(get(hObject,'String')); % returns displaymfiles contents as cell array
         rclk_filename = processedrexfiles{get(hObject,'Value')}; %returns selected item from displaymfiles
-        filecontent=matfile(rclk_filename);
+        filecontent=matfile([procdir,rclk_filename,'.mat']);
         filecodes=filecontent.allcodes;
         curtasktype=taskdetect(filecodes);
         if iscell(curtasktype)
@@ -585,17 +419,91 @@ else
         end
         disptask=uimenu('Parent',listboxcontextmenu,'Label',curtasktype);
         set(hObject,'UIContextMenu',listboxcontextmenu);
+    end
+elseif strcmp(get(gcf,'SelectionType'),'open')
+    
+    s=dbstatus; %little trick to prevent removal of breakpoints with clear
+    save('myBreakpoints.mat', 's');
+    clear functions;
+    load('myBreakpoints.mat');
+    dbstop(s);
+    
+    processedrexfiles = cellstr(get(hObject,'String')); % returns displaymfiles contents as cell array
+    selectionnm = processedrexfiles{get(hObject,'Value')}; %returns selected item from displaymfiles
+
+    %% very different actions (for the moment) between display buttons files and session/grid:
+    % the first will display the file (which was already processed)
+    % the others will process the requested combination of files, but not
+    % display them, since for the moment GUI is designed to display only one
+    % file at a time
+    if ~get(findobj('Tag','displayfbt_files'),'Value') % if session or grid is selected
+            selectedrawdir=dir(monkeydir);
+            fileNames = {selectedrawdir.name};  % Put the file names in a cell array
         
-    elseif strcmp(get(gcf,'SelectionType'),'open')
+       if get(findobj('Tag','displayfbt_session'),'Value')
+            sessionNumber = selectionnm(9:end);
+            if strcmp(monkeydirselected,'rigelselect')
+                rfname = strcat('R',sessionNumber);
+            elseif strcmp(monkeydirselected,'sixxselect')
+                rfname = strcat('S',sessionNumber);
+            elseif strcmp(monkeydirselected,'hildaselect')
+                rfname = strcat('H',sessionNumber);
+            end
+            
+            index = regexp(fileNames, strcat('^',rfname));
+            
+        elseif get(findobj('Tag','displayfbt_grid'),'Value')
+            
+            index = regexp(fileNames, selectionnm);
+            
+        end
         
-        s=dbstatus; %little trick to prevent removal of breakpoints with clear
-        save('myBreakpoints.mat', 's');
-        clear functions;
-        load('myBreakpoints.mat');
-        dbstop(s);
+        rfname = fileNames(~cellfun(@isempty,index));  % Get the names of the matching files in a cell array
         
-        processedrexfiles = cellstr(get(hObject,'String')); % returns displaymfiles contents as cell array
-        rdd_filename = processedrexfiles{get(hObject,'Value')};%returns selected item from displaymfiles
+        %check if file exists already
+        rfname=regexprep(rfname, '(A$)|(E$)',''); %remove A and E from end of names
+        rfname = unique(rfname);
+        overwrite = 1;
+        %         overwriteAll = 0;
+        
+        %         if (exist(cat(2,procdir, procname,'.mat'), 'file')==2) && ~overwriteAll %'B:\data\Recordings\processed\',
+        %                 % Construct question dialog
+        %                 choice = questdlg('File already processed. Overwrite?','File found','Overwrite all','Overwrite this file','Skip','Overwrite this file');
+        %                 switch choice
+        %                     case 'Overwrite all'
+        %                         overwrite = 1;
+        %                         overwriteAll = 1;
+        %                     case 'Overwrite this file'
+        %                         overwrite = 1;
+        %                         overwriteAll = 0;
+        %                     case 'Skip'
+        %                         overwrite = 0;
+        %                         overwriteAll = 0;
+        %                 end
+        %         end
+        
+        for i = 1:length(rfname)
+            procname=rfname{i};
+            
+            if overwrite
+                [success,outliers]=rex_process_inGUI(procname,monkeydir); %shouldn't need the rfpathname
+                % outliers are stored in file now
+                
+                if success
+                    successtr=['file ',procname,' processed succesfully'];
+                    disp(successtr);
+                else
+                    successtr=['processing aborted for file ',procname'];
+                    disp(successtr);
+                end
+            end
+        end
+    else
+        %% normal method
+        
+%         selecteprocdir=dir(procdir);
+%          {selecteprocdir.name};  % Put the file names in a cell array
+         rdd_filename =selectionnm;
         [rdd_nt, trialdirs] = data_info( rdd_filename, 1);% load file
         trialnumber = rex_first_trial( rdd_filename, rdd_nt, 1);
         if trialnumber == 0
@@ -638,14 +546,14 @@ dataaligned=guidata(hObject);
 savealignname=dataaligned.savealignname;
 save(savealignname,'dataaligned','-v7.3');
 %save some data to match with SH data analysis
-% about dataaligned: 
+% about dataaligned:
 % datalign.timefromtrig and datalign.timetotrig represent time from start
 % or to the end of the trial with respect to the alignment time
 % respectively. Depending on whether there is a trigger ecode,
-% they represent different things. 
-% No trigger ecode: time from the first trigger(in case there's a trigger 
-% channel, otherwise it's useless), and time to the  end-of-trial reward delivery 
-% Trigger ecode: time from onset of first trigger (beggining of trial), 
+% they represent different things.
+% No trigger ecode: time from the first trigger(in case there's a trigger
+% channel, otherwise it's useless), and time to the  end-of-trial reward delivery
+% Trigger ecode: time from onset of first trigger (beggining of trial),
 % and time to onset of second trigger (end of trial).
 % for Rigel: no trigger ecode until R146 included
 % for Sixx: no trigger ecode until S102 included
@@ -668,14 +576,14 @@ for i=1:length(dataaligned)
     trialdir(dataaligned(i).trials)={dataaligned(i).dir};
     alignlabel(dataaligned(i).trials)={dataaligned(i).alignlabel};
 end
-    rex2sh.align=alignlabel;
-    rex2sh.dir=trialdir;
-    rex2sh.timefromtrig=timefromtrig;
-    rex2sh.timetotrig=timetotrig;
-    
+rex2sh.align=alignlabel;
+rex2sh.dir=trialdir;
+rex2sh.timefromtrig=timefromtrig;
+rex2sh.timetotrig=timetotrig;
+
 savealignsh=cat(2,savealignname,'_2SH');
 save(savealignsh, '-struct','rex2sh','goodtrials','starttrigs',...
-    'endtrigs','rewtimes','align','dir','timefromtrig','timetotrig','-v7.3');      
+    'endtrigs','rewtimes','align','dir','timefromtrig','timetotrig','-v7.3');
 
 % --- Executes during object creation, after setting all properties.
 function displaymfiles_CreateFcn(hObject, eventdata, handles)
@@ -694,7 +602,7 @@ end
 archst  = computer('arch');
 
 if strcmp(archst, 'maci64')
-    name = getenv('USER'); 
+    name = getenv('USER');
     if strcmp(name, 'nick')
         directory = '/Users/nick/Dropbox/filesforNick/';
     elseif strcmp(name, 'Frank')
@@ -702,7 +610,7 @@ if strcmp(archst, 'maci64')
     end
     slash = '/';
 elseif strcmp(archst, 'win32') || strcmp(archst, 'win64')
-    % for future users, make it name = getenv('username'); 
+    % for future users, make it name = getenv('username');
     directory = 'B:\data\Recordings\';
     slash = '\';
 end
@@ -710,20 +618,20 @@ end
 %setting process directory
 monkeydir= get(get(findobj('Tag','monkeyselect'),'SelectedObject'),'Tag');
 if strcmp(monkeydir,'rigelselect')
-dirlisting = dir([directory,'processed',slash,'Rigel',slash]);%('B:\data\Recordings\processed\Rigel');
-monknum=1;
+    dirlisting = dir([directory,'processed',slash,'Rigel',slash]);%('B:\data\Recordings\processed\Rigel');
+    monknum=1;
 elseif strcmp(monkeydir,'sixxselect')
-dirlisting = dir([directory,'processed',slash,'Sixx',slash]);
-monknum=2;
+    dirlisting = dir([directory,'processed',slash,'Sixx',slash]);
+    monknum=2;
 elseif strcmp(monkeydir,'hildaselect')
-dirlisting = dir([directory,'processed',slash,'Hilda',slash]);
-monknum=3;
+    dirlisting = dir([directory,'processed',slash,'Hilda',slash]);
+    monknum=3;
 end
 
 % add subject ID letter in front of file names for sessions >= 100
-        rawdirs=[{[directory,'Rigel',slash]};{[directory,'Sixx',slash]};{[directory,'Hilda',slash]}];
-        idletters=['R';'S';'H'];
-        olddir=pwd; %keep current dir in memory
+rawdirs=[{[directory,'Rigel',slash]};{[directory,'Sixx',slash]};{[directory,'Hilda',slash]}];
+idletters=['R';'S';'H'];
+olddir=pwd; %keep current dir in memory
 for rwadirnum=1:length(rawdirs)
     rawdir=rawdirs{rwadirnum};
     idletter=idletters(rwadirnum);
@@ -743,20 +651,17 @@ for rwadirnum=1:length(rawdirs)
     rawfilenames=cellfun(@(x) x{:}, rawfilenames, 'UniformOutput', false);
     indfilenames{rwadirnum}=cellfun(@(x) x(1:end-1), rawfilenames, 'UniformOutput', false);
 end
-    
+
 cd(olddir); %go back to original dir
 
-    % Order by date
-    filedates=cell2mat({dirlisting(:).datenum});
-    [filedates,fdateidx] = sort(filedates,'descend');
+% Order by date
+filedates=cell2mat({dirlisting(:).datenum});
+[filedates,fdateidx] = sort(filedates,'descend');
 dirlisting = {dirlisting(:).name};
-dirlisting=dirlisting(fdateidx);
-dirlisting=dirlisting(~cellfun('isempty',strfind(dirlisting,'mat')));
-dirlisting=cellfun(@(x) x(1:end-4), dirlisting, 'UniformOutput', false);
-% for i=1:length(dirlisting)
-%     thisfilename=cell2mat(dirlisting(i));
-%     dirlisting(i)={thisfilename(1:end-4)};
-% end
+dirlisting = dirlisting(fdateidx);
+dirlisting = dirlisting(~cellfun('isempty',strfind(dirlisting,'mat')));
+dirlisting = dirlisting(cellfun('isempty',strfind(dirlisting,'myBreakpoints')));
+dirlisting = cellfun(@(x) x(1:end-4), dirlisting, 'UniformOutput', false);
 if sum(~ismember(indfilenames{monknum},dirlisting))
     global unprocfiles;
     unprocfiles=indfilenames{1,monknum}([~ismember(indfilenames{monknum},dirlisting)]);
@@ -772,7 +677,7 @@ function LoadFile_Callback(hObject, eventdata, handles)
 
 % --- Executes when selected object is changed in aligntimepanel.
 function aligntimepanel_SelectionChangeFcn(hObject, eventdata, handles)
-% hObject    handle to the selected object in aligntimepanel 
+% hObject    handle to the selected object in aligntimepanel
 % eventdata  structure with the following fields (see UIBUTTONGROUP)
 %	EventName: string 'SelectionChanged' (read only)
 %	OldValue: handle of the previously selected object or empty if none was selected
@@ -782,8 +687,8 @@ function aligntimepanel_SelectionChangeFcn(hObject, eventdata, handles)
 %     set(eventdata.OldValue, 'BackgroundColor', [0.99 0.92 0.8]);
 %     set(eventdata.NewValue, 'BackgroundColor', [0.93 0.84 0.84]);
 % else
-    set(eventdata.OldValue, 'BackgroundColor', [0.99 0.92 0.8]);
-    set(eventdata.NewValue, 'BackgroundColor', [0.73 0.83 0.96]);
+set(eventdata.OldValue, 'BackgroundColor', [0.99 0.92 0.8]);
+set(eventdata.NewValue, 'BackgroundColor', [0.73 0.83 0.96]);
 %     set(handles.rasterreplot, 'BackgroundColor', [0.93 0.84 0.84]);
 % end
 % for replot: get selectd file's name
@@ -798,8 +703,8 @@ function secaligntimepanel_SelectionChangeFcn(hObject, eventdata, handles)
 %     set(eventdata.OldValue, 'BackgroundColor', [0.99 0.92 0.8]);
 %     set(eventdata.OldValue, 'Value', [0.0]);
 % else
-    set(eventdata.OldValue, 'BackgroundColor', [0.99 0.92 0.8]);
-    set(eventdata.NewValue, 'BackgroundColor', [0.73 0.83 0.96]);
+set(eventdata.OldValue, 'BackgroundColor', [0.99 0.92 0.8]);
+set(eventdata.NewValue, 'BackgroundColor', [0.73 0.83 0.96]);
 % end
 
 function msbefore_Callback(hObject, eventdata, handles)
@@ -1020,7 +925,7 @@ recfile=matfile(get(findobj('Tag','filenamedisplay'),'String'));
 recfile.Properties.Writable = true;
 recfile.allbad(1,str2num(get(findobj('Tag','trialnumbdisplay'),'String')))=0;
 rdd_trialdata(get(findobj('Tag','filenamedisplay'),'String'),...
-                str2num(get(findobj('Tag','trialnumbdisplay'),'String')),1);
+    str2num(get(findobj('Tag','trialnumbdisplay'),'String')),1);
 
 % --- Executes on button press in marktrialw.
 function marktrialw_Callback(hObject, eventdata, handles)
@@ -1032,7 +937,7 @@ recfile=matfile(get(findobj('Tag','filenamedisplay'),'String'));
 recfile.Properties.Writable = true;
 recfile.allbad(1,str2num(get(findobj('Tag','trialnumbdisplay'),'String')))=1;
 rdd_trialdata(get(findobj('Tag','filenamedisplay'),'String'),...
-                str2num(get(findobj('Tag','trialnumbdisplay'),'String')),1);
+    str2num(get(findobj('Tag','trialnumbdisplay'),'String')),1);
 
 % --- Executes on button press in pushbutton14.
 function pushbutton14_Callback(hObject, eventdata, handles)
@@ -1048,95 +953,94 @@ function pushbutton15_Callback(hObject, eventdata, handles)
 
 % --- Executes when selected object is changed in monkeyselect.
 function monkeyselect_SelectionChangeFcn(hObject, eventdata, handles)
-% hObject    handle to the selected object in monkeyselect 
+% hObject    handle to the selected object in monkeyselect
 % eventdata  structure with the following fields (see UIBUTTONGROUP)
 %	EventName: string 'SelectionChanged' (read only)
 %	OldValue: handle of the previously selected object or empty if none was selected
 %	NewValue: handle of the currently selected object
 % handles    structure with handles and user data (see GUIDATA)
-global directory slash
 
-if get(findobj('Tag','session_checkbox'),'Value')
-    
-    if get(findobj('Tag','rigelselect'),'Value')
-        dirlisting = dir([directory,'Rigel',slash]); %('B:\data\Recordings\processed\Rigel');
-        fileNames = {dirlisting.name};  % Put the file names in a cell array
-        index = regexpi(fileNames,...              % Match a file name if it begins
-            '^R\d+','match');           % with the letter 'R' followed by a set of digits 1 or larger
-        inFiles = index(~cellfun(@isempty,index));  % Get the names of the matching files in a cell array
-        sessionNumbers = cellfun(@(x) strrep(x, 'R', ' '), inFiles, 'UniformOutput', false);
-    elseif get(findobj('Tag','sixxselect'),'Value')
-        dirlisting = dir([directory,'Sixx',slash]); %('B:\data\Recordings\processed\Sixx');
-        fileNames = {dirlisting.name};  % Put the file names in a cell array
-        index = regexpi(fileNames,...              % Match a file name if it begins
-            '^S\d+', 'match');           % with the letter 'S' followed by a set of digits 1 or larger
-        inFiles = index(~cellfun(@isempty,index));  % Get the names of the matching files in a cell array
-        sessionNumbers = cellfun(@(x) strrep(x, 'S', ' '), inFiles, 'UniformOutput', false);
-    end
-    
-    if ~isempty(sessionNumbers)
-        dispsession = cat(1,sessionNumbers{:});
-        dispsession = unique(dispsession); % finds unique session numbers
-        [~,sessionidx]=sort(str2double(dispsession),'descend');
-        dispsession = dispsession(sessionidx); %sort cell arrays descending
-        dispsession = strcat('Session', dispsession);
-        set(findobj('Tag','displaymfiles'),'string', dispsession);
-    else
-        set(findobj('Tag','displaymfiles'),'string','');
-    end                
-    
-    set(findobj('Tag', 'grid_checkbox'), 'Enable', 'off');                                                             
-              
-elseif get(findobj('Tag','grid_checkbox'),'Value')
-    
-    if get(findobj('Tag','rigelselect'),'Value')
-        dirlisting = dir([directory,'Rigel',slash]); %('B:\data\Recordings\processed\Rigel');
-        fileNames = {dirlisting.name};  % Put the file names in a cell array
-        index = regexpi(fileNames,...              % Match a file name if it begins
-            '[a-z]\d[a-z]\d','match');           % with the letter 'R' followed by a set of digits 1 or larger
-        gridLocations = index(~cellfun(@isempty,index));  % Get the names of the matching files in a cell array
-    elseif get(findobj('Tag','sixxselect'),'Value')
-        dirlisting = dir([directory,'Sixx',slash]); %('B:\data\Recordings\processed\Sixx');
-        fileNames = {dirlisting.name};  % Put the file names in a cell array
-        index = regexpi(fileNames,...              % Match a file name if it begins
-            '[a-z]\d[a-z]\d', 'match');           % with the letter 'S' followed by a set of digits 1 or larger
-        gridLocations = index(~cellfun(@isempty,index));  % Get the names of the matching files in a cell array
-    end
-    
-    if ~isempty(gridLocations)
-        displocation = cat(1,gridLocations{:});
-        displocation = unique(displocation); % finds unique session numbers
-        [~,sessionidx]=sort(str2double(displocation),'descend');
-        displocation = displocation(sessionidx); %sort cell arrays descending
-        set(findobj('Tag','displaymfiles'),'string', displocation);
-    else
-        set(findobj('Tag','displaymfiles'),'string','');
-    end         
-    
-    set(findobj('Tag', 'session_checkbox'), 'Enable', 'off');
-    
-else
-    
-    if eventdata.NewValue==findobj('Tag','rigelselect')
-    dirlisting = dir([directory,'processed',slash,'Rigel',slash]); %('B:\data\Recordings\processed\Rigel');
-elseif eventdata.NewValue==findobj('Tag','sixxselect')
-    dirlisting = dir([directory,'processed',slash,'Sixx',slash]); %('B:\data\Recordings\processed\Sixx');
-    end
+displayfbox_SelectionChangeFcn(); %add relevant variables
+% 
+% global directory slash
+% 
+% if get(findobj('Tag','displayfbt_session'),'Value')
+%     
+%     if get(findobj('Tag','rigelselect'),'Value')
+%         dirlisting = dir([directory,'processed',slash,'Rigel',slash]); %('B:\data\Recordings\processed\Rigel');
+%         fileNames = {dirlisting.name};  % Put the file names in a cell array
+%         index = regexpi(fileNames,...              % Match a file name if it begins
+%             '^R\d+','match');           % with the letter 'R' followed by a set of digits 1 or larger
+%         inFiles = index(~cellfun(@isempty,index));  % Get the names of the matching files in a cell array
+%         sessionNumbers = cellfun(@(x) strrep(x, 'R', ' '), inFiles, 'UniformOutput', false);
+%     elseif get(findobj('Tag','sixxselect'),'Value')
+%         dirlisting = dir([directory,'processed',slash,'Sixx',slash]); %('B:\data\Recordings\processed\Sixx');
+%         fileNames = {dirlisting.name};  % Put the file names in a cell array
+%         index = regexpi(fileNames,...              % Match a file name if it begins
+%             '^S\d+', 'match');           % with the letter 'S' followed by a set of digits 1 or larger
+%         inFiles = index(~cellfun(@isempty,index));  % Get the names of the matching files in a cell array
+%         sessionNumbers = cellfun(@(x) strrep(x, 'S', ' '), inFiles, 'UniformOutput', false);
+%     end
+%     
+%     if ~isempty(sessionNumbers)
+%         dispsession = cat(1,sessionNumbers{:});
+%         dispsession = unique(dispsession); % finds unique session numbers
+%         [~,sessionidx]=sort(str2double(dispsession),'descend');
+%         dispsession = dispsession(sessionidx); %sort cell arrays descending
+%         dispsession = strcat('Session', dispsession);
+%         set(findobj('Tag','displaymfiles'),'string', dispsession);
+%     else
+%         set(findobj('Tag','displaymfiles'),'string','');
+%     end
+%     
+%     set(findobj('Tag', 'displayfbt_grid'), 'Enable', 'off');
+%     
+% elseif get(findobj('Tag','displayfbt_grid'),'Value')
+%     
+%     if get(findobj('Tag','rigelselect'),'Value')
+%         dirlisting = dir([directory,'Rigel',slash]); %('B:\data\Recordings\processed\Rigel');
+%     elseif get(findobj('Tag','sixxselect'),'Value')
+%         dirlisting = dir([directory,'Sixx',slash]); %('B:\data\Recordings\processed\Sixx');
+%     end
+%     fileNames = {dirlisting.name};  % Put the file names in a cell array
+%     index = regexpi(fileNames,...              % Match a file name if it begins
+%         '[a-z]\d[a-z]\d', 'match');           % with the letter 'S' followed by a set of digits 1 or larger
+%     gridLocations = index(~cellfun(@isempty,index));  % Get the names of the matching files in a cell array
+%     
+%     if ~isempty(gridLocations)
+%         displocation = cat(1,gridLocations{:});
+%         displocation = unique(displocation); % finds unique session numbers
+%         [~,sessionidx]=sort(str2double(displocation),'descend');
+%         displocation = displocation(sessionidx); %sort cell arrays descending
+%         set(findobj('Tag','displaymfiles'),'string', displocation);
+%     else
+%         set(findobj('Tag','displaymfiles'),'string','');
+%     end
+%     
+%     set(findobj('Tag', 'displayfbt_session'), 'Enable', 'off');
+%     
+% else
+%     
+%     if eventdata.NewValue==findobj('Tag','rigelselect')
+%         dirlisting = dir([directory,'processed',slash,'Rigel',slash]); %('B:\data\Recordings\processed\Rigel');
+%     elseif eventdata.NewValue==findobj('Tag','sixxselect')
+%         dirlisting = dir([directory,'processed',slash,'Sixx',slash]); %('B:\data\Recordings\processed\Sixx');
+%     end
+%     
+%     % Order by date
+%     filedates=cell2mat({dirlisting(:).datenum});
+%     [filedates,fdateidx] = sort(filedates,'descend');
+%     dirlisting = {dirlisting(:).name};
+%     dirlisting=dirlisting(fdateidx);
+%     dirlisting = dirlisting(~cellfun('isempty',strfind(dirlisting,'mat')));
+%     for i=1:length(dirlisting)
+%         thisfilename=cell2mat(dirlisting(i));
+%         dirlisting(i)={thisfilename(1:end-4)};
+%     end
+%     set(findobj('Tag','displaymfiles'),'string',dirlisting);
+%     
+% end
 
-    % Order by date
-    filedates=cell2mat({dirlisting(:).datenum});
-    [filedates,fdateidx] = sort(filedates,'descend');
-dirlisting = {dirlisting(:).name};
-dirlisting=dirlisting(fdateidx);
-dirlisting = dirlisting(~cellfun('isempty',strfind(dirlisting,'mat')));
-for i=1:length(dirlisting)
-    thisfilename=cell2mat(dirlisting(i));
-    dirlisting(i)={thisfilename(1:end-4)};
-end
-set(findobj('Tag','displaymfiles'),'string',dirlisting);
-
-end
-    
 % --- Executes on button press in sumplotrast.
 function sumplotrast_Callback(hObject, eventdata, handles)
 % hObject    handle to sumplotrast (see GCBO)
@@ -1213,7 +1117,7 @@ function sixxselect_CreateFcn(hObject, eventdata, handles)
 
 % --- Executes when selected object is changed in centralpaneldisp.
 function centralpaneldisp_SelectionChangeFcn(hObject, eventdata, handles)
-% hObject    handle to the selected object in centralpaneldisp 
+% hObject    handle to the selected object in centralpaneldisp
 % eventdata  structure with the following fields (see UIBUTTONGROUP)
 %	EventName: string 'SelectionChanged' (read only)
 %	OldValue: handle of the previously selected object or empty if none was selected
@@ -1221,17 +1125,17 @@ function centralpaneldisp_SelectionChangeFcn(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 if eventdata.NewValue==findobj('Tag','rastersandsdf_tab')
-set(findobj('Tag','trialdatapanel'),'visible','off');
-set(findobj('Tag','statisticspanel'),'visible','off');
-set(findobj('Tag','rasterspanel'),'visible','on');
+    set(findobj('Tag','trialdatapanel'),'visible','off');
+    set(findobj('Tag','statisticspanel'),'visible','off');
+    set(findobj('Tag','rasterspanel'),'visible','on');
 elseif eventdata.NewValue==findobj('Tag','trialdata_tab')
-set(findobj('Tag','rasterspanel'),'visible','off')
-set(findobj('Tag','statisticspanel'),'visible','off')
-set(findobj('Tag','trialdatapanel'),'visible','on')
+    set(findobj('Tag','rasterspanel'),'visible','off')
+    set(findobj('Tag','statisticspanel'),'visible','off')
+    set(findobj('Tag','trialdatapanel'),'visible','on')
 elseif eventdata.NewValue==findobj('Tag','statistics_tab')
-set(findobj('Tag','rasterspanel'),'visible','off')
-set(findobj('Tag','trialdatapanel'),'visible','off')
-set(findobj('Tag','statisticspanel'),'visible','on')
+    set(findobj('Tag','rasterspanel'),'visible','off')
+    set(findobj('Tag','trialdatapanel'),'visible','off')
+    set(findobj('Tag','statisticspanel'),'visible','on')
 end
 
 
@@ -1240,11 +1144,21 @@ function unprocfilebutton_Callback(hObject, eventdata, handles)
 % hObject    handle to unprocfilebutton (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+global directory slash unprocfiles;
+
+if get(findobj('Tag','rigelselect'),'Value')
+    dirlisting = dir([directory,'processed',slash,'Rigel',slash]); %('B:\data\Recordings\processed\Rigel');
+elseif get(findobj('Tag','sixxselect'),'Value')
+    dirlisting = dir([directory,'processed',slash,'Sixx',slash]); %('B:\data\Recordings\processed\Sixx');\
+elseif get(findobj('Tag','hildaselect'),'Value')
+    dirlisting = dir([directory,'processed',slash,'Hilda',slash]); %('B:\data\Recordings\processed\Sixx');
+end
+
 
 
 % --- Executes when selected object is changed in displayfbox.
 function displayfbox_SelectionChangeFcn(hObject, eventdata, handles)
-% hObject    handle to the selected object in displayfbox 
+% hObject    handle to the selected object in displayfbox
 % eventdata  structure with the following fields (see UIBUTTONGROUP)
 %	EventName: string 'SelectionChanged' (read only)
 %	OldValue: handle of the previously selected object or empty if none was selected
@@ -1252,19 +1166,19 @@ function displayfbox_SelectionChangeFcn(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 global directory slash;
 
-   % set(eventdata.OldValue, 'BackgroundColor', [0.9608    0.9216    0.9216]);
+% set(eventdata.OldValue, 'BackgroundColor', [0.9608    0.9216    0.9216]);
+
+if get(findobj('Tag','rigelselect'),'Value')
+    dirlisting = dir([directory,'processed',slash,'Rigel',slash]); %('B:\data\Recordings\processed\Rigel');
+elseif get(findobj('Tag','sixxselect'),'Value')
+    dirlisting = dir([directory,'processed',slash,'Sixx',slash]); %('B:\data\Recordings\processed\Sixx');\
+elseif get(findobj('Tag','hildaselect'),'Value')
+    dirlisting = dir([directory,'processed',slash,'Hilda',slash]); %('B:\data\Recordings\processed\Sixx');
+end
+fileNames = {dirlisting.name};  % Put the file names in a cell array
+
+if hObject==findobj('Tag','displayfbt_files')
     
-    if get(findobj('Tag','rigelselect'),'Value')
-        dirlisting = dir([directory,'processed',slash,'Rigel',slash]); %('B:\data\Recordings\processed\Rigel');
- 	elseif get(findobj('Tag','sixxselect'),'Value')
-        dirlisting = dir([directory,'processed',slash,'Sixx',slash]); %('B:\data\Recordings\processed\Sixx');\
-    elseif get(findobj('Tag','hildaselect'),'Value')
-        dirlisting = dir([directory,'processed',slash,'Hilda',slash]); %('B:\data\Recordings\processed\Sixx');
-    end
-    fileNames = {dirlisting.name};  % Put the file names in a cell array
-
-    if hObject==findobj('Tag','displayfbt_files')
-
     % Order by date
     filedates=cell2mat({dirlisting(:).datenum});
     [filedates,fdateidx] = sort(filedates,'descend');
@@ -1275,14 +1189,14 @@ global directory slash;
     dirlisting = cellfun(@(x) x(1:end-4), dirlisting, 'UniformOutput', false);
     set(findobj('Tag','displaymfiles'),'string',dirlisting);
     
-    elseif hObject==findobj('Tag','session_checkbox')
-   
+elseif hObject==findobj('Tag','displayfbt_session')
+    
     if get(findobj('Tag','rigelselect'),'Value')
         index = regexpi(fileNames,...              % Match a file name if it begins
             '^R\d+','match');           % with the letter 'R' followed by a set of digits 1 or larger
         inFiles = index(~cellfun(@isempty,index));  % Get the names of the matching files in a cell array
         sessionNumbers = cellfun(@(x) strrep(x, 'R', ' '), inFiles, 'UniformOutput', false);
- 	elseif get(findobj('Tag','sixxselect'),'Value')
+    elseif get(findobj('Tag','sixxselect'),'Value')
         index = regexpi(fileNames,...              % Match a file name if it begins
             '^S\d+', 'match');           % with the letter 'S' followed by a set of digits 1 or larger
         inFiles = index(~cellfun(@isempty,index));  % Get the names of the matching files in a cell array
@@ -1303,14 +1217,14 @@ global directory slash;
         set(findobj('Tag','displaymfiles'),'string', dispsession);
     else
         set(findobj('Tag','displaymfiles'),'string','');
-    end                         
-
-elseif hObject==findobj('Tag','grid_checkbox') 
-
-        index = regexpi(fileNames,...              % Match a file name if it begins
-            '[a-z]\d[a-z]\d','match');           % with the letter 'R' followed by a set of digits 1 or larger
-        gridLocations = index(~cellfun(@isempty,index));  % Get the names of the matching files in a cell array
-        
+    end
+    
+elseif hObject==findobj('Tag','displayfbt_grid')
+    
+    index = regexpi(fileNames,...              % Match a file name if it begins
+        '[a-z]\d[a-z]\d','match');           % with the letter 'R' followed by a set of digits 1 or larger
+    gridLocations = index(~cellfun(@isempty,index));  % Get the names of the matching files in a cell array
+    
     if ~isempty(gridLocations)
         displocation = cat(1,gridLocations{:});
         displocation = unique(displocation); % finds unique session numbers
@@ -1319,6 +1233,6 @@ elseif hObject==findobj('Tag','grid_checkbox')
         set(findobj('Tag','displaymfiles'),'string', displocation);
     else
         set(findobj('Tag','displaymfiles'),'string','');
-    end         
+    end
     
 end
