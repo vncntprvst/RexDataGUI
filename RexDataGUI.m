@@ -23,7 +23,7 @@ function varargout = RexDataGUI(varargin)
 %
 % See also: GUIDE, GUIDATA, GUIHANDLES
 
-% Last Modified by GUIDE v2.5 21-Aug-2012 21:57:01
+% Last Modified by GUIDE v2.5 23-Aug-2012 00:05:48
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -960,86 +960,14 @@ function monkeyselect_SelectionChangeFcn(hObject, eventdata, handles)
 %	NewValue: handle of the currently selected object
 % handles    structure with handles and user data (see GUIDATA)
 
-displayfbox_SelectionChangeFcn(); %add relevant variables
-% 
-% global directory slash
-% 
-% if get(findobj('Tag','displayfbt_session'),'Value')
-%     
-%     if get(findobj('Tag','rigelselect'),'Value')
-%         dirlisting = dir([directory,'processed',slash,'Rigel',slash]); %('B:\data\Recordings\processed\Rigel');
-%         fileNames = {dirlisting.name};  % Put the file names in a cell array
-%         index = regexpi(fileNames,...              % Match a file name if it begins
-%             '^R\d+','match');           % with the letter 'R' followed by a set of digits 1 or larger
-%         inFiles = index(~cellfun(@isempty,index));  % Get the names of the matching files in a cell array
-%         sessionNumbers = cellfun(@(x) strrep(x, 'R', ' '), inFiles, 'UniformOutput', false);
-%     elseif get(findobj('Tag','sixxselect'),'Value')
-%         dirlisting = dir([directory,'processed',slash,'Sixx',slash]); %('B:\data\Recordings\processed\Sixx');
-%         fileNames = {dirlisting.name};  % Put the file names in a cell array
-%         index = regexpi(fileNames,...              % Match a file name if it begins
-%             '^S\d+', 'match');           % with the letter 'S' followed by a set of digits 1 or larger
-%         inFiles = index(~cellfun(@isempty,index));  % Get the names of the matching files in a cell array
-%         sessionNumbers = cellfun(@(x) strrep(x, 'S', ' '), inFiles, 'UniformOutput', false);
-%     end
-%     
-%     if ~isempty(sessionNumbers)
-%         dispsession = cat(1,sessionNumbers{:});
-%         dispsession = unique(dispsession); % finds unique session numbers
-%         [~,sessionidx]=sort(str2double(dispsession),'descend');
-%         dispsession = dispsession(sessionidx); %sort cell arrays descending
-%         dispsession = strcat('Session', dispsession);
-%         set(findobj('Tag','displaymfiles'),'string', dispsession);
-%     else
-%         set(findobj('Tag','displaymfiles'),'string','');
-%     end
-%     
-%     set(findobj('Tag', 'displayfbt_grid'), 'Enable', 'off');
-%     
-% elseif get(findobj('Tag','displayfbt_grid'),'Value')
-%     
-%     if get(findobj('Tag','rigelselect'),'Value')
-%         dirlisting = dir([directory,'Rigel',slash]); %('B:\data\Recordings\processed\Rigel');
-%     elseif get(findobj('Tag','sixxselect'),'Value')
-%         dirlisting = dir([directory,'Sixx',slash]); %('B:\data\Recordings\processed\Sixx');
-%     end
-%     fileNames = {dirlisting.name};  % Put the file names in a cell array
-%     index = regexpi(fileNames,...              % Match a file name if it begins
-%         '[a-z]\d[a-z]\d', 'match');           % with the letter 'S' followed by a set of digits 1 or larger
-%     gridLocations = index(~cellfun(@isempty,index));  % Get the names of the matching files in a cell array
-%     
-%     if ~isempty(gridLocations)
-%         displocation = cat(1,gridLocations{:});
-%         displocation = unique(displocation); % finds unique session numbers
-%         [~,sessionidx]=sort(str2double(displocation),'descend');
-%         displocation = displocation(sessionidx); %sort cell arrays descending
-%         set(findobj('Tag','displaymfiles'),'string', displocation);
-%     else
-%         set(findobj('Tag','displaymfiles'),'string','');
-%     end
-%     
-%     set(findobj('Tag', 'displayfbt_session'), 'Enable', 'off');
-%     
-% else
-%     
-%     if eventdata.NewValue==findobj('Tag','rigelselect')
-%         dirlisting = dir([directory,'processed',slash,'Rigel',slash]); %('B:\data\Recordings\processed\Rigel');
-%     elseif eventdata.NewValue==findobj('Tag','sixxselect')
-%         dirlisting = dir([directory,'processed',slash,'Sixx',slash]); %('B:\data\Recordings\processed\Sixx');
-%     end
-%     
-%     % Order by date
-%     filedates=cell2mat({dirlisting(:).datenum});
-%     [filedates,fdateidx] = sort(filedates,'descend');
-%     dirlisting = {dirlisting(:).name};
-%     dirlisting=dirlisting(fdateidx);
-%     dirlisting = dirlisting(~cellfun('isempty',strfind(dirlisting,'mat')));
-%     for i=1:length(dirlisting)
-%         thisfilename=cell2mat(dirlisting(i));
-%         dirlisting(i)={thisfilename(1:end-4)};
-%     end
-%     set(findobj('Tag','displaymfiles'),'string',dirlisting);
-%     
-% end
+% find selected display file button 
+dfbth=findobj('Tag',get(get(findobj('Tag','displayfbox'),'SelectedObject'),'tag'));
+% adjusting eventdata, even though it's not used 
+dfbted=eventdata;
+dfbted.OldValue=dfbth;
+dfbted.NewValue=dfbth;
+
+displayfbox_SelectionChangeFcn(dfbth, dfbted, handles);
 
 % --- Executes on button press in sumplotrast.
 function sumplotrast_Callback(hObject, eventdata, handles)
@@ -1146,13 +1074,14 @@ function unprocfilebutton_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 global directory slash unprocfiles;
 
-if get(findobj('Tag','rigelselect'),'Value')
-    dirlisting = dir([directory,'processed',slash,'Rigel',slash]); %('B:\data\Recordings\processed\Rigel');
-elseif get(findobj('Tag','sixxselect'),'Value')
-    dirlisting = dir([directory,'processed',slash,'Sixx',slash]); %('B:\data\Recordings\processed\Sixx');\
-elseif get(findobj('Tag','hildaselect'),'Value')
-    dirlisting = dir([directory,'processed',slash,'Hilda',slash]); %('B:\data\Recordings\processed\Sixx');
-end
+% find which type of file display
+selfd=get(get(findobj('Tag','displayfbox'),'SelectedObject'),'tag');
+
+% find which monkey selected
+selmk=get(get(findobj('Tag','monkeyselect'),'SelectedObject'),'tag');
+
+% call unprocessed files GUI
+ProcUnproc(directory, slash, unprocfiles, selfd, selmk);
 
 
 
