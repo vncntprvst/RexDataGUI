@@ -269,7 +269,8 @@ function OpenRawFile_Callback(hObject, eventdata, handles)
 % hObject    handle to OpenRawFile (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-global directory slash
+global directory slash unprocfiles;
+
 monkeydirselected=get(get(findobj('Tag','monkeyselect'),'SelectedObject'),'Tag');
 if strcmp(monkeydirselected,'rigelselect')
     monkeydir = [directory,'Rigel',slash]; %'B:\data\Recordings\Rigel';
@@ -326,8 +327,13 @@ if overwrite
         
         if strcmp(monkeydirselected,'rigelselect')
             dirlisting = dir([directory,'processed',slash,'Rigel',slash]); %('B:\data\Recordings\processed');
+            monknum=1;
         elseif strcmp(monkeydirselected,'sixxselect')
             dirlisting = dir([directory,'processed',slash,'Sixx',slash]); %('B:\data\Recordings\processed');
+            monknum=2;
+        elseif strcmp(monkeydirselected,'hildaselect')
+            dirlisting = dir([directory,'processed',slash,'Hilda',slash]); %('B:\data\Recordings\processed');
+            monknum=3;
         end
         % Order by date
         filedates=cell2mat({dirlisting(:).datenum});
@@ -342,6 +348,14 @@ if overwrite
         end
         set(findobj('Tag','displaymfiles'),'String',dirlisting);
         
+        %remove newly processed file(s) from unprocessed variable
+        if ismember(unprocfiles{monknum},rfname)
+            if length(ismember(unprocfiles{monknum},rfname))>1
+                unprocfiles{monknum}=unprocfiles{monknum}(~ismember(unprocfiles{monknum},rfname));
+            else
+                unprocfiles{monknum}={};
+            end
+        end
         
         if outliers
             if ~get(findobj('Tag','displayfbt_session'),'Value') %show dialog only if processing individual trial
@@ -389,19 +403,19 @@ function displaymfiles_Callback(hObject, eventdata, handles)
 % hObject    handle to displaymfiles (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-global directory slash;
+global directory slash unprocfiles ;
 
-    monkeydirselected=get(get(findobj('Tag','monkeyselect'),'SelectedObject'),'Tag');
-    if strcmp(monkeydirselected,'rigelselect')
-        monkeydir = [directory,'Rigel',slash]; %'B:\data\Recordings\Rigel';
-        procdir = [directory,'processed',slash,'Rigel',slash];
-    elseif strcmp(monkeydirselected,'sixxselect')
-        monkeydir = [directory,'Sixx',slash]; %'B:\data\Recordings\Sixx';
-        procdir = [directory,'processed',slash,'Sixx',slash];
-    elseif strcmp(monkeydirselected,'hildaselect')
-        monkeydir = [directory,'Hilda',slash]; %'B:\data\Recordings\Sixx';
-        procdir = [directory,'processed',slash,'Hilda',slash];
-    end
+monkeydirselected=get(get(findobj('Tag','monkeyselect'),'SelectedObject'),'Tag');
+if strcmp(monkeydirselected,'rigelselect')
+    monkeydir = [directory,'Rigel',slash]; %'B:\data\Recordings\Rigel';
+    procdir = [directory,'processed',slash,'Rigel',slash];
+elseif strcmp(monkeydirselected,'sixxselect')
+    monkeydir = [directory,'Sixx',slash]; %'B:\data\Recordings\Sixx';
+    procdir = [directory,'processed',slash,'Sixx',slash];
+elseif strcmp(monkeydirselected,'hildaselect')
+    monkeydir = [directory,'Hilda',slash]; %'B:\data\Recordings\Sixx';
+    procdir = [directory,'processed',slash,'Hilda',slash];
+end
 
 if strcmp(get(gcf,'SelectionType'),'normal') % if simple click, just higlight it, don't open
     if get(findobj('Tag','displayfbt_files'),'Value') % works only with individual file display
@@ -430,24 +444,27 @@ elseif strcmp(get(gcf,'SelectionType'),'open')
     
     processedrexfiles = cellstr(get(hObject,'String')); % returns displaymfiles contents as cell array
     selectionnm = processedrexfiles{get(hObject,'Value')}; %returns selected item from displaymfiles
-
+    
     %% very different actions (for the moment) between display buttons files and session/grid:
-    % the first will display the file (which was already processed)
+    % the 'normal' one will display the file (which was already processed)
     % the others will process the requested combination of files, but not
     % display them, since for the moment GUI is designed to display only one
     % file at a time
     if ~get(findobj('Tag','displayfbt_files'),'Value') % if session or grid is selected
-            selectedrawdir=dir(monkeydir);
-            fileNames = {selectedrawdir.name};  % Put the file names in a cell array
+        selectedrawdir=dir(monkeydir);
+        fileNames = {selectedrawdir.name};  % Put the file names in a cell array
         
-       if get(findobj('Tag','displayfbt_session'),'Value')
+        if get(findobj('Tag','displayfbt_session'),'Value')
             sessionNumber = selectionnm(9:end);
             if strcmp(monkeydirselected,'rigelselect')
                 rfname = strcat('R',sessionNumber);
+                monknum=1;
             elseif strcmp(monkeydirselected,'sixxselect')
                 rfname = strcat('S',sessionNumber);
+                monknum=2;
             elseif strcmp(monkeydirselected,'hildaselect')
                 rfname = strcat('H',sessionNumber);
+                monknum=3;
             end
             
             index = regexp(fileNames, strcat('^',rfname));
@@ -492,6 +509,15 @@ elseif strcmp(get(gcf,'SelectionType'),'open')
                 if success
                     successtr=['file ',procname,' processed succesfully'];
                     disp(successtr);
+                    
+                    if ismember(unprocfiles{monknum},procname) %some files from this session / grid may not have been processed
+                        if length(ismember(unprocfiles{monknum},procname))>1
+                            unprocfiles{monknum}=unprocfiles{monknum}(~ismember(unprocfiles{monknum},procname));
+                        else
+                            unprocfiles{monknum}={};
+                        end
+                    end
+                    
                 else
                     successtr=['processing aborted for file ',procname'];
                     disp(successtr);
@@ -501,9 +527,9 @@ elseif strcmp(get(gcf,'SelectionType'),'open')
     else
         %% normal method
         
-%         selecteprocdir=dir(procdir);
-%          {selecteprocdir.name};  % Put the file names in a cell array
-         rdd_filename =selectionnm;
+        %         selecteprocdir=dir(procdir);
+        %          {selecteprocdir.name};  % Put the file names in a cell array
+        rdd_filename =selectionnm;
         [rdd_nt, trialdirs] = data_info( rdd_filename, 1);% load file
         trialnumber = rex_first_trial( rdd_filename, rdd_nt, 1);
         if trialnumber == 0
@@ -590,7 +616,7 @@ function displaymfiles_CreateFcn(hObject, eventdata, handles)
 % hObject    handle to displaymfiles (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
-global directory slash
+global directory slash unprocfiles;
 
 % Hint: listbox controls usually have a white background on Windows.
 %       See ISPC and COMPUTER.
@@ -618,24 +644,29 @@ end
 %setting process directory
 monkeydir= get(get(findobj('Tag','monkeyselect'),'SelectedObject'),'Tag');
 if strcmp(monkeydir,'rigelselect')
-    dirlisting = dir([directory,'processed',slash,'Rigel',slash]);%('B:\data\Recordings\processed\Rigel');
     monknum=1;
 elseif strcmp(monkeydir,'sixxselect')
-    dirlisting = dir([directory,'processed',slash,'Sixx',slash]);
     monknum=2;
 elseif strcmp(monkeydir,'hildaselect')
-    dirlisting = dir([directory,'processed',slash,'Hilda',slash]);
     monknum=3;
 end
+dirlisting{1} = dir([directory,'processed',slash,'Rigel',slash]);%('B:\data\Recordings\processed\Rigel');
+dirlisting{2} = dir([directory,'processed',slash,'Sixx',slash]);
+dirlisting{3} = dir([directory,'processed',slash,'Hilda',slash]);
 
 % add subject ID letter in front of file names for sessions >= 100
 rawdirs=[{[directory,'Rigel',slash]};{[directory,'Sixx',slash]};{[directory,'Hilda',slash]}];
 idletters=['R';'S';'H'];
 olddir=pwd; %keep current dir in memory
+
+%preallocate
+indfilenames=cell(length(rawdirs),1);
+unprocfiles=cell(length(rawdirs),1);
+
 for rwadirnum=1:length(rawdirs)
     rawdir=rawdirs{rwadirnum};
     idletter=idletters(rwadirnum);
-    cd(rawdir); %move to raw fiels directory
+    cd(rawdir); %move to raw files directory
     rawdirlisting=dir(rawdir);
     dirfileNames = {rawdirlisting.name};
     noidfiles=regexpi(dirfileNames,'^\d+','match'); % output file names that start with digits
@@ -650,23 +681,26 @@ for rwadirnum=1:length(rawdirs)
     rawfilenames=rawfilenames(~cellfun('isempty',filematch));
     rawfilenames=cellfun(@(x) x{:}, rawfilenames, 'UniformOutput', false);
     indfilenames{rwadirnum}=cellfun(@(x) x(1:end-1), rawfilenames, 'UniformOutput', false);
+    
+    cd(olddir); %go back to original dir
+    
+    % Order by date
+    procdirlist=dirlisting{rwadirnum};
+    filedates=cell2mat({procdirlist(:).datenum});
+    [filedates,fdateidx] = sort(filedates,'descend');
+    procdirlist = {procdirlist(:).name};
+    procdirlist = procdirlist(fdateidx);
+    procdirlist = procdirlist(~cellfun('isempty',strfind(procdirlist,'mat')));
+    procdirlist = procdirlist(cellfun('isempty',strfind(procdirlist,'myBreakpoints')));
+    procdirlist = cellfun(@(x) x(1:end-4), procdirlist, 'UniformOutput', false);
+    dirlisting{rwadirnum}=procdirlist;
+    if sum(~ismember(indfilenames{rwadirnum},procdirlist))
+        % beware if length of ismember is 1, the ~ will make a null
+        % subscript ... Shouldn't happen.
+        unprocfiles{rwadirnum}=indfilenames{rwadirnum}([~ismember(indfilenames{rwadirnum},procdirlist)]);
+    end
 end
-
-cd(olddir); %go back to original dir
-
-% Order by date
-filedates=cell2mat({dirlisting(:).datenum});
-[filedates,fdateidx] = sort(filedates,'descend');
-dirlisting = {dirlisting(:).name};
-dirlisting = dirlisting(fdateidx);
-dirlisting = dirlisting(~cellfun('isempty',strfind(dirlisting,'mat')));
-dirlisting = dirlisting(cellfun('isempty',strfind(dirlisting,'myBreakpoints')));
-dirlisting = cellfun(@(x) x(1:end-4), dirlisting, 'UniformOutput', false);
-if sum(~ismember(indfilenames{monknum},dirlisting))
-    global unprocfiles;
-    unprocfiles=indfilenames{1,monknum}([~ismember(indfilenames{monknum},dirlisting)]);
-end
-set(hObject,'string',dirlisting);
+set(hObject,'string',dirlisting{monknum});
 
 % --- Executes on button press in LoadFile.
 function LoadFile_Callback(hObject, eventdata, handles)
@@ -960,9 +994,9 @@ function monkeyselect_SelectionChangeFcn(hObject, eventdata, handles)
 %	NewValue: handle of the currently selected object
 % handles    structure with handles and user data (see GUIDATA)
 
-% find selected display file button 
+% find selected display file button
 dfbth=findobj('Tag',get(get(findobj('Tag','displayfbox'),'SelectedObject'),'tag'));
-% adjusting eventdata, even though it's not used 
+% adjusting eventdata, even though it's not used
 dfbted=eventdata;
 dfbted.OldValue=dfbth;
 dfbted.NewValue=dfbth;
@@ -1072,7 +1106,7 @@ function unprocfilebutton_Callback(hObject, eventdata, handles)
 % hObject    handle to unprocfilebutton (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-global directory slash unprocfiles;
+global unprocfiles;
 
 % find which type of file display
 selfd=get(get(findobj('Tag','displayfbox'),'SelectedObject'),'tag');
@@ -1081,7 +1115,7 @@ selfd=get(get(findobj('Tag','displayfbox'),'SelectedObject'),'tag');
 selmk=get(get(findobj('Tag','monkeyselect'),'SelectedObject'),'tag');
 
 % call unprocessed files GUI
-ProcUnproc(directory, slash, unprocfiles, selfd, selmk);
+ProcUnproc(unprocfiles, selmk, selfd);
 
 
 

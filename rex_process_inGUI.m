@@ -17,7 +17,7 @@ function [success,outliers] = rex_process_inGUI( rexname, rawdir )
 %     allcodes alltimes allspkchan allspk allrates ...
 %     allh allv allstart allbad alldeleted allsacstart allsacend...
 %     allcodelen allspklen alleyelen allsaclen allrexnotes;
-clearvars -global -except directory slash;
+clearvars -global -except directory slash unprocfiles;
 global saccadeInfo tasktype;
 tasktype='';
 % eventually, replace cat_variable_size_row nonsense with data structures
@@ -506,7 +506,7 @@ save( newname, 'rexloadedname', 'rexnumtrials', 'alloriginaltrialnums', 'allnewt
 
 %%
 success = 1;
-clearvars -global -except directory slash;
+clearvars -global -except directory slash unprocfiles;
 close( wb );
 
 %% graphic verif if any bug:

@@ -22,16 +22,16 @@ function varargout = ProcUnproc(varargin)
 
 % Edit the above text to modify the response to help ProcUnproc
 
-% Last Modified by GUIDE v2.5 23-Aug-2012 00:26:23
+% Last Modified by GUIDE v2.5 23-Aug-2012 17:55:17
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
 gui_State = struct('gui_Name',       mfilename, ...
-                   'gui_Singleton',  gui_Singleton, ...
-                   'gui_OpeningFcn', @ProcUnproc_OpeningFcn, ...
-                   'gui_OutputFcn',  @ProcUnproc_OutputFcn, ...
-                   'gui_LayoutFcn',  [] , ...
-                   'gui_Callback',   []);
+    'gui_Singleton',  gui_Singleton, ...
+    'gui_OpeningFcn', @ProcUnproc_OpeningFcn, ...
+    'gui_OutputFcn',  @ProcUnproc_OutputFcn, ...
+    'gui_LayoutFcn',  [] , ...
+    'gui_Callback',   []);
 if nargin && ischar(varargin{1})
     gui_State.gui_Callback = str2func(varargin{1});
 end
@@ -58,41 +58,54 @@ handles.output = hObject;
 % Update handles structure
 guidata(hObject, handles);
 
-directory=varargin{1};
-slash=varargin{2};
+unprocfiles=varargin{1};
+selectedmk=varargin{2};
+selectedfd=varargin{3};
 
-unprocfilelist=varargin{3};
-
-set(findobj('tag','unproclist'),'string',unprocfilelist');
-
-selectedfd=varargin{4};
-
-if strcmp(selectedfd,'displayfbt_files')
-    set(findobj('tag','procunprocdf_files'),'value',1);
-elseif strcmp(selectedfd,'displayfbt_session')
-    set(findobj('tag','procunprocdf_sess'),'value',1);
-else %default: files
-    set(findobj('tag','procunprocdf_files'),'value',1);
-end
-
-selectedmk=varargin{5};
 
 if strcmp(selectedmk,'rigelselect')
     set(findobj('tag','procunproc_rigel'),'value',1);
+    unprocfilelist=unprocfiles{1}';
 elseif strcmp(selectedmk,'sixxselect')
     set(findobj('tag','procunproc_sixx'),'value',1);
+    unprocfilelist=unprocfiles{2}';
 elseif strcmp(selectedmk,'hildaselect')
     set(findobj('tag','procunproc_hilda'),'value',1);
+    unprocfilelist=unprocfiles{3}';
 end
 
+if isempty(unprocfilelist)
+    unprocfilelist={' '};
+end
 
+if strcmp(selectedfd,'displayfbt_files')
+    set(findobj('tag','procunprocdf_files'),'value',1);
+    set(findobj('tag','unproclist'),'string',unprocfilelist);
+elseif strcmp(selectedfd,'displayfbt_session')
+    set(findobj('tag','procunprocdf_sess'),'value',1);
+    sessionnumb = regexpi(unprocfilelist,'^\w\d+', 'match');
+    if ~isempty(sessionnumb{1})
+        sessionnumb = cellfun(@(x) strrep(x, x{:}(1),' '), sessionnumb, 'UniformOutput', false);
+        sesslist = cat(1,sessionnumb{:});
+        sesslist = unique(sesslist); % finds unique session numbers
+        [~,sessionlistidx]=sort(str2double(sesslist),'descend');
+        sesslist = sesslist(sessionlistidx); %sort cell arrays descending
+        sesslist = strcat('Session', sesslist);
+    else
+        sesslist='no unprocessed session';
+    end
+    set(findobj('tag','unproclist'),'string',sesslist);
+else %default: files
+    set(findobj('tag','procunprocdf_files'),'value',1);
+    set(findobj('tag','unproclist'),'string',unprocfilelist);
+end
 
 % UIWAIT makes ProcUnproc wait for user response (see UIRESUME)
 % uiwait(handles.figure1);
 
 
 % --- Outputs from this function are returned to the command line.
-function varargout = ProcUnproc_OutputFcn(hObject, eventdata, handles) 
+function varargout = ProcUnproc_OutputFcn(hObject, eventdata, handles)
 % varargout  cell array for returning output args (see VARARGOUT);
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -104,22 +117,68 @@ varargout{1} = handles.output;
 
 % --- Executes on selection change in unproclist.
 function unproclist_Callback(hObject, eventdata, handles)
-% hObject    handle to unproclist (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
 
-% Hints: contents = cellstr(get(hObject,'String')) returns unproclist contents as cell array
-%        contents{get(hObject,'Value')} returns selected item from unproclist
+global directory slash unprocfiles ;
 
+if strcmp(get(gcf,'SelectionType'),'normal') %simple click, do nothing
+    
+elseif strcmp(get(gcf,'SelectionType'),'open')
+
+selectedmk=get(get(findobj('Tag','procunprocsubjpanel'),'SelectedObject'),'tag');
+
+if strcmp(selectedmk,'procunproc_rigel')
+    monkeydir = [directory,'Rigel',slash]; %'B:\data\Recordings\Rigel';
+    monknum=1;
+elseif strcmp(selectedmk,'procunproc_sixx')
+    monkeydir = [directory,'Sixx',slash]; %'B:\data\Recordings\Sixx';
+    monknum=2;
+elseif strcmp(selectedmk,'procunproc_hilda')
+    monkeydir = [directory,'Hilda',slash]; %'B:\data\Recordings\Sixx';
+    monknum=3;
+end
+mrawdir=dir(monkeydir);
+rawfilenames = {mrawdir.name};  % Put the file names in a cell array
+
+currentuflist = cellstr(get(hObject,'String')); % returns file list as cell array
+selectionnm = currentuflist{get(hObject,'Value')}; %returns selected items
+
+if get(findobj('Tag','procunprocdf_sess'),'Value')
+    sessionNumber = selectionnm(9:end);
+    rftoproc = regexp(rawfilenames, strcat('^\w',sessionNumber));
+    rftoproc = rawfilenames(~cellfun(@isempty,rftoproc));  % Get the names of the matching files in a cell array
+    rftoproc = regexprep(rftoproc, '(A$)|(E$)',''); %remove A and E from end of names
+    rftoproc = unique(rftoproc);
+else
+    rftoproc=selectionnm;
+end
+
+for rftpnb = 1:length(rftoproc)
+    procname=rftoproc{rftpnb};
+    [success]=rex_process_inGUI(procname,monkeydir); %shouldn't need the rfpathname
+    % outliers are stored in file now
+    
+    if success
+        successtr=['file ',procname,' processed succesfully'];
+        disp(successtr);
+        
+        if sum(ismember(unprocfiles{monknum},procname)) %some files from this session / grid may not have been processed
+            if length(ismember(unprocfiles{monknum},procname))>1
+                unprocfiles{monknum}=unprocfiles{monknum}(~ismember(unprocfiles{monknum},procname));
+            else
+                unprocfiles{monknum}={};
+            end
+        end
+        
+    else
+        successtr=['processing aborted for file ',procname'];
+        disp(successtr);
+    end
+end
+end
 
 % --- Executes during object creation, after setting all properties.
 function unproclist_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to unproclist (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
 
-% Hint: listbox controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
@@ -127,6 +186,87 @@ end
 
 % --- Executes on button press in processunproc.
 function processunproc_Callback(hObject, eventdata, handles)
-% hObject    handle to processunproc (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes when selected file display is changed in procunprocdfpanel.
+function procunprocdfpanel_SelectionChangeFcn(hObject, eventdata, handles)
+global directory slash unprocfiles;
+
+selectedmk=get(get(findobj('Tag','procunprocsubjpanel'),'SelectedObject'),'tag');
+
+if strcmp(selectedmk,'procunproc_rigel')
+    unprocfilelist=unprocfiles{1}';
+elseif strcmp(selectedmk,'procunproc_sixx')
+    unprocfilelist=unprocfiles{2}';
+elseif strcmp(selectedmk,'procunproc_hilda')
+    unprocfilelist=unprocfiles{3}';
+end
+
+if isempty(unprocfilelist)
+    unprocfilelist={' '};
+end
+
+if strcmp(get(hObject,'tag'),'procunprocdf_files')
+    if strcmp(unprocfilelist,' ')
+        unprocfilelist='no unprocessed files';
+    end
+    set(findobj('tag','unproclist'),'string',unprocfilelist);
+elseif strcmp(get(hObject,'tag'),'procunprocdf_sess')
+    sessionnumb = regexpi(unprocfilelist,'^\w\d+', 'match');
+    if ~isempty(sessionnumb{1})
+        sessionnumb = cellfun(@(x) strrep(x, x{:}(1),' '), sessionnumb, 'UniformOutput', false);
+        sesslist = cat(1,sessionnumb{:});
+        sesslist = unique(sesslist); % finds unique session numbers
+        [~,sessionlistidx]=sort(str2double(sesslist),'descend');
+        sesslist = sesslist(sessionlistidx); %sort cell arrays descending
+        sesslist = strcat('Session', sesslist);
+    else
+        sesslist='no unprocessed session';
+    end
+    set(findobj('tag','unproclist'),'string',sesslist);
+else %default: files
+    set(findobj('tag','unproclist'),'string',unprocfilelist);
+end
+
+
+% --- Executes when selected subject (monkey) is changed in procunprocsubjpanel.
+function procunprocsubjpanel_SelectionChangeFcn(hObject, eventdata, handles)
+
+global directory slash unprocfiles;
+
+if strcmp(get(hObject,'tag'),'procunproc_rigel')
+    unprocfilelist=unprocfiles{1}';
+elseif strcmp(get(hObject,'tag'),'procunproc_sixx')
+    unprocfilelist=unprocfiles{2}';
+elseif strcmp(get(hObject,'tag'),'procunproc_hilda')
+    unprocfilelist=unprocfiles{3}';
+end
+
+if isempty(unprocfilelist)
+    unprocfilelist={' '};
+end
+
+selectedfd=get(get(findobj('Tag','procunprocdfpanel'),'SelectedObject'),'tag');
+
+if strcmp(selectedfd,'procunprocdf_files')
+    if strcmp(unprocfilelist,' ')
+        unprocfilelist='no unprocessed files';
+    end
+    set(findobj('tag','unproclist'),'string',unprocfilelist);
+elseif strcmp(selectedfd,'procunprocdf_sess')
+    sessionnumb = regexpi(unprocfilelist,'^\w\d+', 'match');
+    if ~isempty(sessionnumb{1})
+        sessionnumb = cellfun(@(x) strrep(x, x{:}(1),' '), sessionnumb, 'UniformOutput', false);
+        sesslist = cat(1,sessionnumb{:});
+        sesslist = unique(sesslist); % finds unique session numbers
+        [~,sessionlistidx]=sort(str2double(sesslist),'descend');
+        sesslist = sesslist(sessionlistidx); %sort cell arrays descending
+        sesslist = strcat('Session', sesslist);
+    else
+        sesslist='no unprocessed session';
+    end
+    set(findobj('tag','unproclist'),'string',sesslist);
+else %default: files
+    set(findobj('tag','unproclist'),'string',unprocfilelist);
+end
+
