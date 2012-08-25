@@ -654,7 +654,10 @@ dirlisting{1} = dir([directory,'processed',slash,'Rigel',slash]);%('B:\data\Reco
 dirlisting{2} = dir([directory,'processed',slash,'Sixx',slash]);
 dirlisting{3} = dir([directory,'processed',slash,'Hilda',slash]);
 
-% add subject ID letter in front of file names for sessions >= 100
+%%  add subject ID letter in front of file names for sessions >= 100
+%   change hyphens into underscores
+%   output unprocessed file list
+
 rawdirs=[{[directory,'Rigel',slash]};{[directory,'Sixx',slash]};{[directory,'Hilda',slash]}];
 idletters=['R';'S';'H'];
 olddir=pwd; %keep current dir in memory
@@ -669,6 +672,8 @@ for rwadirnum=1:length(rawdirs)
     cd(rawdir); %move to raw files directory
     rawdirlisting=dir(rawdir);
     dirfileNames = {rawdirlisting.name};
+    
+    %add subject ID letter in front of file names
     noidfiles=regexpi(dirfileNames,'^\d+','match'); % output file names that start with digits
     noidindex=find(~cellfun(@isempty,noidfiles));
     if logical(sum(noidindex))
@@ -677,6 +682,22 @@ for rwadirnum=1:length(rawdirs)
             movefile(dirfileNames{noidindex(id)}, [idletter,dirfileNames{noidindex(id)}]);
         end
     end
+    
+    %change hyphen into underscores
+    hyphenfiles=regexpi(dirfileNames,'^\w+-','match'); % output file names that start with digits
+    hyphenindex=find(~cellfun(@isempty,hyphenfiles));
+    if logical(sum(hyphenindex))
+        % Loop through each
+        for id = 1:length(hyphenindex)
+            movefile(dirfileNames{hyphenindex(id)},...
+                [dirfileNames{hyphenindex(id)}(1:length(hyphenfiles{hyphenindex(id)}{:})-1),'_',dirfileNames{hyphenindex(id)}(length(hyphenfiles{hyphenindex(id)}{:})+1:end)]);
+        end
+    end
+    
+    % refresh dirfileNames
+    rawdirlisting=dir(rawdir);
+    dirfileNames = {rawdirlisting.name};
+    
     [rawfilenames,filematch]=regexpi(dirfileNames,'\w*A$','match'); % output file names that end with A
     rawfilenames=rawfilenames(~cellfun('isempty',filematch));
     rawfilenames=cellfun(@(x) x{:}, rawfilenames, 'UniformOutput', false);

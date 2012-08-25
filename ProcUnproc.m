@@ -118,12 +118,24 @@ varargout{1} = handles.output;
 % --- Executes on selection change in unproclist.
 function unproclist_Callback(hObject, eventdata, handles)
 
-global directory slash unprocfiles ;
-
 if strcmp(get(gcf,'SelectionType'),'normal') %simple click, do nothing
     
-elseif strcmp(get(gcf,'SelectionType'),'open')
+elseif strcmp(get(gcf,'SelectionType'),'open') %double click, process this file or session
+    processunproch=get(findobj('tag','processunproc'));
+    processunproc_Callback(processunproch,eventdata, handles);
+end
 
+% --- Executes on button press in processunproc.
+function processunproc_Callback(hObject, eventdata, handles)
+global directory slash unprocfiles ;
+
+% get list of selected files or session in the list
+unproclisth=findobj('tag','unproclist');
+
+currentuflist = cellstr(get(unproclisth,'String')); % returns file list as cell array
+selectionnm = {currentuflist{get(unproclisth,'Value')}}; %returns selected items
+
+% find which subject selected, and associated raw files directory
 selectedmk=get(get(findobj('Tag','procunprocsubjpanel'),'SelectedObject'),'tag');
 
 if strcmp(selectedmk,'procunproc_rigel')
@@ -139,21 +151,29 @@ end
 mrawdir=dir(monkeydir);
 rawfilenames = {mrawdir.name};  % Put the file names in a cell array
 
-currentuflist = cellstr(get(hObject,'String')); % returns file list as cell array
-selectionnm = currentuflist{get(hObject,'Value')}; %returns selected items
-
 if get(findobj('Tag','procunprocdf_sess'),'Value')
-    sessionNumber = selectionnm(9:end);
-    rftoproc = regexp(rawfilenames, strcat('^\w',sessionNumber));
-    rftoproc = rawfilenames(~cellfun(@isempty,rftoproc));  % Get the names of the matching files in a cell array
-    rftoproc = regexprep(rftoproc, '(A$)|(E$)',''); %remove A and E from end of names
-    rftoproc = unique(rftoproc);
+    % extracting session number
+    if iscell(selectionnm)
+        sessionNumber=regexpi(selectionnm,'\d+$', 'match');    
+        allrftoproc=cell(length(sessionNumber),1);
+            for sessnumnum=1:length(sessionNumber)
+            rftoproc = regexp(rawfilenames, strcat('^\w',sessionNumber{sessnumnum}{:}),'match');
+            rftoproc = rawfilenames(~cellfun(@isempty,rftoproc));  % Get the names of the matching files in a cell array
+            rftoproc = regexprep(rftoproc, '(A$)|(E$)',''); %remove A and E from end of names
+            rftoproc = unique(rftoproc);
+            allrftoproc{sessnumnum}=rftoproc;
+            end
+        allrftoproc=horzcat(allrftoproc{:});
+    else
+        sessionNumber = selectionnm(9:end);
+    end
+
 else
-    rftoproc=selectionnm;
+    allrftoproc=selectionnm;
 end
 
-for rftpnb = 1:length(rftoproc)
-    procname=rftoproc{rftpnb};
+for rftpnb = 1:length(allrftoproc)
+    procname=allrftoproc{rftpnb};
     [success]=rex_process_inGUI(procname,monkeydir); %shouldn't need the rfpathname
     % outliers are stored in file now
     
@@ -174,7 +194,6 @@ for rftpnb = 1:length(rftoproc)
         disp(successtr);
     end
 end
-end
 
 % --- Executes during object creation, after setting all properties.
 function unproclist_CreateFcn(hObject, eventdata, handles)
@@ -184,13 +203,11 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
 end
 
 
-% --- Executes on button press in processunproc.
-function processunproc_Callback(hObject, eventdata, handles)
 
 
 % --- Executes when selected file display is changed in procunprocdfpanel.
 function procunprocdfpanel_SelectionChangeFcn(hObject, eventdata, handles)
-global directory slash unprocfiles;
+global unprocfiles;
 
 selectedmk=get(get(findobj('Tag','procunprocsubjpanel'),'SelectedObject'),'tag');
 
@@ -213,6 +230,7 @@ if strcmp(get(hObject,'tag'),'procunprocdf_files')
     set(findobj('tag','unproclist'),'string',unprocfilelist);
 elseif strcmp(get(hObject,'tag'),'procunprocdf_sess')
     sessionnumb = regexpi(unprocfilelist,'^\w\d+', 'match');
+    sessionnumb = sessionnumb(~cellfun(@isempty,sessionnumb));
     if ~isempty(sessionnumb{1})
         sessionnumb = cellfun(@(x) strrep(x, x{:}(1),' '), sessionnumb, 'UniformOutput', false);
         sesslist = cat(1,sessionnumb{:});
