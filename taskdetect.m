@@ -1,4 +1,4 @@
-function [curtasktype, ecodecueon, ecodesacstart, ecodesacend]=taskdetect(codes, curtasktype);
+function [curtasktype, ecodecueon, ecodesacstart, ecodesacend]=taskdetect(codes, curtasktype)
 
 % identifies task, and also tells which ecodes correspond to which event
 % called by rex_process_inGUI and by data_info
@@ -34,7 +34,7 @@ if ~sum(curtasktype) || strcmp(curtasktype,'Task') %then find task!
     elseif ecodetypes(1)==6020
         %make sure this is consistent over older recordings
         % default memory guided saccade is the self-timed saccade, but check if it is correct
-        if isempty(find(codes==16386))
+        if isempty(find(codes==16386, 1))
             if length(ecodetypes)>1 && find(ecodetypes==6040) && find(ecodetypes==6080)
                 curtasktype=alltasktypes(2); %base2rem50
             else
@@ -48,20 +48,25 @@ if ~sum(curtasktype) || strcmp(curtasktype,'Task') %then find task!
                         case 'Cancel'
                             return;
                     end
-                else
-                    if isempty(tasktype)
-                        taskdisambig = questdlg('Is this a Memory guided task ?','Ambiguous Task','Yes','Yes but self timed','Cancel','Yes');
-                        switch taskdisambig
-                            case 'Yes'
-                                curtasktype=alltasktypes(3); %memory guided
-                                tasktype=alltasktypes(3); %memory guided
-                            case 'Yes but self timed'
-                                curtasktype=alltasktypes(4); %self timed saccade task
-                                tasktype=alltasktypes(4);
-                            case 'Cancel'
-                                return;
-                        end
-                    elseif strcmp(tasktype,'memguided')
+                else %single trial
+                    %if isempty(tasktype) %instead of asking question, assume that it's the rare 
+                                         %ambiguous case where it's memory
+                                         %guided task. Later on, if it
+                                         %appears to be a self-timed
+                                         %saccade task, the file will be
+                                         %reprocessed
+%                         taskdisambig = questdlg('Is this a Memory guided task ?','Ambiguous Task','Yes','Yes but self timed','Cancel','Yes');
+%                         switch taskdisambig
+%                             case 'Yes'
+%                                 curtasktype=alltasktypes(3); %memory guided
+%                                 tasktype=alltasktypes(3); %memory guided
+%                             case 'Yes but self timed'
+%                                 curtasktype=alltasktypes(4); %self timed saccade task
+%                                 tasktype=alltasktypes(4);
+%                             case 'Cancel'
+%                                 return;
+%                         end
+                    if strcmp(tasktype,'memguided')
                         curtasktype=alltasktypes(3); %memory guided
                         tasktype=alltasktypes(3); %memory guided
                     elseif strcmp(tasktype,'st_saccades')
@@ -75,7 +80,14 @@ if ~sum(curtasktype) || strcmp(curtasktype,'Task') %then find task!
                 end
             end
         else
-            curtasktype=alltasktypes(4); %self timed saccade task
+            if strcmp(tasktype,'memguided')
+                curtasktype='reproc';
+                tasktype=alltasktypes(4);
+                return;
+            else
+                curtasktype=alltasktypes(4); %self timed saccade task
+                tasktype=alltasktypes(4);
+            end
         end
     elseif ecodetypes(1)==6040
         if length(ecodetypes)>1 && find(ecodetypes==6020) && find(ecodetypes==6080)
@@ -124,7 +136,7 @@ if ~isempty(curtasktype) && ~sum(find(codes==17385))
             ecodesacend=9;
         case 'gapstop'
             ecodecueon=7;
-            if ~isempty(find(codes==1503)) 
+            if ~isempty(find(codes==1503, 1)) 
             ecodesacstart=9;
 %               ecode to control for stop signal delay value, introduced between target code and stop code
 %               stopcode is at 9, not 8 anymore 

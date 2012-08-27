@@ -190,7 +190,7 @@ for rftpnb = 1:length(allrftoproc)
         end
         
     else
-        successtr=['processing aborted for file ',procname'];
+        successtr=['processing aborted for file ',procname];
         disp(successtr);
     end
 end

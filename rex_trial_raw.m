@@ -230,8 +230,15 @@ if ~isempty(aidx)
 
         while (cnt112 <= length( aoffset )) && keepgoing
             %%%while (cnt112 <= length( aoffset )) && (atm < endofthistrial) %-101 )
-
+        try
             [aseq, acd, atm, ausr, acont, adata] = rex_analog(name, aoffset(cnt112));
+        catch err_rexanalog
+               errmess= regexp(err_rexanalog.identifier,':\w+$','match');
+               errmess=['problem at rex_analog',errmess{:}];
+               disp(errmess);
+            return
+        end
+            
             % s = sprintf( 'first code time: %d, atm: %d, acont: %d, ofst: %d', startofthistrial, atm, acont, ofst );
             % disp( s );
 

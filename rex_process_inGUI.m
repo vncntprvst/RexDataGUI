@@ -1,4 +1,4 @@
-function [success,outliers] = rex_process_inGUI( rexname, rawdir )
+function [success,outliers] = rex_process_inGUI( rexname, rawdir, reprocess )
 
 % [success] = rex_process_inGUI( rexname, monkeydir )
 %
@@ -17,11 +17,16 @@ function [success,outliers] = rex_process_inGUI( rexname, rawdir )
 %     allcodes alltimes allspkchan allspk allrates ...
 %     allh allv allstart allbad alldeleted allsacstart allsacend...
 %     allcodelen allspklen alleyelen allsaclen allrexnotes;
-clearvars -global -except directory slash unprocfiles;
+clearvars -global -except directory slash unprocfiles tasktype;
 global saccadeInfo tasktype;
-tasktype='';
-% eventually, replace cat_variable_size_row nonsense with data structures
 
+if nargin<3
+    reprocess=0;
+end
+
+if ~reprocess
+    tasktype='';
+end
 
 includeaborted = 1;
 slopethreshold = 0.025;
@@ -81,7 +86,13 @@ nt = rex_numtrials_raw( rexname, includeaborted ); %rawdir
 %nt = rex_numtrials_fake( rexname, includeaborted );
 %% trialnumber is the trial # from the recorded file. Some may be discarded in this loop. next is the resulting trial number
 for trialnumber = 1:nt
+    try
     [ecodeout, etimeout, spkchan, spk, arate, h, v, start_time, badtrial, analog_time] = rex_trial_raw(rexname, trialnumber, includeaborted); %rawdir
+    catch
+         errmess= sprintf('file %s could not be processed at trial %d. Terminate processing',rexname, trialnumber);
+         disp(errmess);
+         return;
+    end
     %[ecodeout, etimeout, spkchan, spk, arate, h, v, start_time, badtrial ] = rex_trial_fake(rexname, trialnumber, includeaborted);
     if length(badtrial)>1 %rare event: two identical error code in the same trial
         secbadtrltime=badtrial(2)-analog_time;
@@ -319,6 +330,10 @@ for trialnumber = 1:nt
         end
         
         [curtasktype, ecodecueon, ecodesacstart, ecodesacend]=taskdetect(ecodeout);
+        if strcmp(curtasktype,'reproc')
+            success=rex_process_inGUI( rexname, rawdir, 1); %last argument is for reprocessing file
+            return;
+        end
         if strcmp(curtasktype,'tokens') && logical(sum(ecodecueon)) %multiple cues
             allcues=ecodecueon; %keep it for later
             ecodecueon=ecodecueon(end); %for the moment only keep the last one
@@ -432,6 +447,8 @@ end;
 if ~isequal((logical(allbad) & (~goodsac)),~goodsac)
     disp('mismatch in saccade detection and wrong trials')
     mismatch=find((~goodsac)~= (logical(allbad) & (~goodsac)));
+else
+    mismatch=0;
 end
 
 amps=nan(size(goodsac));
