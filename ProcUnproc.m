@@ -192,7 +192,7 @@ for rftpnb = 1:length(allrftoproc)
     end
     diary('log.txt');
     procname=allrftoproc{rftpnb};
-    [success]=rex_process_inGUI(procname,monkeydir); %shouldn't need the rfpathname
+    [success,~,rectask]=rex_process_inGUI(procname,monkeydir); %shouldn't need the rfpathname
     % outliers are stored in file now
     
     if success
@@ -227,7 +227,7 @@ for rftpnb = 1:length(allrftoproc)
         diarycontent=fscanf(diarydata,'%c',inf);
         fclose(diarydata);
         
-        writeinfo={procname,sessionid,recloc,recdepth,recnum,' ',' ',' ',' ',' ',diarycontent};
+        writeinfo={procname,sessionid,recloc,recdepth,recnum,rectask{:},' ',' ',' ',' ',diarycontent};
         %cd to directory and save data in spreadsheet
         cd(directory);
         [~,pfilelist] = xlsread('procdata.xlsx',monknum,['A2:A' num2str(numrows)]);

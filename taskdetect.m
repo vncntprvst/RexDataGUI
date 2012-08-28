@@ -92,10 +92,16 @@ if ~sum(curtasktype) || strcmp(curtasktype,'Task') %then find task!
     elseif ecodetypes(1)==6040
         if length(ecodetypes)>1 && find(ecodetypes==6020) && find(ecodetypes==6080)
             curtasktype=alltasktypes(2); %base2rem50
+            tasktype=alltasktypes(2);
         elseif length(ecodetypes)>1 && find(ecodetypes==4070)
             curtasktype=alltasktypes(5); %gapstop
-        else
+            tasktype=alltasktypes(5);
+        elseif ~strcmp(tasktype,'gapstop')
             curtasktype=alltasktypes(6); %gapsac
+            tasktype=alltasktypes(6);
+        else
+            curtasktype=alltasktypes(5); %gapstop
+            tasktype=alltasktypes(5);
         end
     elseif ecodetypes(1)==6050
         return;
@@ -110,11 +116,16 @@ if ~sum(curtasktype) || strcmp(curtasktype,'Task') %then find task!
     elseif ecodetypes(1)==4060
         curtasktype=alltasktypes(9);% tokens
     elseif ecodetypes(1)==4070
-        if length(ecodetypes)>1 && find(ecodetypes==6040)
-            curtasktype=alltasktypes(5); %gapstop
-        else
-            return;
-        end
+%         if length(ecodetypes)>1 && find(ecodetypes==6040)
+             curtasktype=alltasktypes(5); %gapstop
+%         else
+%             return;
+%         end
+            if ~strcmp(tasktype,'gapstop')
+                curtasktype='reproc';
+                tasktype=alltasktypes(5);
+                return;
+            end
     elseif ecodetypes(1)==4080
         return;
     end

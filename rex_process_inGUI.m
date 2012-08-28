@@ -1,4 +1,4 @@
-function [success,outliers] = rex_process_inGUI( rexname, rawdir, reprocess )
+function [success,outliers,curtasktype] = rex_process_inGUI( rexname, rawdir, reprocess )
 
 % [success] = rex_process_inGUI( rexname, monkeydir )
 %
@@ -332,7 +332,7 @@ for trialnumber = 1:nt
         [curtasktype, ecodecueon, ecodesacstart, ecodesacend]=taskdetect(ecodeout);
         if strcmp(curtasktype,'reproc')
             close(wb);
-            success=rex_process_inGUI( rexname, rawdir, 1); %last argument is for reprocessing file
+            [success,outliers,curtasktype]=rex_process_inGUI( rexname, rawdir, 1); %last argument is for reprocessing file
             return;
         end
         if strcmp(curtasktype,'tokens') && logical(sum(ecodecueon)) %multiple cues
