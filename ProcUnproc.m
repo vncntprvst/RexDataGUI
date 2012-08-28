@@ -172,7 +172,25 @@ else
     allrftoproc=selectionnm;
 end
 
-for rftpnb = 1:length(allrftoproc)
+% get number of row in "database"
+exl = actxserver('excel.application');
+exlWkbk = exl.Workbooks;
+exlFile = exlWkbk.Open([directory 'procdata.xlsx']);
+exlSheet = exlFile.Sheets.Item(monknum);%'Sixx'
+robj = exlSheet.Columns.End(4);
+numrows = robj.row;
+if numrows==1048576
+    numrows=1;
+end
+%exl.registerevent({'WorkbookBeforeClose',@close_event1})
+Quit(exl);
+
+for rftpnb = 1:length(allrftoproc) 
+    if exist('log.txt')
+        diarydata=fopen('log.txt','w+'); %clears previous diary
+        fclose(diarydata);
+    end
+    diary('log.txt');
     procname=allrftoproc{rftpnb};
     [success]=rex_process_inGUI(procname,monkeydir); %shouldn't need the rfpathname
     % outliers are stored in file now
@@ -193,6 +211,35 @@ for rftpnb = 1:length(allrftoproc)
         successtr=['processing aborted for file ',procname];
         disp(successtr);
     end
+    diary off;
+    % exporting data to Excel spreadsheet 
+        %get data
+        %subjectid=regexp(procname,'^\w','match');
+        [fnnumbs,fnloc]=regexp(procname,'\d+','match');
+        sessionid=fnnumbs{1};
+        recdepth=fnnumbs{end};
+        recnum=recdepth(end);
+        recdepth(end)='0';
+        recloc=regexp(procname(length(sessionid)+fnloc:end),'\w\d\w\d','match');
+        recloc=recloc{1};
+        
+        diarydata=fopen('log.txt');
+        diarycontent=fscanf(diarydata,'%c',inf);
+        fclose(diarydata);
+        
+        writeinfo={procname,sessionid,recloc,recdepth,recnum,' ',' ',' ',' ',' ',diarycontent};
+        %cd to directory and save data in spreadsheet
+        cd(directory);
+        [~,pfilelist] = xlsread('procdata.xlsx',monknum,['A2:A' num2str(numrows)]);
+        if logical(sum(ismember(pfilelist,procname))) %pfile data already. Overwrite to avoid duplicates
+            wline=find(ismember(pfilelist,procname))+1;
+            numrows=numrows-1;
+        else
+            wline=numrows+rftpnb;
+        end
+        xlswrite('procdata.xlsx', writeinfo, monknum, sprintf('A%d',wline)); % first idea: str2num(sessionid)+recnum+1, but it can't work 
+        %to make sure text is wrapped, see xlsalign
+        
 end
 
 % --- Executes during object creation, after setting all properties.

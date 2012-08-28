@@ -331,6 +331,7 @@ for trialnumber = 1:nt
         
         [curtasktype, ecodecueon, ecodesacstart, ecodesacend]=taskdetect(ecodeout);
         if strcmp(curtasktype,'reproc')
+            close(wb);
             success=rex_process_inGUI( rexname, rawdir, 1); %last argument is for reprocessing file
             return;
         end

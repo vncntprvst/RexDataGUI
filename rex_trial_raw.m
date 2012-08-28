@@ -161,7 +161,6 @@ if ~isempty( fbt )
         str=sprintf('two error codes found in trial %d',trial);
         disp(str);
         disp('see rex_trial_raw line 160');
-        pause
     end
 end;
 

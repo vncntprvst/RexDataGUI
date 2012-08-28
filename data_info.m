@@ -44,7 +44,11 @@ else
     disp( 'File already loaded ...');
 end;
 
-
+% matfile access takes ~3.5s. for the commands below (if initial matfile
+% called taken into account). Loading the whole file takes .5s.
+% May be due to the file being saved in v7.3 rather than 7 (but we need
+% 7.3) . In the future, could be done by saving data into database and
+% using http://www.mathworks.com/products/database/
 % allcodes = sessiondata.allcodes;
 % alltimes = sessiondata.alltimes;
 % allspkchan = sessiondata.allspkchan;
@@ -54,7 +58,7 @@ end;
 % allv = sessiondata.allv;
 % allstart = sessiondata.allstart;
 % allbad = sessiondata.allbad;
-% saccadeInfo = sessiondata.saccadeInfo;
+% saccadeinfo = sessiondata.saccadeinfo;
 
 % detecting tasktype
 curtasktype=taskdetect(allcodes);

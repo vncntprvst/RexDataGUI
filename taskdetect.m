@@ -150,7 +150,6 @@ if ~isempty(curtasktype) && ~sum(find(codes==17385))
             ecodesacstart=9;
             ecodesacend=10;
         case 'gapsac' % to change !
-            disp('check task ecodes in taskdetect');
             ecodecueon=7;
             ecodesacstart=8;
             ecodesacend=9;
