@@ -33,7 +33,7 @@ else
         [diff(Saccvel(peakIdx(1):-1:1)) 0] >= 0);          % acc <= 0
     
     if isempty(saccadeStartIdx)
-        disp('find_saccades_excerpt: empty saccadeStartIdx');
+        %disp('find_saccades_excerpt: empty saccadeStartIdx');
         sacfound=0;
     else
         
@@ -46,7 +46,7 @@ else
         
         % Check whether the local vel. noise exceeds the peak vel. threshold.
         if localVelNoise > peakDetectionThreshold
-            disp('find_saccades_excerpt: local velocity noise exceeds the peak velocity threshold');
+            %disp('find_saccades_excerpt: local velocity noise exceeds the peak velocity threshold');
             sacfound=0;
         else
             
@@ -55,7 +55,7 @@ else
                 [diff(Saccvel(peakIdx(end):end)) 0] >= 0);        % acc <= 0
             
             if isempty(saccadeEndIdx)
-                disp('find_saccades_excerpt: empty saccadeEndIdx');
+               % disp('find_saccades_excerpt: empty saccadeEndIdx');
                 sacfound=0;
             else
                 saccadeEndIdx = peakIdx(end) + saccadeEndIdx(1) - 1;
@@ -66,7 +66,7 @@ else
                 % Make sure the saccade duration exceeds the minimum duration.
                 saccadeLen = saccadeEndIdx - saccadeStartIdx;
                 if saccadeLen < minwidth
-                    disp('find_saccades_excerpt: saccade duration below minimum duration');
+                  %  disp('find_saccades_excerpt: saccade duration below minimum duration');
                     sacfound=0;
                 else
                     %
@@ -85,7 +85,7 @@ else
                     %If all the above criteria are fulfilled
                     
                     if sacamp<3 % If  saccade too small
-                        disp('find_saccades_excerpt: saccade too small');
+                        %disp('find_saccades_excerpt: saccade too small');
                         sacfound=0;
                     else
                         saccadeInfo(next,newpeak).starttime = excs+saccadeStartIdx;

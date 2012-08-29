@@ -93,6 +93,10 @@ for trialnumber = 1:nt
          disp(errmess);
          return;
     end
+    
+     if  strcmp(tasktype,'optiloc') && logical(sum(find(ecodeout==16386)))
+         badtrial=1;
+     end
     %[ecodeout, etimeout, spkchan, spk, arate, h, v, start_time, badtrial ] = rex_trial_fake(rexname, trialnumber, includeaborted);
     if length(badtrial)>1 %rare event: two identical error code in the same trial
         secbadtrltime=badtrial(2)-analog_time;
@@ -341,8 +345,12 @@ for trialnumber = 1:nt
         end
         codefound=sum(ecodecueon & ecodesacstart & ecodesacend);
         if codefound
-        sacofint=nwsacstart>etimeout(ecodesacstart-1); %considering all saccades occuring after the ecode
-        %preceding the saccade ecode, which is often erroneous
+            if numel(etimeout)<ecodesacstart-1
+                sacofint=0;
+            else
+                sacofint=nwsacstart>etimeout(ecodesacstart-1); %considering all saccades occuring after the ecode
+                                                               %preceding the saccade ecode, which is often erroneous
+            end
         else
             sacofint=0;
         end
@@ -445,6 +453,14 @@ end;
 
 %first make sure the trials as dected without good saccades are in wrong
 %trials
+if ~exist('goodsac')
+    %not even one recorded trial
+    success = 0;
+    outliers = 0;
+    curtasktype='unspecified';
+    return
+end
+
 if ~isequal((logical(allbad) & (~goodsac)),~goodsac)
     disp('mismatch in saccade detection and wrong trials')
     mismatch=find((~goodsac)~= (logical(allbad) & (~goodsac)));
@@ -503,6 +519,11 @@ else
         procdir='B:\data\Recordings\processed\Sixx\';
         if ~strcmp(rexname(1),'S')
             rexname=cat(2,'S',rexname);
+        end
+    elseif strcmp(rawdir,'B:\data\Recordings\Hilda\')
+        procdir='B:\data\Recordings\processed\Hilda\';
+        if ~strcmp(rexname(1),'H')
+            rexname=cat(2,'H',rexname);
         end
     end
 end

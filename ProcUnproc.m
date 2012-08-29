@@ -226,8 +226,10 @@ for rftpnb = 1:length(allrftoproc)
         diarydata=fopen('log.txt');
         diarycontent=fscanf(diarydata,'%c',inf);
         fclose(diarydata);
-        
-        writeinfo={procname,sessionid,recloc,recdepth,recnum,rectask{:},' ',' ',' ',' ',diarycontent};
+            if iscell(rectask)
+                rectask=rectask{:};
+            end
+        writeinfo={procname,sessionid,recloc,recdepth,recnum,rectask,' ',' ',' ',' ',diarycontent};
         %cd to directory and save data in spreadsheet
         cd(directory);
         [~,pfilelist] = xlsread('procdata.xlsx',monknum,['A2:A' num2str(numrows)]);

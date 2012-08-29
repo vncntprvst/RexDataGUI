@@ -422,6 +422,7 @@ if strcmp(get(gcf,'SelectionType'),'normal') % if simple click, just higlight it
         %set uimenu content for following rightclick
         %SelectionType 'Alternate' (Right click) doesn't work with listbox
         %dispmenu=(get(hObject,'UIContextMenu'));
+        clear global tasktype;
         listboxcontextmenu=uicontextmenu;
         processedrexfiles = cellstr(get(hObject,'String')); % returns displaymfiles contents as cell array
         rclk_filename = processedrexfiles{get(hObject,'Value')}; %returns selected item from displaymfiles
@@ -545,7 +546,7 @@ elseif strcmp(get(gcf,'SelectionType'),'open')
         %trialdatapanelH = findobj('Tag','fulltrialdata');
         %set(trialdatapanelH,'UserData',whatever might be needed);
         
-        rdd_trialdata(rdd_filename, trialnumber, 1);
+        rdd_trialdata(rdd_filename, trialnumber); % add 1 to make sure it reloads file
         dataaligned=rdd_rasters_sdf(rdd_filename, trialdirs);
         guidata(findobj('Tag','exportdata'),dataaligned);
     end

@@ -30,7 +30,18 @@ else %if called during a trial, there's only one line
 end
 if ~sum(curtasktype) || strcmp(curtasktype,'Task') %then find task!
     if ecodetypes(1)==6010 % Visually guided saccades task type, including 'amp', 'dir' and 'optiloc'
-        curtasktype=alltasktypes(1);
+        if strcmp(tasktype,'optiloc')
+             curtasktype=alltasktypes(8); %memory guided
+             tasktype=alltasktypes(8); %memory guided
+        else
+            if find(codes==16386)
+                curtasktype='reproc';
+                tasktype=alltasktypes(8);
+                return;
+            else
+            curtasktype=alltasktypes(1);
+            end 
+        end
     elseif ecodetypes(1)==6020
         %make sure this is consistent over older recordings
         % default memory guided saccade is the self-timed saccade, but check if it is correct
@@ -72,9 +83,15 @@ if ~sum(curtasktype) || strcmp(curtasktype,'Task') %then find task!
                     elseif strcmp(tasktype,'st_saccades')
                         curtasktype=alltasktypes(4); %self timed saccade task
                         tasktype=alltasktypes(4);
-                    else
-                        curtasktype=alltasktypes(3); %memory guided
-                        tasktype=alltasktypes(3); %memory guided
+                    elseif strcmp(tasktype,'base2rem50')
+                        curtasktype=alltasktypes(2); %base2rem50
+                        tasktype=alltasktypes(2);
+                    else 
+                        %have to assume the default is self timed saccade,
+                        %because Rigel managed to do entire recordings
+                        %without the 16386 error code!
+                        curtasktype=alltasktypes(4); %self timed saccade task
+                        tasktype=alltasktypes(4); %self timed saccade task
                     end
                     
                 end
@@ -90,7 +107,7 @@ if ~sum(curtasktype) || strcmp(curtasktype,'Task') %then find task!
             end
         end
     elseif ecodetypes(1)==6040
-        if length(ecodetypes)>1 && find(ecodetypes==6020) && find(ecodetypes==6080)
+        if (length(ecodetypes)>1 && find(ecodetypes==6020) && find(ecodetypes==6080)) || strcmp(tasktype,'base2rem50')
             curtasktype=alltasktypes(2); %base2rem50
             tasktype=alltasktypes(2);
         elseif length(ecodetypes)>1 && find(ecodetypes==4070)
@@ -106,26 +123,33 @@ if ~sum(curtasktype) || strcmp(curtasktype,'Task') %then find task!
     elseif ecodetypes(1)==6050
         return;
     elseif ecodetypes(1)==6080
-        if length(ecodetypes)>1 && find(ecodetypes==6020) && find(ecodetypes==6040)
+        if (length(ecodetypes)>1 && find(ecodetypes==6020) && find(ecodetypes==6040)) || strcmp(tasktype,'base2rem50')
             curtasktype=alltasktypes(2); %base2rem50
+            tasktype=alltasktypes(2);
         else
-            curtasktype=alltasktypes(7);% delayedsac
+            if strcmp(tasktype,'memguided') || strcmp(tasktype,'gapsac') || strcmp(tasktype,'st_saccades')
+                curtasktype='reproc';
+                tasktype=alltasktypes(2);
+                return;
+            else
+                curtasktype=alltasktypes(7);% delayedsac
+            end 
         end
     elseif ecodetypes(1)==4050
         return;
     elseif ecodetypes(1)==4060
         curtasktype=alltasktypes(9);% tokens
     elseif ecodetypes(1)==4070
-%         if length(ecodetypes)>1 && find(ecodetypes==6040)
+        if length(ecodetypes)>1 && find(ecodetypes==6040) % for full set of ecodes
              curtasktype=alltasktypes(5); %gapstop
-%         else
-%             return;
-%         end
+        else
+            curtasktype=alltasktypes(5); %gapstop
             if ~strcmp(tasktype,'gapstop')
                 curtasktype='reproc';
                 tasktype=alltasktypes(5);
                 return;
             end
+        end
     elseif ecodetypes(1)==4080
         return;
     end
@@ -165,7 +189,7 @@ if ~isempty(curtasktype) && ~sum(find(codes==17385))
             ecodesacstart=8;
             ecodesacend=9;
         case 'delayedsac' % to change !
-            disp('check task ecodes in taskdetect');
+            disp('check task ecodes for delayedsac in taskdetect');
             ecodecueon=6;
             ecodesacstart=8;
             ecodesacend=9;
@@ -179,5 +203,9 @@ if ~isempty(curtasktype) && ~sum(find(codes==17385))
             else
                 ecodesacend=find(floor(codes/10)==486);
             end
+         case 'optiloc'
+            ecodecueon=7;
+            ecodesacstart=8;
+            ecodesacend=9;
     end
 end
