@@ -55,6 +55,7 @@ success = 0;
 usedexfile = 0;
 
 wb = waitbar( 0, 'Reading Rex data...' );
+set(wb,'position',[50 50 270.0000 56.2500]); %bottom left of the screen, not right in the middle
 rez = 'No';
 % rez = questdlg( 'Is there a DEX "D" file containing markers that you would like to load for this REX data?',...
 %     'Converting REX data', 'No' );
@@ -138,17 +139,22 @@ for trialnumber = 1:nt
         szspk = length( spkchan );
         if ( szspk > 1 && channel == -1)
             while ( channel < 1 || channel > szspk )
-                sp = sprintf( 'There are %d spike channels in this file.  \nPick one for this translation (1 - %d).', szspk, szspk );
-                prompt = {sp};
-                name='Kloodgy spike channel picking...';
-                numlines=1;
-                defaultanswer={'1'};
-                
-                answer = inputdlg( prompt, name, numlines, defaultanswer );
-                channel = str2num( answer{1} );
+%                 sp = sprintf( 'There are %d spike channels in this file.  \nPick one for this translation (1 - %d).', szspk, szspk );
+%                 prompt = {sp};
+%                 name='Kloodgy spike channel picking...';
+%                 numlines=1;
+%                 defaultanswer={'1'};
+%                 
+%                 answer = inputdlg( prompt, name, numlines, defaultanswer );
+%                 channel = answer{:};               
+
+
+                channel=1;
                 rex_process_channelpicked = channel;
             end;
         elseif szspk ==1
+        %for processing only files with >1 channels: 
+        %return
             channel = 1;
         end;
         %%

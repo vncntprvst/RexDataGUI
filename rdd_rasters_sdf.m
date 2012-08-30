@@ -329,7 +329,7 @@ nonecodes=[17385 16386];
 
 % variable to save aligned data
 datalign=struct('dir',{},'rasters',{},'trials',{},'timefromtrig',{},'timetotrig',{},'alignidx',{},'eyeh',{},'eyev',{},'eyevel',{},'amplitudes',{},...
-    'peakvels',{},'peakaccs',{},'allgreyareas',{},'alignlabel',{},'savealignname',{});
+    'peakvels',{},'peakaccs',{},'allgreyareas',{},'stats',{},'alignlabel',{},'savealignname',{});
 if strcmp(get(get(findobj('Tag','showdirpanel'),'SelectedObject'),'Tag'),'seleccompall') && sum(secondcode)==0
     singlerastplot=1;
 else
@@ -538,10 +538,17 @@ else % if multiple, separate directions, or multiple align codes, create individ
     end
     
 end
+% preallocate
+isnantrial=cell(numplots,1);
 
 for i=1:numplots
     
     rasters=datalign(i).rasters;
+    
+    if isempty(rasters)
+        continue
+    end
+    
     aidx=datalign(i).alignidx;
     trialidx=datalign(i).trials;
     timefromtrigs=datalign(i).timefromtrig;
@@ -558,9 +565,7 @@ for i=1:numplots
         ssd=datalign(i).ssd;
     end
     
-    if isempty(rasters)
-        continue
-    end
+
     
     
     % adjust temporal axis
@@ -584,7 +589,7 @@ for i=1:numplots
     %                     testbin=testbin-1;
     %                     end
     trials = size(rasters,1);
-    isnantrial=zeros(1,size(rasters,1));
+    isnantrial(i)={zeros(1,size(rasters,1))};
     axis([0 stop-start+1 0 size(rasters,1)]);
     hold on
     
@@ -622,44 +627,7 @@ for i=1:numplots
                     [num_trials num_trials-1], [1 0 0]);
                 set(greylim2, 'Edgecolor', [0 0 1],'Linewidth',2, 'EdgeAlpha', 0.5, 'FaceAlpha', 0.3)
                 end   
-            end
-                
-                
-%             if isempty(diffgreytimes)
-%                 patch([greytimes(1) greytimes(end) greytimes(end) greytimes(1)],[num_trials num_trials num_trials-1 num_trials-1],...
-%                     [0 0 0], 'EdgeColor', 'none', 'FaceAlpha', 0.3);
-%                 greylim1 = patch([greytimes(1) greytimes(1)], [num_trials num_trials-1], [1 0 0]);
-%                 greylim2 = patch([greytimes(end) greytimes(end)], [num_trials num_trials-1], [1 0 0]);
-%                 set(greylim1, 'Edgecolor', [0 0 1],'Linewidth',2, 'EdgeAlpha', 0.5, 'FaceAlpha', 0.3)
-%                 set(greylim2, 'Edgecolor', [0 0 1],'Linewidth',2, 'EdgeAlpha', 0.5, 'FaceAlpha', 0.3)
-%             else
-%                 for k = 1:length(diffgreytimes)
-%                     if k==1
-%                         patch([greytimes(1) greytimes(diffgrey(k)) greytimes(diffgrey(k)) greytimes(1)],[num_trials num_trials num_trials-1 num_trials-1],...
-%                             [0 0 0], 'EdgeColor', 'none', 'FaceAlpha', 0.3);
-%                         greylim3 = patch([greytimes(1) greytimes(1)], [num_trials num_trials-1], [1 0 0]);
-%                         greylim4 = patch([greytimes(diffgrey(k)) greytimes(diffgrey(k))], [num_trials num_trials-1], [1 0 0]);
-%                         set(greylim3, 'Edgecolor', [0 0 1],'Linewidth',2, 'EdgeAlpha', 0.5, 'FaceAlpha', 0.3)
-%                         set(greylim4, 'Edgecolor', [0 0 1],'Linewidth',2, 'EdgeAlpha', 0.5, 'FaceAlpha', 0.3)
-%                     end
-%                     if k == length(diffgreytimes)
-%                         patch([greytimes(diffgrey(k)+1) greytimes(end) greytimes(end) greytimes(diffgrey(k)+1)],[num_trials num_trials num_trials-1 num_trials-1],...
-%                             [0 0 0], 'EdgeColor', 'none', 'FaceAlpha', 0.3);
-%                         greylim5 = patch([greytimes(diffgrey(k)+1) greytimes(diffgrey(k)+1)], [num_trials num_trials-1], [1 0 0]);
-%                         greylim6 = patch([greytimes(end) greytimes(end)], [num_trials num_trials-1], [1 0 0]);
-%                         set(greylim5, 'Edgecolor', [0 0 1],'Linewidth',2, 'EdgeAlpha', 0.5, 'FaceAlpha', 0.3)
-%                         set(greylim6, 'Edgecolor', [0 0 1],'Linewidth',2, 'EdgeAlpha', 0.5, 'FaceAlpha', 0.3)
-%                     else
-%                         patch([greytimes(diffgrey(k)+1) greytimes(diffgrey(k+1)) greytimes(diffgrey(k+1)) greytimes(diffgrey(k)+1)],[num_trials num_trials num_trials-1 num_trials-1],...
-%                             [0 0 0], 'EdgeColor', 'none', 'FaceAlpha', 0.3);
-%                         greylim7 = patch([greytimes(diffgrey(k)+1) greytimes(diffgrey(k)+1)], [num_trials num_trials-1], [1 0 0]);
-%                         greylim8 = patch([greytimes(diffgrey(k+1)) greytimes(diffgrey(k+1))], [num_trials num_trials-1], [1 0 0]);
-%                         set(greylim7, 'Edgecolor', [0 0 1],'Linewidth',2, 'EdgeAlpha', 0.5, 'FaceAlpha', 0.3)
-%                         set(greylim8, 'Edgecolor', [0 0 1],'Linewidth',2, 'EdgeAlpha', 0.5, 'FaceAlpha', 0.3)
-%                     end
-%                 end
-%             end
-            
+            end 
         end
     end
     
@@ -667,7 +635,7 @@ for i=1:numplots
     for j=1:size(rasters,1)
         spiketimes=find(rasters(j,start:stop)); %converting from a matrix representation to a time collection, within selected time range
         if isnan(sum(rasters(j,start:stop)))
-            isnantrial(j)=1;
+            isnantrial{i}(j)=1;
         end
         rastploth=plot([spiketimes;spiketimes],[ones(size(spiketimes))*j;ones(size(spiketimes))*j-1],'k-');
         uistack(rastploth,'down');
@@ -677,18 +645,6 @@ for i=1:numplots
         uistack(greylim1,'top');
     elseif exist('greylim2')
         uistack(greylim2,'top');
-%     elseif exist('greylim3')
-%         uistack(greylim3,'top');
-%     elseif exist('greylim4')
-%         uistack(greylim4,'top');
-%     elseif exist('greylim5')
-%         uistack(greylim5,'top');
-%     elseif exist('greylim6')
-%         uistack(greylim6,'top');
-%     elseif exist('greylim7')
-%         uistack(greylim7,'top');
-%     elseif exist('greylim8')
-%         uistack(greylim8,'top');
     end
     
     hold off;
@@ -747,8 +703,8 @@ for i=1:numplots
     
     %% sdf plot
     % for kernel optimization, see : http://176.32.89.45/~hideaki/res/ppt/histogram-kernel_optimization.pdf
-    sumall=sum(rasters(~isnantrial,start:stop));
-    sdf=spike_density(sumall,fsigma)./length(find(~isnantrial)); %instead of number of trials
+    sumall=sum(rasters(~isnantrial{i},start:stop));
+    sdf=spike_density(sumall,fsigma)./length(find(~isnantrial{i})); %instead of number of trials
     %pdf = probability_density( sumall, fsigma ) ./ trials;
     
     axes(sdfploth(i));
@@ -768,105 +724,129 @@ for i=1:numplots
     
 end
 
-dostats='off'; %finish it later
-if strcmp(dostats,'on')
+% dostats='off'; %finish it later
+% if strcmp(dostats,'on')
     %% do stats for each raster
-    for i=1:numplots
+    
+    %prealloc
+    p_sac=nan(length(numplots),6);
+    h_sac=nan(length(numplots),2);
+    
+    for alignmtnum=1:numplots
         
-        rasters=datalign(i).rasters;
-        allgreyareas=datalign(i).allgreyareas;
+        rasters=datalign(alignmtnum).rasters;
+        allgreyareas=datalign(alignmtnum).allgreyareas;
+        
+        %preallocate
+        allpostcue=nan(size(rasters,1),1);
+        allbaseline=nan(size(rasters,1),1);
+        allpresac=nan(size(rasters,1),1);
+        allpostsac=nan(size(rasters,1),1);
+        allperisac=nan(size(rasters,1),1);
+        alldelay=nan(size(rasters,1),1);
         
         %% Statistic Information
         for num_trials = 1:size(rasters,1)
             timesmat = allgreyareas{num_trials}; %condtimes
             
-            % timesmat(1,1) - target on  %% timesmat(1,2) - target off
-            % timesmat(2,1or2) - saccade
-            % timesmat(3,1) - fixation on  %% timesmat(3,2) - fixation off
+%       Measure mean firing rate in four time periods:
+%       - fixation period from (500 to 200) or 300 ms before target
+%       - visual period from 50 to 150 ms after visual stimulus onset 
+%       - delay period covering the last 300 ms interval of the delay
+%       interval (if any)
+%       - presaccadic period covering the last 100 ms before saccade onset
+%       - postsaccadic period covering the first 100 ms after saccade onset
             
-            vis_response_min = timesmat(1,1)+50;
-            vis_response_max = timesmat(1,1)+200;
+            %300ms of fixation period
+            baseline = timesmat(1,1)-300 : timesmat(1,1)-1;   %300 ms to 1ms before cue
             
-            baseline_min = timesmat(1,1)-151;
-            baseline_max = timesmat(1,1)-1;
+            %150ms period of visual response
+            postcue = timesmat(1,1)+51 : timesmat(1,1)+150; %50ms to 150ms after cue presentation         
             
-            mvmt_response_min = timesmat(2,1) - 100;
-            mvmt_response_max = timesmat(2,1) + 50;
+            %100ms of pre-eye movement period
+            presac = timesmat(2,1)-100 : timesmat(2,1)-1; %100ms before sac initation
             
-            if strcmp(tasktype,'memguided') || strcmp(tasktype,'vg_saccades')
-                delay_min = timesmat(3,2) - 450;
-                delay_max = timesmat(3,2) - 300;
-            elseif strcmp(tasktype, 'st_saccades')
-                delay_min = timesmat(1,1) + 300; % 300 ms after visual cue is removed
-                delay_max = timesmat(1,1) + 450; % 450 ms after visual cue is removed
-            elseif strcmp(tasktype, 'tokens')
-                delay_min = timesmat(2,1) - 400; % 300 ms after visual cue is removed
-                delay_max = timesmat(2,1) - 250; % 450 ms after visual cue is removed
-            elseif strcmp(tasktype, 'gapstop')
-                delay_min = timesmat(3,2) - 450;
-                delay_max = timesmat(3,2) - 300; % need to design a if statement if there
-                % is a stop signal in the trial
+            %100ms of eye movement period
+            postsac = timesmat(2,1)+1 : timesmat(2,1)+100; %100ms before sac initation
+            
+            %perisactime
+            perisac = timesmat(2,1)-50 : timesmat(2,1)+50; %100ms around sac initation
+             
+            if strcmp(tasktype,'memguided') % || strcmp(tasktype,'vg_saccades')
+                delay=timesmat(3,2)-300 : timesmat(3,2)-1;
+            elseif strcmp(tasktype, 'st_saccades') || strcmp(tasktype, 'tokens')
+                delay=timesmat(2,1)-400 : timesmat(2,1)-101;   
+            else
+                delay=0;
             end
+                      %make changes above for gapstop
             
-            if ~isnantrial(num_trials)
-                visual_response(num_trials).struct = rasters(num_trials, vis_response_min:vis_response_max);
-                baseline_activity(num_trials).struct = rasters(num_trials, baseline_min:baseline_max);
-                movement_response(num_trials).struct = rasters(num_trials, mvmt_response_min:mvmt_response_max);
-                delay_period(num_trials).struct = rasters(num_trials, delay_min:delay_max);
+            %conversion to firing rate (since epochs are different
+            %durations)
+            if ~isnantrial{alignmtnum}(num_trials)
+                allpostcue(num_trials) = (sum(rasters(num_trials, postcue))/length(postcue))*1000; 
+                allbaseline(num_trials) = (sum(rasters(num_trials, baseline))/length(baseline))*1000;
+                allpresac(num_trials) = (sum(rasters(num_trials, presac))/length(presac))*1000;
+                allpostsac(num_trials) = (sum(rasters(num_trials, postsac))/length(postsac))*1000;
+                allperisac(num_trials) = (sum(rasters(num_trials, perisac))/length(perisac))*1000;
+                if delay
+                    alldelay(num_trials) = (sum(rasters(num_trials, delay))/length(delay))*1000;
+                end
             end
             
         end
         
-        % complete statistics
+        allpostcue=allpostcue(~isnantrial{alignmtnum});
+        allbaseline=allbaseline(~isnantrial{alignmtnum});
+        allpresac=allpresac(~isnantrial{alignmtnum});
+        allpostsac=allpostsac(~isnantrial{alignmtnum});
+        allperisac=allperisac(~isnantrial{alignmtnum});
+        if delay
+            alldelay=alldelay(~isnantrial{alignmtnum});
+        end
         
-        visual_sum = sum(cat(1, visual_response.struct));
-        baseline_sum = sum(cat(1, baseline_activity.struct));
-        movement_sum = sum(cat(1, movement_response.struct));
-        delay_sum = sum(cat(1, delay_period.struct));
+        %Wilcoxon signed rank test, get p value (adding difference of mean
+        %firing rate), and h (yes or no significance)
+        [p_sac(alignmtnum,1),h_sac(alignmtnum,1)] = signrank(allbaseline, allpresac);
+        p_sac(alignmtnum,2)=mean(allpresac)-mean(allbaseline);
         
-        [p_vis(i),h_vis(i)] = ranksum(visual_sum, baseline_sum);
+        %if pre-sac inhibition and post-sac burst, the pre-sac Vs baseline 
+        % comparison might not give correct results, but that will be
+        % caught by following pre/post comparison
         
-        [p_mvmt(i),h_mvmt(i)] = ranksum(movement_sum, delay_sum);
+        [p_sac(alignmtnum,3),h_sac(alignmtnum,2)] = signrank(allpresac, allpostsac);
+        p_sac(alignmtnum,4)=mean(allpostsac)-mean(allpresac);
         
-    end
-    
+        % if saccade burst sharp, short and exacty at saccade time, the
+        % first two tests may not catch it (100ms periods too long for that).
+        % But perisaccadic period comparison with baseline should
+        
+        [p_sac(alignmtnum,5),h_sac(alignmtnum,3)] = signrank(allbaseline, allperisac);
+        p_sac(alignmtnum,6)=mean(allperisac)-mean(allbaseline);
+        
+        datalign(alignmtnum).stats.p=p_sac(alignmtnum,:);
+        datalign(alignmtnum).stats.h=h_sac(alignmtnum,:);
+        
+
+end
+
     
     %% Present statistics
-    data = {};
+    pdata = {};
     stat_dir = {};
-    set(findobj('Tag','wilcoxontable'),'ColumnName',[],'Data',data,'RowName',[]); %Clears previous table
+    set(findobj('Tag','wilcoxontable'),'Data',pdata,'RowName',[]); %Clears previous table
     
     % Create table data
-    if any(h_vis) || any(h_mvmt)
-        
-        mvmt_ind = find(h_mvmt);
-        vis_ind = find(h_vis);
-        
-        max_ind = max([max(mvmt_ind) max(vis_ind)]);
-        
-        for ind = 1:max_ind
-            
-            if h_mvmt(ind) && h_vis(ind)
-                data = cat(1, data, [ num2cell(p_vis(ind)), num2cell(p_mvmt(ind))]);
-                stat_dir = cat(1,stat_dir,datalign(ind).dir);
-            elseif h_mvmt(ind) && ~h_vis(ind)
-                data = cat(1, data, [ cellstr('                   *'), num2cell(p_mvmt(ind))]);
-                stat_dir = cat(1,stat_dir,datalign(ind).dir);
-            elseif ~h_mvmt(ind) && h_vis(ind)
-                data = cat(1, data, [ num2cell(p_vis(ind)), cellstr('                   *')]);
-                stat_dir = cat(1,stat_dir,datalign(ind).dir);
-            end
-            
-        end
-        
-        columnNames = {'Visually Responsive', 'Movement Related'};
-        
-        set(findobj('Tag','wilcoxontable'),'ColumnName',columnNames,'Data',data,'RowName',stat_dir);
-        
-    elseif ~any(h_vis) && ~any(h_mvmt)
-        return
+    if any(sum(h_sac,1))
+       pdata=num2cell(p_sac);
+       stat_dir ={datalign.dir};
+       set(findobj('Tag','wilcoxontable'),'Data',pdata,'RowName',stat_dir); 
     end
-end
+
+
+    
+% last item: save name    
+datalign(1).savealignname = cat( 2, directory, 'processed',slash, 'aligned',slash, rdd_filename, '_', cell2mat(unique({datalign.alignlabel})));
 
 % comparison of raster from different methods
 %    figure(21);
@@ -887,5 +867,4 @@ end
 %    spy(rasters(:,start:stop),':',5);
 %    set(gca,'PlotBoxAspectRatio',[1052 200 1]);
 
-datalign(1).savealignname = cat( 2, directory, 'processed',slash, 'aligned',slash, rdd_filename, '_', cell2mat(unique({datalign.alignlabel})));
 end

@@ -229,6 +229,8 @@ for rftpnb = 1:length(allrftoproc)
             if iscell(rectask)
                 rectask=rectask{:};
             end
+            
+       %File name, Session Location, Depth, Recording #, Task, Lobule, Layer, Activity, Comparison, Processing notes, Checked   
         writeinfo={procname,sessionid,recloc,recdepth,recnum,rectask,' ',' ',' ',' ',diarycontent};
         %cd to directory and save data in spreadsheet
         cd(directory);
