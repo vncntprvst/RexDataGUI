@@ -266,6 +266,12 @@ while ~islast
                 
                 
                 greytypes={'cue';'eyemvt';'fix'};
+                
+                    %caveat: some conditions may be 4 or 5 digits long,
+                    %such as user defined codes such as TOKSWCD (1501) 
+                    
+                    conditions(conditions>=1000)=floor(conditions(conditions>=1000)/10); %cut last digit off of them
+                
 %                 greytypes=(greytypes(selectedgrey));
                 codepairnb=floor(size(conditions,2)/2);%there may be multiple code. See l. 421 as well as here (273)
   %              if logical(sum(greycodes))
@@ -358,7 +364,7 @@ while ~islast
                         triggercode=0;
                         timefromtrig=aligntime-etimeout(1)-1; %in case there is a trigger channel available in the SH recording
                         if find(ecodeout==1030) %good trial
-                            timetotrig=etimeout(find(ecodeout==1030,1))+1-aligntime;%1ms between reward coe and valve opening
+                            timetotrig=etimeout(find(ecodeout==1030,1))+1-aligntime;%1ms between reward code and valve opening
                         else %wrong trial
                             timetotrig=NaN;
                         end

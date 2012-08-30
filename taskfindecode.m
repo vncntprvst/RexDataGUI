@@ -18,7 +18,7 @@ errcode3=16387;
 tokcode=1501;
 basecode=[];
 
-if strcmp(tasktype,'vg_saccades') %change in num_rex_trial the vg sac to differenciate optiloc ? It has errcd2
+if strcmp(tasktype,'vg_saccades') || strcmp(tasktype,'optiloc')
     basecode=601;
     fixcode=621;
     fixoffcode=661;
