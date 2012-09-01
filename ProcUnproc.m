@@ -192,9 +192,13 @@ for rftpnb = 1:length(allrftoproc)
     end
     diary('log.txt');
     procname=allrftoproc{rftpnb};
-    [success,~,rectask]=rex_process_inGUI(procname,monkeydir); %shouldn't need the rfpathname
-    % outliers are stored in file now
-    
+    try
+        [success,~,rectask]=rex_process_inGUI(procname,monkeydir); %shouldn't need the rfpathname
+        % outliers are stored in file now
+    catch
+        success=0;
+        rectask='failed';
+    end
     if success
         successtr=['file ',procname,' processed succesfully'];
         disp(successtr);
