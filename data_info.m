@@ -1,4 +1,4 @@
-function [rexnumtrials, trialdirs] = data_info( rdd_filename, reload )
+function [rexnumtrials, trialdirs] = data_info( rdd_filename, reload, skipunproc )
 
 % [nt, curtasktype, trialdirs, saccadeInfo] = data_info( name )
 %
@@ -21,10 +21,13 @@ global sessiondata rexloadedname rexnumtrials;
 % using the matfile function to access file
 sessiondata=matfile(rdd_filename);
 
+if nargin<3
+    skipunproc=0;
+end
+
 if nargin<2
     reload=0;
 end
-
 
 includeaborted = 1; %by default
 rdd_includeaborted = includeaborted;
@@ -33,7 +36,7 @@ rexloadedname=get(findobj('Tag','filenamedisplay'),'String');
 if ~strcmp(rdd_filename,rexloadedname) || reload; % rexloadedname is created in rex_process
      rexnumtrials = 0;
      %disp( 'File not loaded yet...');
-     success = rex_load_processed( rdd_filename );
+     success = rex_load_processed( rdd_filename, skipunproc);
      if ~success
          return;
      end;

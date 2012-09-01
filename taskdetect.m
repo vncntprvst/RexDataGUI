@@ -144,7 +144,10 @@ if ~sum(curtasktype) || strcmp(curtasktype,'Task') %then find task!
              curtasktype=alltasktypes(5); %gapstop
         else
             curtasktype=alltasktypes(5); %gapstop
-            if ~strcmp(tasktype,'gapstop')
+            if strcmp(tasktype,'st_saccades') %for that one weird mixed-up file
+                curtasktype='gapstop';
+                tasktype=alltasktypes(5);
+            elseif ~strcmp(tasktype,'gapstop')
                 curtasktype='reproc';
                 tasktype=alltasktypes(5);
                 return;

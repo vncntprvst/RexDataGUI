@@ -1,4 +1,4 @@
-function [success] = rex_load_processed( name )
+function [success] = rex_load_processed( name, skip)
 
 %  [success] = rex_load_processed( name )
 % 
@@ -21,6 +21,10 @@ global allcodes alltimes allspkchan allspk allrates ...
     
 global sessiondata rexloadedname rexnumtrials;
 
+if nargin<2
+    skip=0;
+end
+
 allrexnotes = '';
 
 monkeydirselected=get(get(findobj('Tag','monkeyselect'),'SelectedObject'),'Tag'); 
@@ -36,10 +40,10 @@ end
 
 namelength = length( name );
 rexmatname = name;
-if ~strcmp( lower( name( namelength-3:namelength ) ), '.mat' )
+if ~strcmpi(  name( namelength-3:namelength ) , '.mat' )
     rexmatname = cat( 2, name, '.mat' );
 end;
-if ~exist( rexmatname, 'file' )
+if ~exist( rexmatname, 'file' ) && ~skip
     disp( 'File to be processed...');
     if findstr(name,'gap')
         success = rex_process_gaptask( name ); %specifically to analyse gap tasks
@@ -50,6 +54,9 @@ if ~exist( rexmatname, 'file' )
         disp( 'Failed to process file...');
         return;
     end;
+elseif ~exist( rexmatname, 'file' ) && skip
+    success=0;
+    return;
 end;
 
 success = 1;

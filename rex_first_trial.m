@@ -31,7 +31,7 @@ function [firsttrial] = rex_first_trial( name, num, includebad )
 
 if nargin < 2
     includebad = 0;
-end;
+end
 
 firsttrial = 0;
 

@@ -481,24 +481,25 @@ elseif strcmp(get(gcf,'SelectionType'),'open')
         %check if file exists already
         rfname=regexprep(rfname, '(A$)|(E$)',''); %remove A and E from end of names
         rfname = unique(rfname);
-        overwrite = 1;
-        %         overwriteAll = 0;
         
-        %         if (exist(cat(2,procdir, procname,'.mat'), 'file')==2) && ~overwriteAll %'B:\data\Recordings\processed\',
-        %                 % Construct question dialog
-        %                 choice = questdlg('File already processed. Overwrite?','File found','Overwrite all','Overwrite this file','Skip','Overwrite this file');
-        %                 switch choice
-        %                     case 'Overwrite all'
-        %                         overwrite = 1;
-        %                         overwriteAll = 1;
-        %                     case 'Overwrite this file'
-        %                         overwrite = 1;
-        %                         overwriteAll = 0;
-        %                     case 'Skip'
-        %                         overwrite = 0;
-        %                         overwriteAll = 0;
-        %                 end
-        %         end
+                 overwriteAll = 0;
+                if  overwriteAll %(exist(strcat({procdir},rfname,{'.mat'}), 'file')==2)
+                        % Construct question dialog
+                        choice = questdlg('Do you want to overwrite processed files?','Reprocess files?','Overwrite all','Skip','Skip'); %'Overwrite this file'
+                        switch choice
+                            case 'Overwrite all'
+                                overwrite = 1;
+%                                 overwriteAll = 1;
+%                             case 'Overwrite this file'
+%                                 overwrite = 1;
+%                                 overwriteAll = 0;
+                            case 'Skip'
+                                overwrite = 0;
+%                                 overwriteAll = 0;
+                        end
+                else 
+                    overwrite=0;
+                end
         
         for i = 1:length(rfname)
             procname=rfname{i};
@@ -524,6 +525,18 @@ elseif strcmp(get(gcf,'SelectionType'),'open')
                     disp(successtr);
                 end
             end
+            % load file
+            try
+            [~, trialdirs] = data_info(procname, 1, 1); %reload file: yes (shouldn't happen, though), skip unprocessed files: yes
+            catch
+                continue
+            end
+            % process file
+            getaligndata = rdd_rasters_sdf(procname, trialdirs, 0, 1); % align data, don't plot rasters, do stats but don't show them
+            % export data
+            guidata(findobj('Tag','exportdata'),getaligndata);
+            exportdata_Callback(findobj('tag','exportdata'), eventdata, handles);
+            
         end
     else
         %% normal method
@@ -547,7 +560,7 @@ elseif strcmp(get(gcf,'SelectionType'),'open')
         %set(trialdatapanelH,'UserData',whatever might be needed);
         
         rdd_trialdata(rdd_filename, trialnumber); % add 1 to make sure it reloads file
-        dataaligned=rdd_rasters_sdf(rdd_filename, trialdirs);
+        dataaligned=rdd_rasters_sdf(rdd_filename, trialdirs,1,1,1); %align data, plot rasters, do stats and show them. 
         guidata(findobj('Tag','exportdata'),dataaligned);
     end
 end
@@ -572,6 +585,8 @@ function exportdata_Callback(hObject, eventdata, handles)
 dataaligned=guidata(hObject);
 savealignname=dataaligned.savealignname;
 save(savealignname,'dataaligned','-v7.3');
+
+
 %save some data to match with SH data analysis
 % about dataaligned:
 % datalign.timefromtrig and datalign.timetotrig represent time from start
