@@ -21,7 +21,7 @@ if iscell(curtasktype)
     curtasktype=cell2mat(curtasktype);
 end
 
-alltasktypes={'vg_saccades','base2rem50','memguided','st_saccades','gapstop','gapsac','delayedsac','optiloc','tokens'};
+alltasktypes={'vg_saccades','base2rem50','memguided','st_saccades','gapstop','gapsac','delayedsac','optiloc','tokens','fixation'};
 %fsttlecode=floor(allcodes(1,2)/10)*10;
 if size(codes,1)>1 %for a full file of ecodes
     ecodetypes=unique(floor(codes(:,2)/10)*10); %gives away the different ecode if mixed task
@@ -31,8 +31,10 @@ end
 if ~sum(curtasktype) || strcmp(curtasktype,'Task') %then find task!
     if ecodetypes(1)==6010 % Visually guided saccades task type, including 'amp', 'dir' and 'optiloc'
         if strcmp(tasktype,'optiloc')
-             curtasktype=alltasktypes(8); %memory guided
-             tasktype=alltasktypes(8); %memory guided
+             curtasktype=alltasktypes(8); %optiloc
+             tasktype=alltasktypes(8); 
+        elseif size(codes,1)>1 && logical(find(codes==16386,1))
+            curtasktype=alltasktypes(8); %optiloc
         else
             if find(codes==16386)
                 curtasktype='reproc';
@@ -135,6 +137,8 @@ if ~sum(curtasktype) || strcmp(curtasktype,'Task') %then find task!
                 curtasktype=alltasktypes(7);% delayedsac
             end 
         end
+    elseif ecodetypes(1)==4010
+        curtasktype=alltasktypes(10);
     elseif ecodetypes(1)==4050
         return;
     elseif ecodetypes(1)==4060

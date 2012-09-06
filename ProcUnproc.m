@@ -176,10 +176,10 @@ end
 exl = actxserver('excel.application');
 exlWkbk = exl.Workbooks;
 exlFile = exlWkbk.Open([directory 'procdata.xlsx']);
-exlSheet = exlFile.Sheets.Item(monknum);%'Sixx'
+exlSheet = exlFile.Sheets.Item(monknum);% e.g.: 2 = Sixx
 robj = exlSheet.Columns.End(4);
 numrows = robj.row;
-if numrows==1048576
+if numrows==1048576 %empty document
     numrows=1;
 end
 %exl.registerevent({'WorkbookBeforeClose',@close_event1})

@@ -65,7 +65,9 @@ end;
 
 % detecting tasktype
 curtasktype=taskdetect(allcodes);
-
+% if strcmp(curtasktype,'reproc')
+%     curtasktype
+% end
 set(findobj('Tag','taskdisplay'),'String',curtasktype);
 
 %findings all used directions from ecodes

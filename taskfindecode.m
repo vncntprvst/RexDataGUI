@@ -54,6 +54,13 @@ elseif strcmp(tasktype,'tokens')
     tgtcode=tokcode;
     tgtoffcode=103; %none
     saccode=466;
+elseif strcmp(tasktype,'fixation')
+    basecode=401;
+    fixcode=421;
+    fixoffcode=103; %none
+    tgtcode=fixcode;
+    tgtoffcode=103; %none
+    saccode=441;
 else
     disp('task type no recognized');
     return
