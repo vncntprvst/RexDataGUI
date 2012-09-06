@@ -395,6 +395,9 @@ function savechg_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+function rigthclickcallback
+        processedrexfiles = cellstr(get(findobj('tag','displaymfiles'),'String')); % returns displaymfiles contents as cell array
+        rclk_filename = processedrexfiles{get(findobj('tag','displaymfiles'),'Value')};
 
 % --- Executes on selection (double click) of file in listbox.
 % this the function that loads data,  puts name in UserData, and display
@@ -417,11 +420,13 @@ elseif strcmp(monkeydirselected,'hildaselect')
     procdir = [directory,'processed',slash,'Hilda',slash];
 end
 
-if strcmp(get(gcf,'SelectionType'),'normal') % if simple click, just higlight it, don't open
+if strcmp(get(gcf,'SelectionType'),'normal') && ~strcmp(eventdata,'rightclkevt') % if simple click, just higlight it, don't open
     if get(findobj('Tag','displayfbt_files'),'Value') % works only with individual file display
         %set uimenu content for following rightclick
         %SelectionType 'Alternate' (Right click) doesn't work with listbox
         %dispmenu=(get(hObject,'UIContextMenu'));
+        set(findobj('tag','displaymfiles'),'Max',1)
+        clear rightclkevt;
         clear global tasktype;
         listboxcontextmenu=uicontextmenu;
         processedrexfiles = cellstr(get(hObject,'String')); % returns displaymfiles contents as cell array
@@ -434,17 +439,25 @@ if strcmp(get(gcf,'SelectionType'),'normal') % if simple click, just higlight it
         end
         disptask=uimenu('Parent',listboxcontextmenu,'Label',curtasktype);
         set(hObject,'UIContextMenu',listboxcontextmenu);
+    else
+        set(hObject,'Max',2);
+        rightclkevt='rightclkevt';
+        multianalyzepopup=uicontextmenu();
+        set(hObject,'uicontextmenu',multianalyzepopup);
+        item1 = uimenu(multianalyzepopup,'Label','Analyze','Callback',{@(src,evt,handles) displaymfiles_Callback(hObject,rightclkevt,handles),hObject});  %disp(get(hObject,'Value'))
+        %displaymfiles_Callback(hObject, eventdata, handles)
     end
-elseif strcmp(get(gcf,'SelectionType'),'open')
+elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt')
     
     s=dbstatus; %little trick to prevent removal of breakpoints with clear
     save('myBreakpoints.mat', 's');
     clear functions;
+    clear rightclkevt;
     load('myBreakpoints.mat');
     dbstop(s);
     
     processedrexfiles = cellstr(get(hObject,'String')); % returns displaymfiles contents as cell array
-    selectionnm = processedrexfiles{get(hObject,'Value')}; %returns selected item from displaymfiles
+    selectionnm = {processedrexfiles{get(hObject,'Value')}}; %returns selected item from displaymfiles
     
     %% very different actions (for the moment) between display buttons files and session/grid:
     % the 'normal' one will display the file (which was already processed)
@@ -456,31 +469,38 @@ elseif strcmp(get(gcf,'SelectionType'),'open')
         fileNames = {selectedrawdir.name};  % Put the file names in a cell array
         
         if get(findobj('Tag','displayfbt_session'),'Value')
-            sessionNumber = selectionnm(9:end);
+                sessionNumber=regexpi(selectionnm,'\d+$', 'match');
+                allftoanlz=cell(length(sessionNumber),1);
+                for sessnumnum=1:length(sessionNumber)
+                    ftoanlz = regexp(fileNames, strcat('^\w',sessionNumber{sessnumnum}{:}),'match');
+                    ftoanlz = fileNames(~cellfun(@isempty,ftoanlz));  % Get the names of the matching files in a cell array
+                    ftoanlz = regexprep(ftoanlz, '(A$)|(E$)',''); %remove A and E from end of names
+                    ftoanlz = unique(ftoanlz);
+                    allftoanlz{sessnumnum}=ftoanlz;
+                end
+                allftoanlz=horzcat(allftoanlz{:});
+            
+        elseif get(findobj('Tag','displayfbt_grid'),'Value')
+                allftoanlz=cell(length(selectionnm),1);
+                for sessnumnum=1:length(selectionnm)
+                    ftoanlz = regexp(fileNames, selectionnm{sessnumnum}); %regexp(fileNames, strcat('^\w',gridNumber{sessnumnum}{:}),'match');
+                    ftoanlz = fileNames(~cellfun(@isempty,ftoanlz));  % Get the names of the matching files in a cell array
+                    ftoanlz = regexprep(ftoanlz, '(A$)|(E$)',''); %remove A and E from end of names
+                    ftoanlz = unique(ftoanlz);
+                    allftoanlz{sessnumnum}=ftoanlz;
+                end
+                allftoanlz=horzcat(allftoanlz{:});        
+        end
+        
+
             if strcmp(monkeydirselected,'rigelselect')
-                rfname = strcat('R',sessionNumber);
                 monknum=1;
             elseif strcmp(monkeydirselected,'sixxselect')
-                rfname = strcat('S',sessionNumber);
                 monknum=2;
             elseif strcmp(monkeydirselected,'hildaselect')
-                rfname = strcat('H',sessionNumber);
                 monknum=3;
             end
             
-            index = regexp(fileNames, strcat('^',rfname));
-            
-        elseif get(findobj('Tag','displayfbt_grid'),'Value')
-            
-            index = regexp(fileNames, selectionnm);
-            
-        end
-        
-        rfname = fileNames(~cellfun(@isempty,index));  % Get the names of the matching files in a cell array
-        
-        %check if file exists already
-        rfname=regexprep(rfname, '(A$)|(E$)',''); %remove A and E from end of names
-        rfname = unique(rfname);
         
                  overwriteAll = 0;
                 if  overwriteAll %(exist(strcat({procdir},rfname,{'.mat'}), 'file')==2)
@@ -501,8 +521,8 @@ elseif strcmp(get(gcf,'SelectionType'),'open')
                     overwrite=0;
                 end
         
-        for i = 1:length(rfname)
-            procname=rfname{i};
+        for i = 1:length(allftoanlz)
+            procname=allftoanlz{i};
             
             if overwrite
                 [success,outliers]=rex_process_inGUI(procname,monkeydir); %shouldn't need the rfpathname
@@ -526,6 +546,7 @@ elseif strcmp(get(gcf,'SelectionType'),'open')
                 end
             end
             % load file
+            clear global tasktype;
             try
             [~, trialdirs] = data_info(procname, 1, 1); %reload file: yes (shouldn't happen, though), skip unprocessed files: yes
             catch
@@ -534,16 +555,61 @@ elseif strcmp(get(gcf,'SelectionType'),'open')
             % process file
             getaligndata = rdd_rasters_sdf(procname, trialdirs, 0, 1); % align data, don't plot rasters, do stats but don't show them
             % export data
-            guidata(findobj('Tag','exportdata'),getaligndata);
-            exportdata_Callback(findobj('tag','exportdata'), eventdata, handles);
+            if ~isempty([getaligndata.trials]) % if anything to export, that is
+                guidata(findobj('Tag','exportdata'),getaligndata);
+                exportdata_Callback(findobj('tag','exportdata'), eventdata, handles);
+                % check if statistically significant saccade activity in any alignment   
+                sumstatsacs=sum(arrayfun(@(x) sum(x{:}.h), {getaligndata(~cellfun(@isempty, {getaligndata.stats})).stats}));
+            else
+                sumstatsacs=0;
+            end
             
+            % write result to excel file
+            
+            % get number of row in "database"
+            exl = actxserver('excel.application');
+            exlWkbk = exl.Workbooks;
+            exlFile = exlWkbk.Open([directory 'procdata.xlsx']);
+            exlSheet = exlFile.Sheets.Item(monknum);% e.g.: 2 = Sixx
+            robj = exlSheet.Columns.End(4);
+            numrows = robj.row;
+            if numrows==1048576 %empty document
+                numrows=1;
+            end
+            Quit(exl);
+            
+            activreport='Sac activity found: ';
+            if logical(sumstatsacs)
+                if logical(sum(arrayfun(@(x) x{:}.h(1), {getaligndata(~cellfun(@isempty, {getaligndata.stats})).stats})))
+                activreport = [activreport, 'pre_sac vs baseline '];
+                end
+                if logical(sum(arrayfun(@(x) x{:}.h(2), {getaligndata(~cellfun(@isempty, {getaligndata.stats})).stats})))
+                activreport = [activreport, 'pre_post difference '];
+                end
+                if logical(sum(arrayfun(@(x) x{:}.h(3), {getaligndata(~cellfun(@isempty, {getaligndata.stats})).stats})))
+                activreport = [activreport, 'perisac vs baseline'];
+                end
+                statinfo={'1',activreport};
+            else
+                activreport = 'no sac activity found';
+                statinfo={'0',activreport};
+            end
+            
+        cd(directory);   
+        [~,pfilelist] = xlsread('procdata.xlsx',monknum,['A2:A' num2str(numrows)]);
+        if logical(sum(ismember(pfilelist,procname))) %file has to have been processed already, but if for some reason not, then do not go further
+            wline=find(ismember(pfilelist,procname))+1;
+        else
+            continue
+        end
+        xlswrite('procdata.xlsx', statinfo, monknum, sprintf('I%d',wline));              
         end
     else
         %% normal method
         
         %         selecteprocdir=dir(procdir);
         %          {selecteprocdir.name};  % Put the file names in a cell array
-        rdd_filename =selectionnm;
+        rdd_filename =selectionnm{:};
         [rdd_nt, trialdirs] = data_info( rdd_filename, 1);% load file
         trialnumber = rex_first_trial( rdd_filename, rdd_nt, 1);
         if trialnumber == 0
@@ -612,11 +678,15 @@ timefromtrig=nan(size(rex2sh.goodtrials));
 timetotrig=nan(size(rex2sh.goodtrials));
 trialdir=cell(size(rex2sh.goodtrials));
 alignlabel=cell(size(rex2sh.goodtrials));
-for i=1:length(dataaligned)
-    timefromtrig((dataaligned(i).trials),1)=dataaligned(i).timefromtrig;
-    timetotrig((dataaligned(i).trials),1)=dataaligned(i).timetotrig;
-    trialdir(dataaligned(i).trials)={dataaligned(i).dir};
-    alignlabel(dataaligned(i).trials)={dataaligned(i).alignlabel};
+if logical(sum(rex2sh.goodtrials))
+    for i=1:length(dataaligned)
+        if ~isempty(dataaligned(i).trials)
+        timefromtrig((dataaligned(i).trials),1)=dataaligned(i).timefromtrig;
+        timetotrig((dataaligned(i).trials),1)=dataaligned(i).timetotrig;
+        trialdir(dataaligned(i).trials)={dataaligned(i).dir};
+        alignlabel(dataaligned(i).trials)={dataaligned(i).alignlabel};
+        end
+    end
 end
 rex2sh.align=alignlabel;
 rex2sh.dir=trialdir;
