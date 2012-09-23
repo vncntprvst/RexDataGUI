@@ -33,7 +33,7 @@ if ~sum(curtasktype) || strcmp(curtasktype,'Task') %then find task!
         if strcmp(tasktype,'optiloc')
              curtasktype=alltasktypes(8); %optiloc
              tasktype=alltasktypes(8); 
-        elseif size(codes,1)>1 && logical(find(codes==16386,1))
+        elseif size(codes,1)>1 && logical(sum(find(codes==16386,1)))
             curtasktype=alltasktypes(8); %optiloc
         else
             if find(codes==16386)

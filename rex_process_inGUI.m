@@ -329,6 +329,11 @@ for trialnumber = 1:nt
         %   disp(s);
         %note that the trial number given to find_saccades_3 is 'next', not
         %'trialnumber'
+        
+        if next==317
+            next
+        end
+        
         [saccadeInfo, saccadeIdx] = find_saccades_3(next,filtvel,filtacc,velPeakIdx,minwidth,minfixwidth,saccadeVelocityTreshold,peakDetectionThreshold,filth,filtv);
         
         %% corrective code for missed saccade, if old method has found a correct saccade that the new one missed
@@ -454,6 +459,11 @@ for trialnumber = 1:nt
     end;
     waitbar( (trialnumber/nt)*0.9, wb, 'Converting Rex data...' );
 end;
+
+%% data clinic
+if strcmp(tasktype,'gapstop')
+    allcodes=dataclinic(allcodes,saccadeInfo,1);
+end
 
 %% detect ouliers
 
