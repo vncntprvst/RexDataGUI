@@ -55,7 +55,7 @@ else
                 [diff(Saccvel(peakIdx(end):end)) 0] >= 0);        % acc <= 0
             
             if isempty(saccadeEndIdx)
-               % disp('find_saccades_excerpt: empty saccadeEndIdx');
+                % disp('find_saccades_excerpt: empty saccadeEndIdx');
                 sacfound=0;
             else
                 saccadeEndIdx = peakIdx(end) + saccadeEndIdx(1) - 1;
@@ -66,7 +66,7 @@ else
                 % Make sure the saccade duration exceeds the minimum duration.
                 saccadeLen = saccadeEndIdx - saccadeStartIdx;
                 if saccadeLen < minwidth
-                  %  disp('find_saccades_excerpt: saccade duration below minimum duration');
+                    %  disp('find_saccades_excerpt: saccade duration below minimum duration');
                     sacfound=0;
                 else
                     %
@@ -80,21 +80,34 @@ else
                     % for small saccades, check if it's not a first step of a double step
                     % saccade, where the second (possibly larger step may go undetected because
                     % the localVelNoise would be too high
-                    sacamp=sqrt(((heye(saccadeEndIdx)-(heye(saccadeStartIdx))))^2 + ((veye(saccadeEndIdx)-(veye(saccadeStartIdx))))^2);
+                    sacamp=sqrt(((heye(saccadeEndIdx)-(heye(saccadeStartIdx))))^2 + ...
+                        ((veye(saccadeEndIdx)-(veye(saccadeStartIdx))))^2);
+                    
+                    sacdeg=abs(atand((heye(saccadeEndIdx)-(heye(saccadeStartIdx)))/(veye(saccadeEndIdx)-(veye(saccadeStartIdx)))));
+                    
+                    
+                    % sign adjustements
+                    if veye(saccadeEndIdx)<veye(saccadeStartIdx) % negative vertical amplitude -> vertical flip
+                        sacdeg=180-sacdeg;
+                    end
+                    
+                    if heye(saccadeEndIdx)>heye(saccadeStartIdx)%inverted signal: leftward is in postive range. Correcting to negative.
+                        sacamp=-sacamp;
+                        sacdeg=360-sacdeg; % mirror image;
+                    end
+                    
                     
                     %If all the above criteria are fulfilled
                     
-                    if sacamp<3 % If  saccade too small
+                    if abs(sacamp)<2 % If  saccade too small
                         %disp('find_saccades_excerpt: saccade too small');
                         sacfound=0;
                     else
                         saccadeInfo(next,newpeak).starttime = excs+saccadeStartIdx;
                         saccadeInfo(next,newpeak).endtime = excs+saccadeEndIdx;
                         saccadeInfo(next,newpeak).duration = saccadeEndIdx - saccadeStartIdx;
-                        if heye(saccadeEndIdx)>heye(saccadeStartIdx)%leftward sac negative, inverted signal
-                            sacamp=-sacamp;
-                        end
                         saccadeInfo(next,newpeak).amplitude = sacamp;
+                        saccadeInfo(next,newpeak).direction=sacdeg;
                         saccadeInfo(next,newpeak).peakVelocity = max(Saccvel(saccadeStartIdx:saccadeEndIdx));
                         saccadeInfo(next,newpeak).peakAcceleration = max(Saccacc(saccadeStartIdx:saccadeEndIdx));
                         saccadeInfo(next,newpeak).status='saccade';
