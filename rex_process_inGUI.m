@@ -462,7 +462,8 @@ end;
 
 %% data clinic
 if strcmp(tasktype,'gapstop')
-    allcodes=dataclinic(allcodes,saccadeInfo,1);
+    cure='fixdircs';
+    allcodes=dataclinic(cure,allcodes,saccadeInfo);
 end
 
 %% detect ouliers

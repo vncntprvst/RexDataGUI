@@ -331,6 +331,12 @@ end
 % default nonecodes. Potential conflict resolved in rdd_rasters
 nonecodes=[17385 16386];
 
+% fix directions for optimal location task
+if strcmp(tasktype,'optiloc')
+    cure='fixdirol';
+    allcodes=dataclinic(cure,rdd_filename);
+end
+
 % variable to save aligned data
 datalign=struct('dir',{},'rasters',{},'trials',{},'timefromtrig',{},'timetotrig',{},'alignidx',{},'eyeh',{},'eyev',{},'eyevel',{},'amplitudes',{},...
     'peakvels',{},'peakaccs',{},'allgreyareas',{},'stats',{},'alignlabel',{},'savealignname',{});

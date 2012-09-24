@@ -1,17 +1,46 @@
 % Data clinic
-function allcodes=dataclinic(allcodes,saccadeInfo,cure)
+function allcodes=dataclinic(cure,firstarg,secarg)
 
 %% check, and if necessary, fix wrong directions ecodes in countermanding task
-if cure==1
-    % (the issue appears when using negative x values for tab3)
-    % treatedfile='S121L4A5_13091.mat';
-    % load(treatedfile);
+if strcmp(cure,'fixdircs') || strcmp(cure,'fixdirol')
+    
+    if strcmp(cure,'fixdircs')
+        % (the issue appears when using negative x values for tab3)
+        % treatedfile='S121L4A5_13091.mat';
+        % load(treatedfile);
+        allcodes=firstarg;
+        saccadeInfo=secarg;
+        basecode=6040;
+    elseif strcmp(cure,'fixdirol')
+        load(firstarg);
+        %         allcodes=firstarg;
+        %         saccadeInfo=secarg;
+        basecode=6010;
+%         optilocstruct=[
+%           28          28        6011
+%           40           0        6012
+%           28         -28        6013
+%           84          84        6011
+%          120           0        6012
+%           84         -84        6013
+%          140         140        6011
+%          200           0        6012
+%          140        -140        6013]; %6011=TR; 6012=SR; 6013=BR
+    end
+    
     alldirs=reshape({saccadeInfo.direction},size(saccadeInfo)); % all directions found in saccadeInfo
     alldirs=alldirs'; %needs to be transposed because the logical indexing below will be done column by column, not row by row
     allgoodsacs=~cellfun('isempty',reshape({saccadeInfo.latency},size(saccadeInfo)));
     %removing stop trials that may be included
     allgoodsacs(floor(allcodes(:,2)./1000)~=6,:)=0;
     %indexing good sac trials
+        % if saccade detection corrected, there may two 'good' saccades
+        if max(sum(allgoodsacs,2))>1
+            twogoods=find(sum(allgoodsacs,2)>1);
+            for dblsac=1:length(twogoods)
+                allgoodsacs(twogoods(dblsac),find(allgoodsacs(twogoods(dblsac),:),1))=0;
+            end
+        end
     goodsacindex=logical(sum(allgoodsacs,2));
     %translate ecodes into directions
     goodsactrialecodes=allcodes(goodsacindex,:);
@@ -23,17 +52,25 @@ if cure==1
     % convert codes to directions (going anticlockwise because codes are
     % inverted left-right)
     gsacbcodeangle=nan(size(gsacbasecode));
-    gsacbcodeangle(gsacbasecode-6040==0)=0;
-    gsacbcodeangle(gsacbasecode-6040==7)=45;
-    gsacbcodeangle(gsacbasecode-6040==6)=90;
-    gsacbcodeangle(gsacbasecode-6040==5)=135;
-    gsacbcodeangle(gsacbasecode-6040==4)=180;
-    gsacbcodeangle(gsacbasecode-6040==3)=225;
-    gsacbcodeangle(gsacbasecode-6040==2)=270;
-    gsacbcodeangle(gsacbasecode-6040==1)=315;
+        if strcmp(cure,'fixdircs')
+            gsacbcodeangle(gsacbasecode-basecode==0)=0;
+            gsacbcodeangle(gsacbasecode-basecode==7)=45;
+            gsacbcodeangle(gsacbasecode-basecode==6)=90;
+            gsacbcodeangle(gsacbasecode-basecode==5)=135;
+            gsacbcodeangle(gsacbasecode-basecode==4)=180;
+            gsacbcodeangle(gsacbasecode-basecode==3)=225;
+            gsacbcodeangle(gsacbasecode-basecode==2)=270;
+            gsacbcodeangle(gsacbasecode-basecode==1)=315;
+        elseif strcmp(cure,'fixdirol')
+            gsacbcodeangle(gsacbasecode-basecode==1)=45;
+            gsacbcodeangle(gsacbasecode-basecode==2)=90;
+            gsacbcodeangle(gsacbasecode-basecode==3)=135;
+        end
     
     % compare code angle with actual saccade direction
     anglediff=allgooddirs-gsacbcodeangle;
+    
+    anglediff(anglediff<45)
     
     % find out range of wrong trials
     trialq=find(goodsacindex);
@@ -41,10 +78,10 @@ if cure==1
     %wrongconditions=max(bwlabel(wrongdircode)); %should hopefully be one at most. Although, if bad conditions are contiguous, it will not be detected here
     wrongdircode=trialq(find(wrongdircode,1)); % first wrong trial in all trials
     % wrong direction digit
-    if allcodes(wrongdircode,2)-6040>4
-        wrgdirdg=[allcodes(wrongdircode,2)-6040 allcodes(wrongdircode,2)-6044];
+    if allcodes(wrongdircode,2)-basecode>4
+        wrgdirdg=[allcodes(wrongdircode,2)-basecode allcodes(wrongdircode,2)-6044];
     else
-        wrgdirdg=[allcodes(wrongdircode,2)-6040 allcodes(wrongdircode,2)-6036];
+        wrgdirdg=[allcodes(wrongdircode,2)-basecode allcodes(wrongdircode,2)-6036];
     end
     
     %find if stop trials before, and if yes, if wrong direction too
@@ -62,7 +99,7 @@ if cure==1
                 firstwrongcode=firstwrongcode+1;
             end
         end
-        if floor(allcodes(firstwrongcode,2)/10)==407 && max(allcodes(firstwrongcode-1,2)-6040==wrgdirdg)
+        if floor(allcodes(firstwrongcode,2)/10)==407 && max(allcodes(firstwrongcode-1,2)-basecode==wrgdirdg)
             firstwrongcode=firstwrongcode+1; %just to be conservative
         end
         % same story for last wrong trial
@@ -80,7 +117,7 @@ if cure==1
                 lastwrongcode=lastwrongcode+1;
             end
         end
-        if floor(allcodes(lastwrongcode,2)/10)==407 && max(allcodes(lastwrongcode+1,2)-6040==wrgdirdg)
+        if floor(allcodes(lastwrongcode,2)/10)==407 && max(allcodes(lastwrongcode+1,2)-basecode==wrgdirdg)
             lastwrongcode=lastwrongcode-1; % same conservative principle
         end
         
