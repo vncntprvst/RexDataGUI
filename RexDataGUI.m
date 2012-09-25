@@ -722,8 +722,11 @@ if strcmp(archst, 'maci64')
     end
     slash = '/';
 elseif strcmp(archst, 'win32') || strcmp(archst, 'win64')
-    % for future users, make it name = getenv('username');
-    directory = 'B:\data\Recordings\';
+    if strcmp(getenv('username'),'SommerVD')
+        directory = 'C:\Data\Recordings\';
+    else
+        directory = 'B:\data\Recordings\';
+    end
     slash = '\';
 end
 
