@@ -513,36 +513,41 @@ outlandmismtch(1)={mismatch};
 outlandmismtch(2)={outliers};
 
 %% saving data
-archst  = computer('arch');
-if strcmp(archst, 'maci64')
-    if strcmp(rawdir,'/Users/nick/Dropbox/filesforNick/Rigel/')
+%archst  = computer('arch');
+
+if logical(regexpi(rawdir(1:end-1),'Rigel$'))
+    if strcmp(getenv('username'),'nick')
         procdir='/Users/nick/Dropbox/filesforNick/processed/Rigel/';
+    elseif strcmp(getenv('username'),'SommerVD')
+        procdir='C:\Data\Recordings\processed\Rigel\';
+    else
+        procdir='B:\data\Recordings\processed\Rigel\';
+    end
         if ~strcmp(rexname(1),'R')
             rexname=cat(2,'R',rexname);
         end
-    elseif strcmp(rawdir,'/Users/nick/Dropbox/filesforNick/Sixx/')
+elseif logical(regexpi(rawdir(1:end-1),'Sixx$'))
+    if strcmp(getenv('username'),'nick')
         procdir='/Users/nick/Dropbox/filesforNick/processed/Sixx/';
+    elseif strcmp(getenv('username'),'SommerVD')
+        procdir='C:\Data\Recordings\processed\Sixx\';
+    else
+        procdir='B:\data\Recordings\processed\Sixx\';
+    end
     if ~strcmp(rexname(1),'S')
         rexname=cat(2,'S',rexname);
     end
-    end
-else
-    if strcmp(rawdir,'B:\data\Recordings\Rigel\')
-        procdir='B:\data\Recordings\processed\Rigel\';
-        if ~strcmp(rexname(1),'R')
-            rexname=cat(2,'R',rexname);
-        end
-    elseif strcmp(rawdir,'B:\data\Recordings\Sixx\')
-        procdir='B:\data\Recordings\processed\Sixx\';
-        if ~strcmp(rexname(1),'S')
-            rexname=cat(2,'S',rexname);
-        end
-    elseif strcmp(rawdir,'B:\data\Recordings\Hilda\')
+elseif logical(regexpi(rawdir(1:end-1),'Hilda$'))
+    if strcmp(getenv('username'),'nick')
+        procdir='/Users/nick/Dropbox/filesforNick/processed/Hilda/';
+    elseif strcmp(getenv('username'),'SommerVD')
+        procdir='C:\Data\Recordings\processed\Hilda\';
+    else
         procdir='B:\data\Recordings\processed\Hilda\';
+    end
         if ~strcmp(rexname(1),'H')
             rexname=cat(2,'H',rexname);
         end
-    end
 end
 
 newname = cat( 2, procdir, rexname, '.mat' );

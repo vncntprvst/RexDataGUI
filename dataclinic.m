@@ -31,6 +31,8 @@ if strcmp(cure,'fixdircs') || strcmp(cure,'fixdirol')
     alldirs=reshape({saccadeInfo.direction},size(saccadeInfo)); % all directions found in saccadeInfo
     alldirs=alldirs'; %needs to be transposed because the logical indexing below will be done column by column, not row by row
     allgoodsacs=~cellfun('isempty',reshape({saccadeInfo.latency},size(saccadeInfo)));
+    %removing bad trials
+    allgoodsacs(logical(allbad),:)=0;
     %removing stop trials that may be included
     allgoodsacs(floor(allcodes(:,2)./1000)~=6,:)=0;
     %indexing good sac trials
@@ -69,8 +71,6 @@ if strcmp(cure,'fixdircs') || strcmp(cure,'fixdirol')
     
     % compare code angle with actual saccade direction
     anglediff=allgooddirs-gsacbcodeangle;
-    
-    anglediff(anglediff<45)
     
     % find out range of wrong trials
     trialq=find(goodsacindex);
