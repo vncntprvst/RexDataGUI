@@ -29,7 +29,9 @@ if strcmp(cure,'fixdircs') || strcmp(cure,'fixdirol')
     end
     
     alldirs=reshape({saccadeInfo.direction},size(saccadeInfo)); % all directions found in saccadeInfo
+    allamps=reshape({saccadeInfo.amplitude},size(saccadeInfo));
     alldirs=alldirs'; %needs to be transposed because the logical indexing below will be done column by column, not row by row
+    allamps=allamps';
     allgoodsacs=~cellfun('isempty',reshape({saccadeInfo.latency},size(saccadeInfo)));
     %removing bad trials
     allgoodsacs(logical(allbad),:)=0;
@@ -50,6 +52,7 @@ if strcmp(cure,'fixdircs') || strcmp(cure,'fixdirol')
     gsacbasecode=goodsactrialecodes(:,2);
     %getting all good directions
     allgooddirs=cell2mat(alldirs(allgoodsacs'));
+    allgoodamps=cell2mat(allamps(allgoodsacs'));
     
     % convert codes to directions (going anticlockwise because codes are
     % inverted left-right)
@@ -71,7 +74,8 @@ if strcmp(cure,'fixdircs') || strcmp(cure,'fixdirol')
     
     % compare code angle with actual saccade direction
     anglediff=allgooddirs-gsacbcodeangle;
-    
+    %allgoodamps is a good predictor of direction reversal for optilov
+    %direction computation is wrong
     % find out range of wrong trials
     trialq=find(goodsacindex);
     wrongdircode=abs(anglediff)>45; %indexing in good saccade trials
