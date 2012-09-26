@@ -83,32 +83,32 @@ end;
 
 next = 1;
 channel = -1;
-nt = rex_numtrials_raw( rexname, includeaborted ); %rawdir  
+nt = rex_numtrials_raw( rexname, includeaborted ); %rawdir
 %nt = rex_numtrials_fake( rexname, includeaborted );
 %% trialnumber is the trial # from the recorded file. Some may be discarded in this loop. next is the resulting trial number
 for trialnumber = 1:nt
     try
-    [ecodeout, etimeout, spkchan, spk, arate, h, v, start_time, badtrial, analog_time] = rex_trial_raw(rexname, trialnumber, includeaborted); %rawdir
+        [ecodeout, etimeout, spkchan, spk, arate, h, v, start_time, badtrial, analog_time] = rex_trial_raw(rexname, trialnumber, includeaborted); %rawdir
     catch
-         errmess= sprintf('file %s could not be processed at trial %d. Terminate processing',rexname, trialnumber);
-         disp(errmess);
-         return;
+        errmess= sprintf('file %s could not be processed at trial %d. Terminate processing',rexname, trialnumber);
+        disp(errmess);
+        return;
     end
     
-     if  strcmp(tasktype,'optiloc') && logical(sum(find(ecodeout==16386)))
-         badtrial=1;
-     end
+    if  strcmp(tasktype,'optiloc') && logical(sum(find(ecodeout==16386)))
+        badtrial=1;
+    end
     %[ecodeout, etimeout, spkchan, spk, arate, h, v, start_time, badtrial ] = rex_trial_fake(rexname, trialnumber, includeaborted);
     if length(badtrial)>1 %rare event: two identical error code in the same trial
         secbadtrltime=badtrial(2)-analog_time;
-            figure;
-            plot(h,'r');
-            hold on; plot(v,'g');
-            plot(badtrial-analog_time,8,'*-k');
-            plot(etimeout([2 4 5]),8,'*b'); % if token task, these are the
-                                            % basecode, fixation display and
-                                            % eye in window respectively (if
-                                            % it goes to that point)
+        figure;
+        plot(h,'r');
+        hold on; plot(v,'g');
+        plot(badtrial-analog_time,8,'*-k');
+        plot(etimeout([2 4 5]),8,'*b'); % if token task, these are the
+        % basecode, fixation display and
+        % eye in window respectively (if
+        % it goes to that point)
         badtrial=badtrial(1);
     end
     
@@ -139,22 +139,22 @@ for trialnumber = 1:nt
         szspk = length( spkchan );
         if ( szspk > 1 && channel == -1)
             while ( channel < 1 || channel > szspk )
-%                 sp = sprintf( 'There are %d spike channels in this file.  \nPick one for this translation (1 - %d).', szspk, szspk );
-%                 prompt = {sp};
-%                 name='Kloodgy spike channel picking...';
-%                 numlines=1;
-%                 defaultanswer={'1'};
-%                 
-%                 answer = inputdlg( prompt, name, numlines, defaultanswer );
-%                 channel = answer{:};               
-
-
+                %                 sp = sprintf( 'There are %d spike channels in this file.  \nPick one for this translation (1 - %d).', szspk, szspk );
+                %                 prompt = {sp};
+                %                 name='Kloodgy spike channel picking...';
+                %                 numlines=1;
+                %                 defaultanswer={'1'};
+                %
+                %                 answer = inputdlg( prompt, name, numlines, defaultanswer );
+                %                 channel = answer{:};
+                
+                
                 channel=1;
                 rex_process_channelpicked = channel;
             end;
         elseif szspk ==1
-        %for processing only files with >1 channels: 
-        %return
+            %for processing only files with >1 channels:
+            %return
             channel = 1;
         end;
         %%
@@ -184,9 +184,9 @@ for trialnumber = 1:nt
             alltrigout(next)=etimeout(find(ecodeout==1502,1))+analog_time; % the second 1502 in ecodes is actually the one for the next trial
         else
             if find(ecodeout==1030,1)
-            alltrigout(next)=etimeout(find(ecodeout==1030,1))+analog_time; % if no trigger code, then use reward time
+                alltrigout(next)=etimeout(find(ecodeout==1030,1))+analog_time; % if no trigger code, then use reward time
             else
-            alltrigout(next)=NaN; %nothing to align bad trials on recordings without trigger channel to
+                alltrigout(next)=NaN; %nothing to align bad trials on recordings without trigger channel to
             end
         end
         if find(ecodeout==1030,1)
@@ -339,9 +339,9 @@ for trialnumber = 1:nt
         %% corrective code for missed saccade, if old method has found a correct saccade that the new one missed
         clear ampsacofint sacofint newsacs;
         if isfield(saccadeInfo, 'starttime')
-        nwsacstart=cat(1,saccadeInfo(next,:).starttime);
-        else 
-         nwsacstart=0;
+            nwsacstart=cat(1,saccadeInfo(next,:).starttime);
+        else
+            nwsacstart=0;
         end
         
         [curtasktype, ecodecueon, ecodesacstart, ecodesacend]=taskdetect(ecodeout);
@@ -360,7 +360,7 @@ for trialnumber = 1:nt
                 sacofint=0;
             else
                 sacofint=nwsacstart>etimeout(ecodesacstart-1); %considering all saccades occuring after the ecode
-                                                               %preceding the saccade ecode, which is often erroneous
+                %preceding the saccade ecode, which is often erroneous
             end
         else
             sacofint=0;
@@ -423,18 +423,18 @@ for trialnumber = 1:nt
         end
         
         %% detect actual direction of "good" sac for each trial
-            
-%         try
-%             lasac=find(~cellfun(@isempty,{saccadeInfo(next,:).latency}));
-%             lasach=allh(next,saccadeInfo(next,lasac).starttime:saccadeInfo(next,lasac).endtime);
-%             lasacv=allv(next,saccadeInfo(next,lasac).starttime:saccadeInfo(next,lasac).endtime);
-%             sacdeg=atand((lascv(end)-lascv(1))/(lasch(end)-lasch(1)));
-%             if (lasch(end)-lasch(1))<1
-%                 sacdeg=sacdeg+180;
-%             end
-%             saccadeInfo(next,lasac).direction=sacdeg;
-%         catch
-%         end
+        
+        %         try
+        %             lasac=find(~cellfun(@isempty,{saccadeInfo(next,:).latency}));
+        %             lasach=allh(next,saccadeInfo(next,lasac).starttime:saccadeInfo(next,lasac).endtime);
+        %             lasacv=allv(next,saccadeInfo(next,lasac).starttime:saccadeInfo(next,lasac).endtime);
+        %             sacdeg=atand((lascv(end)-lascv(1))/(lasch(end)-lasch(1)));
+        %             if (lasch(end)-lasch(1))<1
+        %                 sacdeg=sacdeg+180;
+        %             end
+        %             saccadeInfo(next,lasac).direction=sacdeg;
+        %         catch
+        %         end
         
         
         %% back to old code, pre-processing stage, still within the loop
@@ -461,9 +461,13 @@ for trialnumber = 1:nt
 end;
 
 %% data clinic
-if strcmp(tasktype,'gapstop')
-    cure='fixdircs';
-    allcodes=dataclinic(cure,allcodes,saccadeInfo);
+if strcmp(tasktype,'gapstop') || strcmp(tasktype,'optiloc')
+    if strcmp(tasktype,'gapstop') % fix potentially wrong dir in gapstop recording
+        cure='fixdircs';
+    elseif strcmp(tasktype,'optiloc')  % fix directions for optimal location task
+        cure='fixdirol';
+    end
+    allcodes=dataclinic(cure,allcodes,saccadeInfo,allbad);
 end
 
 %% detect ouliers
@@ -523,9 +527,9 @@ if logical(regexpi(rawdir(1:end-1),'Rigel$'))
     else
         procdir='B:\data\Recordings\processed\Rigel\';
     end
-        if ~strcmp(rexname(1),'R')
-            rexname=cat(2,'R',rexname);
-        end
+    if ~strcmp(rexname(1),'R')
+        rexname=cat(2,'R',rexname);
+    end
 elseif logical(regexpi(rawdir(1:end-1),'Sixx$'))
     if strcmp(getenv('username'),'nick')
         procdir='/Users/nick/Dropbox/filesforNick/processed/Sixx/';
@@ -545,9 +549,9 @@ elseif logical(regexpi(rawdir(1:end-1),'Hilda$'))
     else
         procdir='B:\data\Recordings\processed\Hilda\';
     end
-        if ~strcmp(rexname(1),'H')
-            rexname=cat(2,'H',rexname);
-        end
+    if ~strcmp(rexname(1),'H')
+        rexname=cat(2,'H',rexname);
+    end
 end
 
 newname = cat( 2, procdir, rexname, '.mat' );
