@@ -330,7 +330,7 @@ for trialnumber = 1:nt
         %note that the trial number given to find_saccades_3 is 'next', not
         %'trialnumber'
         
-        if next==317
+        if next==109
             next
         end
         
