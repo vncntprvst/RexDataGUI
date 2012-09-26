@@ -319,7 +319,11 @@ if logical(sum(togrey))
     greycodes=conditions(togrey,:); %selecting out the codes
 end
 
-
+%% Task-specific instructions
+if strcmp(tasktype,'optiloc')
+    ol_instructs=get(findobj('Tag','optiloc_popup'),'String');
+    ol_instruct=ol_instructs{get(findobj('Tag','optiloc_popup'),'Value')};
+end
 %% aligning data and generating rasters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -330,12 +334,6 @@ end
 
 % default nonecodes. Potential conflict resolved in rdd_rasters
 nonecodes=[17385 16386];
-
-% fix directions for optimal location task
-if strcmp(tasktype,'optiloc')
-    cure='fixdirol';
-    allcodes=dataclinic(cure,rdd_filename);
-end
 
 % variable to save aligned data
 datalign=struct('dir',{},'rasters',{},'trials',{},'timefromtrig',{},'timetotrig',{},'alignidx',{},'eyeh',{},'eyev',{},'eyevel',{},'amplitudes',{},...
@@ -431,16 +429,31 @@ else
     end
 end
 
+if strcmp(tasktype,'optiloc')
+    if strcmp(ol_instruct,'directions') 
+        %default, nothing to change
+    elseif strcmp(ol_instruct,'amplitudes') && singlerastplot
+        singlerastplot=0;
+        numcodes=3;
+    elseif strcmp(ol_instruct,'directions mleft') || strcmp(ol_instruct,'amplitudes mleft')
+        numcodes=ceil(numcodes/2);
+        allaligncodes=allaligncodes(allaligncodes==7011 | allaligncodes==7012 | allaligncodes==7013);
+    elseif strcmp(ol_instruct,'directions mright') || strcmp(ol_instruct,'amplitudes mright')
+        numcodes=ceil(numcodes/2);
+        allaligncodes=allaligncodes(allaligncodes==7015 | allaligncodes==7016 | allaligncodes==7017);
+    end
+end
+
 
 % align trials
-for i=1:numcodes
-    aligntype=datalign(i).alignlabel;
+for cnc=1:numcodes
+    aligntype=datalign(cnc).alignlabel;
     adjconditions=conditions;
     if strcmp(aligntype,'stop')
         includebad=1; %we want to compare cancelled with non-cancelled
         numplots=numcodes+1;
     elseif strcmp(tasktype,'base2rem50')
-        adjconditions=[conditions(i,:);conditions(i+numcodes,:);conditions(i+2*numcodes,:)];
+        adjconditions=[conditions(cnc,:);conditions(cnc+numcodes,:);conditions(cnc+2*numcodes,:)];
         numplots=numcodes;
     else
         includebad=0;
@@ -448,62 +461,113 @@ for i=1:numcodes
     end
     [rasters,aidx, trialidx, timefromtrigs, timetotrigs, eyeh,eyev,eyevel,...
         amplitudes,peakvels,peakaccs,allgreyareas,badidx,ssd] = rdd_rasters( rdd_filename, spikechannel,...
-        allaligncodes(i,:), nonecodes, includebad, alignsacnum, aligntype, collapsecode, adjconditions);
+        allaligncodes(cnc,:), nonecodes, includebad, alignsacnum, aligntype, collapsecode, adjconditions);
     
     
     if isempty( rasters )
         disp( 'No raster could be generated (rex_rasters_trialtype returned empty raster)' );
         continue;
     elseif strcmp(aligntype,'stop')
-        canceledtrials=~badidx';
-        datalign(i).alignlabel='stop_cancel';
-        datalign(i).rasters=rasters(canceledtrials,:);
-        datalign(i).alignidx=aidx;
-        datalign(i).trials=trialidx(canceledtrials);
-        datalign(i).timefromtrig=timefromtrigs(canceledtrials);
-        datalign(i).timetotrig=timetotrigs(canceledtrials);
-        datalign(i).eyeh=eyeh(canceledtrials,:);
-        datalign(i).eyev=eyev(canceledtrials,:);
-        datalign(i).eyevel=eyevel(canceledtrials,:);
-        datalign(i).allgreyareas=allgreyareas(:,canceledtrials);
-        datalign(i).amplitudes=amplitudes(canceledtrials);
-        datalign(i).peakvels=peakvels(canceledtrials);
-        datalign(i).peakaccs=peakaccs(canceledtrials);
-        datalign(i).bad=badidx(canceledtrials);
-        datalign(i).ssd=ssd(canceledtrials,:);
+        shortamp=saccadeI;
+        datalign(cnc).alignlabel='stop_cancel';
+        datalign(cnc).rasters=rasters(canceledtrials,:);
+        datalign(cnc).alignidx=aidx;
+        datalign(cnc).trials=trialidx(canceledtrials);
+        datalign(cnc).timefromtrig=timefromtrigs(canceledtrials);
+        datalign(cnc).timetotrig=timetotrigs(canceledtrials);
+        datalign(cnc).eyeh=eyeh(canceledtrials,:);
+        datalign(cnc).eyev=eyev(canceledtrials,:);
+        datalign(cnc).eyevel=eyevel(canceledtrials,:);
+        datalign(cnc).allgreyareas=allgreyareas(:,canceledtrials);
+        datalign(cnc).amplitudes=amplitudes(canceledtrials);
+        datalign(cnc).peakvels=peakvels(canceledtrials);
+        datalign(cnc).peakaccs=peakaccs(canceledtrials);
+        datalign(cnc).bad=badidx(canceledtrials);
+        datalign(cnc).ssd=ssd(canceledtrials,:);
         
         canceledtrials=~canceledtrials;
-        datalign(i+1).alignlabel='stop_non_cancel';
-        datalign(i+1).rasters=rasters(canceledtrials,:);
-        datalign(i+1).alignidx=aidx;
-        datalign(i+1).trials=trialidx(canceledtrials);
-        datalign(i+1).timefromtrig=timefromtrigs(canceledtrials);
-        datalign(i+1).timetotrig=timetotrigs(canceledtrials);
-        datalign(i+1).eyeh=eyeh(canceledtrials,:);
-        datalign(i+1).eyev=eyev(canceledtrials,:);
-        datalign(i+1).eyevel=eyevel(canceledtrials,:);
-        datalign(i+1).allgreyareas=allgreyareas(:,canceledtrials);
-        datalign(i+1).amplitudes=amplitudes(canceledtrials);
-        datalign(i+1).peakvels=peakvels(canceledtrials);
-        datalign(i+1).peakaccs=peakaccs(canceledtrials);
-        datalign(i+1).bad=badidx(canceledtrials);
-        datalign(i+1).ssd=ssd(canceledtrials,:);
-        %             datalign(i+1).condtimes=condtimes(canceledtrials);
+        datalign(cnc+1).alignlabel='stop_non_cancel';
+        datalign(cnc+1).rasters=rasters(canceledtrials,:);
+        datalign(cnc+1).alignidx=aidx;
+        datalign(cnc+1).trials=trialidx(canceledtrials);
+        datalign(cnc+1).timefromtrig=timefromtrigs(canceledtrials);
+        datalign(cnc+1).timetotrig=timetotrigs(canceledtrials);
+        datalign(cnc+1).eyeh=eyeh(canceledtrials,:);
+        datalign(cnc+1).eyev=eyev(canceledtrials,:);
+        datalign(cnc+1).eyevel=eyevel(canceledtrials,:);
+        datalign(cnc+1).allgreyareas=allgreyareas(:,canceledtrials);
+        datalign(cnc+1).amplitudes=amplitudes(canceledtrials);
+        datalign(cnc+1).peakvels=peakvels(canceledtrials);
+        datalign(cnc+1).peakaccs=peakaccs(canceledtrials);
+        datalign(cnc+1).bad=badidx(canceledtrials);
+        datalign(cnc+1).ssd=ssd(canceledtrials,:);
+        %             datalign(cnc+1).condtimes=condtimes(canceledtrials);
+        elseif strcmp(tasktype,'optiloc') && strfind(ol_instruct,'amplitudes')
+        apmdistrib=hist(abs(amplitudes),[4,12,20]);
+        allamps=(sort(abs(amplitudes)));
+        shortamps=(abs(amplitudes)<allamps(apmdistrib(1)))';
+        datalign(cnc).alignlabel='4dg';
+        datalign(cnc).rasters=rasters(shortamps,:);
+        datalign(cnc).alignidx=aidx;
+        datalign(cnc).trials=trialidx(shortamps);
+        datalign(cnc).timefromtrig=timefromtrigs(shortamps);
+        datalign(cnc).timetotrig=timetotrigs(shortamps);
+        datalign(cnc).eyeh=eyeh(shortamps,:);
+        datalign(cnc).eyev=eyev(shortamps,:);
+        datalign(cnc).eyevel=eyevel(shortamps,:);
+        datalign(cnc).allgreyareas=allgreyareas(:,shortamps);
+        datalign(cnc).amplitudes=amplitudes(shortamps);
+        datalign(cnc).peakvels=peakvels(shortamps);
+        datalign(cnc).peakaccs=peakaccs(shortamps);
+        datalign(cnc).bad=badidx(shortamps);
+        
+        medamps=abs(amplitudes)<allamps(apmdistrib(2));
+        datalign(cnc).alignlabel='12dg';
+        datalign(cnc).rasters=rasters(medamps,:);
+        datalign(cnc).alignidx=aidx;
+        datalign(cnc).trials=trialidx(medamps);
+        datalign(cnc).timefromtrig=timefromtrigs(medamps);
+        datalign(cnc).timetotrig=timetotrigs(medamps);
+        datalign(cnc).eyeh=eyeh(medamps,:);
+        datalign(cnc).eyev=eyev(medamps,:);
+        datalign(cnc).eyevel=eyevel(medamps,:);
+        datalign(cnc).allgreyareas=allgreyareas(:,medamps);
+        datalign(cnc).amplitudes=amplitudes(medamps);
+        datalign(cnc).peakvels=peakvels(medamps);
+        datalign(cnc).peakaccs=peakaccs(medamps);
+        datalign(cnc).bad=badidx(medamps);
+
+        longamps=abs(amplitudes)<allamps(apmdistrib(3));
+        datalign(cnc).alignlabel='20dg';
+        datalign(cnc).rasters=rasters(longamps,:);
+        datalign(cnc).alignidx=aidx;
+        datalign(cnc).trials=trialidx(longamps);
+        datalign(cnc).timefromtrig=timefromtrigs(longamps);
+        datalign(cnc).timetotrig=timetotrigs(longamps);
+        datalign(cnc).eyeh=eyeh(longamps,:);
+        datalign(cnc).eyev=eyev(longamps,:);
+        datalign(cnc).eyevel=eyevel(longamps,:);
+        datalign(cnc).allgreyareas=allgreyareas(:,longamps);
+        datalign(cnc).amplitudes=amplitudes(longamps);
+        datalign(cnc).peakvels=peakvels(longamps);
+        datalign(cnc).peakaccs=peakaccs(longamps);
+        datalign(cnc).bad=badidx(longamps);
+        
     else
-        datalign(i).rasters=rasters;
-        datalign(i).alignidx=aidx;
-        datalign(i).trials=trialidx;
-        datalign(i).timefromtrig=timefromtrigs;
-        datalign(i).timetotrig=timetotrigs;
-        datalign(i).eyeh=eyeh;
-        datalign(i).eyev=eyev;
-        datalign(i).eyevel=eyevel;
-        datalign(i).allgreyareas=allgreyareas;
-        datalign(i).amplitudes=amplitudes;
-        datalign(i).peakvels=peakvels;
-        datalign(i).peakaccs=peakaccs;
-        datalign(i).bad=badidx;
-        %             datalign(i).condtimes=condtimes;
+        datalign(cnc).rasters=rasters;
+        datalign(cnc).alignidx=aidx;
+        datalign(cnc).trials=trialidx;
+        datalign(cnc).timefromtrig=timefromtrigs;
+        datalign(cnc).timetotrig=timetotrigs;
+        datalign(cnc).eyeh=eyeh;
+        datalign(cnc).eyev=eyev;
+        datalign(cnc).eyevel=eyevel;
+        datalign(cnc).allgreyareas=allgreyareas;
+        datalign(cnc).amplitudes=amplitudes;
+        datalign(cnc).peakvels=peakvels;
+        datalign(cnc).peakaccs=peakaccs;
+        datalign(cnc).bad=badidx;
+        %             datalign(cnc).condtimes=condtimes;
     end
     
 end
@@ -552,28 +616,28 @@ if plotrasts
     % preallocate
     isnantrial=cell(numplots,1);
     
-    for i=1:numplots
+    for cnp=1:numplots
         
-        rasters=datalign(i).rasters;
+        rasters=datalign(cnp).rasters;
         
         if isempty(rasters)
             continue
         end
         
-        aidx=datalign(i).alignidx;
-        trialidx=datalign(i).trials;
-        timefromtrigs=datalign(i).timefromtrig;
-        timetotrigs=datalign(i).timetotrig;
-        eyeh=datalign(i).eyeh;
-        eyev=datalign(i).eyev;
-        eyevel=datalign(i).eyevel;
-        allgreyareas=datalign(i).allgreyareas;
-        amplitudes=datalign(i).amplitudes;
-        peakvels=datalign(i).peakvels;
-        peakaccs=datalign(i).peakaccs;
-        badidx=datalign(i).bad;
+        aidx=datalign(cnp).alignidx;
+        trialidx=datalign(cnp).trials;
+        timefromtrigs=datalign(cnp).timefromtrig;
+        timetotrigs=datalign(cnp).timetotrig;
+        eyeh=datalign(cnp).eyeh;
+        eyev=datalign(cnp).eyev;
+        eyevel=datalign(cnp).eyevel;
+        allgreyareas=datalign(cnp).allgreyareas;
+        amplitudes=datalign(cnp).amplitudes;
+        peakvels=datalign(cnp).peakvels;
+        peakaccs=datalign(cnp).peakaccs;
+        badidx=datalign(cnp).bad;
         if strcmp(aligntype,'stop')
-            ssd=datalign(i).ssd;
+            ssd=datalign(cnp).ssd;
         end
         
         % adjust temporal axis
@@ -587,7 +651,7 @@ if plotrasts
         end
         
         %get the current axes
-        axes(rasterh(i));
+        axes(rasterh(cnp));
         %plot the rasters
         % if one wants to plots the whole trials, find the
         % size of the longest trials as follow, and adjust
@@ -597,7 +661,7 @@ if plotrasts
         %                     testbin=testbin-1;
         %                     end
         trials = size(rasters,1);
-        isnantrial(i)={zeros(1,size(rasters,1))};
+        isnantrial(cnp)={zeros(1,size(rasters,1))};
         axis([0 stop-start+1 0 size(rasters,1)]);
         hold on
         
@@ -607,7 +671,7 @@ if plotrasts
             for num_trials=1:size(allgreyareas,2) %plotting grey area trial by trial
                 try
                     greytimes=allgreyareas{num_trials}-start;
-                    if greytimes(2,1)~=mstart && ~(strcmp(aligntype,'stop') && i==2) %just a control for unnoticed incorrect trials
+                    if greytimes(2,1)~=mstart && ~(strcmp(aligntype,'stop') && cnp==2) %just a control for unnoticed incorrect trials
                         num_trials
                         greytimes(2,1)
                     end
@@ -643,7 +707,7 @@ if plotrasts
         for j=1:size(rasters,1)
             spiketimes=find(rasters(j,start:stop)); %converting from a matrix representation to a time collection, within selected time range
             if isnan(sum(rasters(j,start:stop)))
-                isnantrial{i}(j)=1;
+                isnantrial{cnp}(j)=1;
             end
             rastploth=plot([spiketimes;spiketimes],[ones(size(spiketimes))*j;ones(size(spiketimes))*j-1],'k-');
             uistack(rastploth,'down');
@@ -666,10 +730,10 @@ if plotrasts
         % finding current trial direction.
         % Direction already flipped left/ right in find_saccades_3 line 183
         % (see rex_process > find_saccades_3)
-        if i>numcodes
+        if cnp>numcodes
             aligncodeidx=max(numcodes);
         else
-            aligncodeidx=i;
+            aligncodeidx=cnp;
         end
         if logical(sum(rotaterow(1,:))) && logical(aligncodeidx>=length(aligncodes)+1)
             curdirnb=rotaterow(aligncodeidx-length(aligncodes),1)-(floor(rotaterow(aligncodeidx-length(aligncodes),1)/10)*10);
@@ -703,28 +767,28 @@ if plotrasts
             end
         end
         
-        s1 = sprintf( 'Trials for %s direction, n = %d trials.', curdir, trials); %num2str( aligncodes(i) )
+        s1 = sprintf( 'Trials for %s direction, n = %d trials.', curdir, trials); %num2str( aligncodes(cnp) )
         htitle=title( s1 );
         set(htitle,'Interpreter','none'); %that prevents underscores turning charcter into subscript
         
-        datalign(i).dir=curdir;
+        datalign(cnp).dir=curdir;
         
         %% sdf plot
         % for kernel optimization, see : http://176.32.89.45/~hideaki/res/ppt/histogram-kernel_optimization.pdf
-        sumall=sum(rasters(~isnantrial{i},start:stop));
-        sdf=spike_density(sumall,fsigma)./length(find(~isnantrial{i})); %instead of number of trials
+        sumall=sum(rasters(~isnantrial{cnp},start:stop));
+        sdf=spike_density(sumall,fsigma)./length(find(~isnantrial{cnp})); %instead of number of trials
         %pdf = probability_density( sumall, fsigma ) ./ trials;
         
-        axes(sdfploth(i));
-        %         sdfaxh = axes('Position',get(rasterh(i),'Position'),...
+        axes(sdfploth(cnp));
+        %         sdfaxh = axes('Position',get(rasterh(cnp),'Position'),...
         %            'XAxisLocation','top',...
         %            'YAxisLocation','left',...
         %            'Color','none',...
         %            'XColor','k','YColor','k');
         plot(sdf,'Color','b','LineWidth',3);
         axis([0 stop-start 0 200])
-        set(sdfploth(i),'Color','none','YAxisLocation','right','TickDir','out', ...
-            'FontSize',8,'Position',get(rasterh(i),'Position'));
+        set(sdfploth(cnp),'Color','none','YAxisLocation','right','TickDir','out', ...
+            'FontSize',8,'Position',get(rasterh(cnp),'Position'));
         
         patch([repmat((aidx-start)-5,1,2) repmat((aidx-start)+5,1,2)], ...
             [get(gca,'YLim') fliplr(get(gca,'YLim'))], ...

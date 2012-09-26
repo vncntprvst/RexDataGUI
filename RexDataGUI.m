@@ -23,7 +23,7 @@ function varargout = RexDataGUI(varargin)
 %
 % See also: GUIDE, GUIDATA, GUIHANDLES
 
-% Last Modified by GUIDE v2.5 23-Aug-2012 00:05:48
+% Last Modified by GUIDE v2.5 26-Sep-2012 14:11:45
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -640,7 +640,7 @@ load('myBreakpoints.mat');
 dbstop(s);
 rdd_filename=get(findobj('Tag','filenamedisplay'),'String');
 [rdd_nt, trialdirs] = data_info( rdd_filename );
-dataaligned=rdd_rasters_sdf(rdd_filename, trialdirs);
+dataaligned=rdd_rasters_sdf(rdd_filename, trialdirs,1,1,1);
 guidata(findobj('Tag','exportdata'),dataaligned);
 
 % --- Executes on button press in exportdata.
@@ -1022,8 +1022,8 @@ function greyfix_Callback(hObject, eventdata, handles)
 % Hint: get(hObject,'Value') returns toggle state of greyfix
 
 % --------------------------------------------------------------------
-function analysis_menu_Callback(hObject, eventdata, handles)
-% hObject    handle to analysis_menu (see GCBO)
+function optiloc_menu_Callback(hObject, eventdata, handles)
+% hObject    handle to optiloc_menu (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
@@ -1309,3 +1309,21 @@ elseif hObject==findobj('Tag','displayfbt_grid')
     end
     
 end
+
+
+% --- Executes during object creation, after setting all properties.
+function optiloc_popup_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to optiloc_popup (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on selection change in optiloc_popup.
+function optiloc_popup_Callback(hObject, eventdata, handles)
+% no action to do. 

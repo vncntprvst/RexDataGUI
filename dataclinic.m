@@ -1,15 +1,15 @@
 % Data clinic
-function allcodes=dataclinic(cure,firstarg,secarg)
-
+function allcodes=dataclinic(varargin)
+        cure=varargin{1};
 %% check, and if necessary, fix wrong directions ecodes in countermanding task
 if strcmp(cure,'fixdircs') || strcmp(cure,'fixdirol')
-    
+        allcodes=varargin{2};
+        saccadeInfo=varargin{3};
+        allbad=varargin{4}; 
     if strcmp(cure,'fixdircs')
         % (the issue appears when using negative x values for tab3)
         % treatedfile='S121L4A5_13091.mat';
         % load(treatedfile);
-        allcodes=firstarg;
-        saccadeInfo=secarg;
         basecode=6040;
     elseif strcmp(cure,'fixdirol')
         % two problems:
@@ -18,7 +18,7 @@ if strcmp(cure,'fixdircs') || strcmp(cure,'fixdirol')
         % In addition to that, since I coded the task like an idiot, target
         % locations for FP1 are flipped horizontally AND vertically with
         % respect to FP0.
-        load(firstarg);
+        %load(firstarg);
         %         allcodes=firstarg;
         %         saccadeInfo=secarg;
         basecode=6010;
@@ -106,11 +106,17 @@ if strcmp(cure,'fixdircs') || strcmp(cure,'fixdirol')
             wrongdircode=1;
             rangewtrials=wrongdircode:trialq(find(abs(anglediff)<45,1)-1);
         end
-        newdir=allcodes(rangewtrials,2);
-        newdir(newdir==6011)=6015;
-        newdir(newdir==6012)=6016;
-        newdir(newdir==6013)=6017;
-        allcodes(rangewtrials,2)= newdir;
+            for wtr=1:length(rangewtrials)
+                trbasecd=floor(allcodes(rangewtrials(wtr),2)/10)*10;
+                wtrdir=allcodes(rangewtrials(wtr),2)-trbasecd;
+                replacedir=wtrdir+4;
+                findwrcd=trbasecd+wtrdir;
+                while logical(sum(find(allcodes(rangewtrials(wtr),:)==findwrcd)))
+                    allcodes(rangewtrials(wtr),allcodes(rangewtrials(wtr),:)==findwrcd)=...
+                        floor(findwrcd/10)*10+replacedir;
+                    findwrcd=findwrcd+200; % next ecode in line
+                end
+            end
     elseif strcmp(cure,'fixdircs')
         if allcodes(wrongdircode,2)-basecode>4
             wrgdirdg=[allcodes(wrongdircode,2)-basecode allcodes(wrongdircode,2)-6044];
