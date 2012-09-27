@@ -320,6 +320,7 @@ if logical(sum(togrey))
 end
 
 %% Task-specific instructions
+ol_instruct='directions'; %default mode
 if strcmp(tasktype,'optiloc')
     ol_instructs=get(findobj('Tag','optiloc_popup'),'String');
     ol_instruct=ol_instructs{get(findobj('Tag','optiloc_popup'),'Value')};
@@ -434,7 +435,6 @@ if strcmp(tasktype,'optiloc')
         %default, nothing to change
     elseif strcmp(ol_instruct,'amplitudes') && singlerastplot
         singlerastplot=0;
-        numcodes=3;
     elseif strcmp(ol_instruct,'directions mleft') || strcmp(ol_instruct,'amplitudes mleft')
         numcodes=ceil(numcodes/2);
         allaligncodes=allaligncodes(allaligncodes==7011 | allaligncodes==7012 | allaligncodes==7013);
@@ -455,6 +455,8 @@ for cnc=1:numcodes
     elseif strcmp(tasktype,'base2rem50')
         adjconditions=[conditions(cnc,:);conditions(cnc+numcodes,:);conditions(cnc+2*numcodes,:)];
         numplots=numcodes;
+    elseif strcmp(ol_instruct,'amplitudes') && singlerastplot
+        numplots=numcodes+2;
     else
         includebad=0;
         numplots=numcodes;
@@ -468,7 +470,7 @@ for cnc=1:numcodes
         disp( 'No raster could be generated (rex_rasters_trialtype returned empty raster)' );
         continue;
     elseif strcmp(aligntype,'stop')
-        shortamp=saccadeI;
+        canceledtrials=~badidx';
         datalign(cnc).alignlabel='stop_cancel';
         datalign(cnc).rasters=rasters(canceledtrials,:);
         datalign(cnc).alignidx=aidx;
@@ -502,7 +504,7 @@ for cnc=1:numcodes
         datalign(cnc+1).bad=badidx(canceledtrials);
         datalign(cnc+1).ssd=ssd(canceledtrials,:);
         %             datalign(cnc+1).condtimes=condtimes(canceledtrials);
-        elseif strcmp(tasktype,'optiloc') && strfind(ol_instruct,'amplitudes')
+        elseif strcmp(tasktype,'optiloc') && logical(sum(strfind(ol_instruct,'amplitudes')))
         apmdistrib=hist(abs(amplitudes),[4,12,20]);
         allamps=(sort(abs(amplitudes)));
         shortamps=(abs(amplitudes)<allamps(apmdistrib(1)))';
