@@ -330,9 +330,9 @@ for trialnumber = 1:nt
         %note that the trial number given to find_saccades_3 is 'next', not
         %'trialnumber'
         
-        if next==109
-            next
-        end
+%         if next==109
+%             next
+%         end
         
         [saccadeInfo, saccadeIdx] = find_saccades_3(next,filtvel,filtacc,velPeakIdx,minwidth,minfixwidth,saccadeVelocityTreshold,peakDetectionThreshold,filth,filtv);
         
@@ -522,7 +522,7 @@ outlandmismtch(2)={outliers};
 if logical(regexpi(rawdir(1:end-1),'Rigel$'))
     if strcmp(getenv('username'),'nick')
         procdir='/Users/nick/Dropbox/filesforNick/processed/Rigel/';
-    elseif strcmp(getenv('username'),'SommerVD')
+    elseif strcmp(getenv('username'),'SommerVD') || strcmp(getenv('username'),'DangerZone')
         procdir='C:\Data\Recordings\processed\Rigel\';
     else
         procdir='B:\data\Recordings\processed\Rigel\';
@@ -533,7 +533,7 @@ if logical(regexpi(rawdir(1:end-1),'Rigel$'))
 elseif logical(regexpi(rawdir(1:end-1),'Sixx$'))
     if strcmp(getenv('username'),'nick')
         procdir='/Users/nick/Dropbox/filesforNick/processed/Sixx/';
-    elseif strcmp(getenv('username'),'SommerVD')
+    elseif strcmp(getenv('username'),'SommerVD') || strcmp(getenv('username'),'DangerZone')
         procdir='C:\Data\Recordings\processed\Sixx\';
     else
         procdir='B:\data\Recordings\processed\Sixx\';
@@ -544,7 +544,7 @@ elseif logical(regexpi(rawdir(1:end-1),'Sixx$'))
 elseif logical(regexpi(rawdir(1:end-1),'Hilda$'))
     if strcmp(getenv('username'),'nick')
         procdir='/Users/nick/Dropbox/filesforNick/processed/Hilda/';
-    elseif strcmp(getenv('username'),'SommerVD')
+    elseif strcmp(getenv('username'),'SommerVD') || strcmp(getenv('username'),'DangerZone')
         procdir='C:\Data\Recordings\processed\Hilda\';
     else
         procdir='B:\data\Recordings\processed\Hilda\';
