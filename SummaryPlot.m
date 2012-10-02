@@ -131,7 +131,7 @@ for i=1:numrast
     start=alignidx - plotstart;
     stop=alignidx + plotstop;
        
-    trials = size(rasters,1);
+    %trials = size(rasters,1);
     isnantrial=zeros(1,size(rasters,1));
     
     if numrast==1
@@ -280,36 +280,43 @@ set(hlegdir,'Interpreter','none', 'Box', 'off','LineWidth',1.5,'FontName','calib
 newylim=[0, ceil(max(max(cell2mat(get(findobj(sdfplot,'Type','line'),'YDATA'))))/10)*10]; %rounding up to the decimal
 set(sdfplot,'YLim',newylim);
 
-
 % UIWAIT makes SummaryPlot wait for user response (see UIRESUME)
 % uiwait(handles.figure1);
 function batchplot(filelist,tasklist,handles)
 global directory slash;
-guifigh=gcf;
-plotaxh=gca;
-initaxdim=get(plotaxh,'Position');
+% guifigh=gcf;
+% plotaxh=gca;
+% initaxdim=get(plotaxh,'Position');
+algdir=[directory,'processed',slash,'aligned',slash];
 for algfile=1:length(filelist)
     filename=filelist{algfile};
     tasktype=tasklist{algfile};
 set(findobj('tag','dispfilename'),'string',filename);
 set(findobj('tag','disptaskname'),'string',tasktype);
-algdir=[directory,'processed',slash,'aligned',slash];
+
 load([algdir,filename,'_sac.mat']);
 alignment=dataaligned(1,1).savealignname(max(strfind(dataaligned(1,1).savealignname,'_'))+1:end);
 set(findobj('tag','dispalignment'),'string',alignment);
 
+%alignment=get(findobj('tag','dispalignment'),'string');
+
+%findobj(handles.mainfig,'Type','axes','Tag','legend')
+figuresize=getpixelposition(handles.mainfig);
+figuresize(1:2)=[80 167];
+exportfigname=[directory,'figures\',filename,'_',tasktype,'_',alignment];
+exportfig=figure('color','white','position',figuresize);
 %figdimension=get(findobj('tag','mainfig'),'Position');
 
-figure(guifigh);
+%figure(guifigh);
 %cla(findall(guifigh,'type','axes'))
 %handles.mainfig
 %axes(plotaxh);
-plotaxh=axes('Position',initaxdim);
+%plotaxh=axes('Position',initaxdim);
 %set(gca,'Position',initaxdim);
-rasterdim=[initaxdim(1)*1.1 (initaxdim(4)*0.66)+initaxdim(2)*1.1 initaxdim(3)*0.9 initaxdim(4)*0.3];
+rasterdim=[figuresize(1)*1.1 (figuresize(4)*0.66)+figuresize(2)*1.1 figuresize(3)*0.9 figuresize(4)*0.3];
 
-plotstart=300;
-plotstop=200;
+plotstart=1000;
+plotstop=500;
 fsigma=20;
 cc=lines(length(dataaligned));
 
@@ -322,22 +329,29 @@ end
 %rastersh = axes('Position', rasterdim, 'Layer','top','XTick',[],'YTick',[],'XColor','white','YColor','white');
 numrast=length(dataaligned);
 clear heyevelline aligntype curdir;
-for i=1:numrast
-    rasters=dataaligned(i).rasters;
-    alignidx=dataaligned(i).alignidx;
-    greyareas=dataaligned(i).allgreyareas;
+for rstplt=1:numrast
+    rasters=dataaligned(rstplt).rasters;
+    alignidx=dataaligned(rstplt).alignidx;
+    greyareas=dataaligned(rstplt).allgreyareas;
     start=alignidx - plotstart;
     stop=alignidx + plotstop;
        
+    if start < 1
+        start = 1;
+    end
+    if stop > length( rasters )
+        stop = length( rasters );
+    end
+    
     trials = size(rasters,1);
     isnantrial=zeros(1,size(rasters,1));
     
     if numrast==1
-        hrastplot(i)=subplot(numsubplot,1,1:2,'Layer','top', ...
-        'XTick',[],'YTick',[],'XColor','white','YColor','white', 'Parent', handles.mainfig);
+        hrastplot(rstplt)=subplot(numsubplot,1,1:2,'Layer','top', ...
+        'XTick',[],'YTick',[],'XColor','white','YColor','white');%'Parent', handles.mainfig
     else
-        hrastplot(i)=subplot(numsubplot,1,i,'Layer','top', ...
-        'XTick',[],'YTick',[],'XColor','white','YColor','white', 'Parent', handles.mainfig);
+        hrastplot(rstplt)=subplot(numsubplot,1,rstplt,'Layer','top', ...
+        'XTick',[],'YTick',[],'XColor','white','YColor','white');%'Parent', handles.mainfig
     end
     %reducing spacing between rasters
     if numrast>1
@@ -358,16 +372,22 @@ for i=1:numrast
         sortidx=[1:size(viscuetimes,1)];
     end
     viscuetimes=viscuetimes(sortidx,:);
+    if size(rasters,1)<length(sortidx)
+        % ca deconne
+        size(rasters,1)
+    else
     rasters=rasters(sortidx,:);
-    
+    end
+
     %axis([0 stop-start+1 0 size(rasters,1)]);
     hold on
     for j=1:size(rasters,1) %plotting rasters trial by trial
-        spiketimes=find(rasters(j,start:stop)); %converting from a matrix representation to a time collection, within selected time range
         if isnan(sum(rasters(j,start:stop)))
             isnantrial(j)=1;
+            rasters(j,isnan(rasters(j,:)))=0;
         end
-        plot([spiketimes;spiketimes],[ones(size(spiketimes))*j;ones(size(spiketimes))*j-1],'color',cc(i,:),'LineStyle','-');
+        spiketimes=find(rasters(j,start:stop)); %converting from a matrix representation to a time collection, within selected time range
+        plot([spiketimes;spiketimes],[ones(size(spiketimes))*j;ones(size(spiketimes))*j-1],'color',cc(rstplt,:),'LineStyle','-');
         
         % drawing the grey areas
         try
@@ -394,10 +414,10 @@ for i=1:numrast
     axis(gca, 'off', 'tight');
     
     %Plot sdf
-    if exist('sdfplot','var')
-        clf(sdfplot);
-    end
-    sdfplot=subplot(numsubplot,1,(numsubplot/3)+1:(numsubplot/3)+(numsubplot/3),'Layer','top','Parent', handles.mainfig);
+%     if exist('sdfplot','var')
+%         clf(sdfplot);
+%     end
+    sdfplot=subplot(numsubplot,1,(numsubplot/3)+1:(numsubplot/3)+(numsubplot/3),'Layer','top');%,'Parent', handles.mainfig
     %sdfh = axes('Position', [.15 .65 .2 .2], 'Layer','top');
     title('Spike Density Function','FontName','calibri','FontSize',11);
     hold on;
@@ -408,7 +428,7 @@ for i=1:numrast
     end
     sdf=spike_density(sumall,fsigma)./length(find(~isnantrial)); %instead of number of trials
     
-    plot(sdf,'Color',cc(i,:),'LineWidth',1.8);
+    plot(sdf,'Color',cc(rstplt,:),'LineWidth',1.8);
     % axis([0 stop-start 0 200])
     axis(gca,'tight');
     box off;
@@ -424,15 +444,15 @@ for i=1:numrast
         [0 0 0 0],[1 0 0],'EdgeColor','none','FaceAlpha',0.5);
     
     %Plot eye velocities
-    heyevelplot=subplot(numsubplot,1,(numsubplot*2/3)+1:numsubplot,'Layer','top','Parent', handles.mainfig);
+    heyevelplot=subplot(numsubplot,1,(numsubplot*2/3)+1:numsubplot,'Layer','top');%,'Parent', handles.mainfig
     title('Mean Eye Velocity','FontName','calibri','FontSize',11);
     hxlabel=xlabel(gca,'Time (ms)','FontName','calibri','FontSize',8);
     
     hold on;
     
-    eyevel=dataaligned(i).eyevel;
+    eyevel=dataaligned(rstplt).eyevel;
     eyevel=mean(eyevel(:,start:stop));
-    heyevelline(i)=plot(eyevel,'Color',cc(i,:),'LineWidth',1);
+    heyevelline(rstplt)=plot(eyevel,'Color',cc(rstplt,:),'LineWidth',1);
     %axis(gca,'tight');
     eyevelymax=max(eyevel);
     if eyevelymax>0.8
@@ -448,8 +468,58 @@ for i=1:numrast
         [0 0 0 0],[1 0 0],'EdgeColor','none','FaceAlpha',0.5);
     
     % get directions for the legend
-    curdir{i}=dataaligned(i).dir;
-    aligntype{i}=dataaligned(i).alignlabel;
+    %curdir{rstplt}=dataaligned(rstplt).dir;
+    sacdeg=nan(size(dataaligned(1,rstplt).trials,2),1);
+    for eyetr=1:size(dataaligned(1,rstplt).trials,2)
+    thissach=dataaligned(1,rstplt).eyeh(eyetr,dataaligned(1,rstplt).alignidx:dataaligned(1,rstplt).alignidx+100);
+    thissacv=dataaligned(1,rstplt).eyev(eyetr,dataaligned(1,rstplt).alignidx:dataaligned(1,rstplt).alignidx+100);
+    minwidth=5;
+    [~, ~, thissacvel, ~, ~, ~] = cal_velacc(thissach,thissacv,minwidth);
+    peakvel=find(thissacvel==max(thissacvel),1);
+    sacendtime=peakvel+find(thissacvel(peakvel:end)<=...
+        (min(thissacvel(peakvel:end))+(max(thissacvel(peakvel:end))-min(thissacvel(peakvel:end)))/10),1);
+    try
+    sacdeg(eyetr)=abs(atand((thissach(sacendtime)-thissach(1))/(thissacv(sacendtime)-thissacv(1))));
+    catch
+        thissacv;
+    end
+
+    % sign adjustements
+    if thissacv(sacendtime)<thissacv(1) % negative vertical amplitude -> vertical flip
+    	sacdeg(eyetr)=180-sacdeg(eyetr);
+    end
+    if thissach(sacendtime)>thissach(1)%inverted signal: leftward is in postive range. Correcting to negative. 
+        sacdeg(eyetr)=360-sacdeg(eyetr); % mirror image;
+    end
+    end
+    % a quick fix to be ableto put "upwards" directions together
+    distrib=hist(sacdeg,3); %floor(length(sacdeg)/2)
+    if max(bwlabel(distrib,4))>1 && distrib(1)>1 && distrib(end)>1 %=bimodal distribution with more than 1 outlier
+    sacdeg=sacdeg+45;
+    sacdeg(sacdeg>360)=-(360-(sacdeg(sacdeg>360)-45));
+    sacdeg(sacdeg>0)= sacdeg(sacdeg>0)-45;
+    end
+    sacdeg=abs(median(sacdeg));
+    
+    if sacdeg>45/2 && sacdeg <= 45+45/2
+        curdir{rstplt}='up_right';
+    elseif sacdeg>45+45/2 && sacdeg <= 90+45/2
+        curdir{rstplt}='rightward';
+    elseif sacdeg>90+45/2 && sacdeg <= 135+45/2
+        curdir{rstplt}='down_right';
+    elseif sacdeg>135+45/2 && sacdeg < 180+45/2
+        curdir{rstplt}='downward';
+    elseif sacdeg>=180+45/2 && sacdeg <= 225+45/2
+        curdir{rstplt}='down_left';
+    elseif sacdeg>225+45/2 && sacdeg <= 270+45/2
+        curdir{rstplt}='leftward';
+    elseif sacdeg>270+45/2 && sacdeg <= 315+45/2
+        curdir{rstplt}='up_left';
+    else
+        curdir{rstplt}='upward';
+    end
+    %get alignement type
+    aligntype{rstplt}=dataaligned(rstplt).alignlabel;
     
 end
 %moving up all rasters now
@@ -484,14 +554,50 @@ set(hlegdir,'Interpreter','none', 'Box', 'off','LineWidth',1.5,'FontName','calib
 % setting sdf plot y axis
 newylim=[0, ceil(max(max(cell2mat(get(findobj(sdfplot,'Type','line'),'YDATA'))))/10)*10]; %rounding up to the decimal
 set(sdfplot,'YLim',newylim);
-eventdata={algfile,aligntype};
-exportfig_Callback(findobj('tag','exportfig'), eventdata, handles);
+%eventdata={algfile,aligntype};
+%exportfig_Callback(findobj('tag','exportfig'), eventdata, handles);
+%% copied from export_callback
 
-figure(guifigh);
-allcurax=findall(guifigh,'type','axes');
-for axnum=1:length(allcurax)
-cla(allcurax(axnum))
-end
+% for k=1:length(subplots)
+%     copyobj(subplots(k),exportfig);
+% end
+%increase figure height to leave space for the title
+    %first change axes units to pixels, so that they don't rescale
+allaxes=findobj(exportfig,'Type','axes');
+    set(allaxes,'Units','pixels');
+addspace=figuresize(4)./8;
+figuresize(4)=figuresize(4)+addspace;
+set(exportfig,'position',figuresize);
+    %putting title
+axespos=cell2mat(get(allaxes,'Position'));
+figtitleh = title(allaxes(find(axespos(:,2)==max(axespos(:,2)),1)),...
+    ['File: ',filename,' - Task: ',tasktype,' - Alignment: ',alignment]);
+set(figtitleh,'Interpreter','none'); %that prevents underscores turning charcter into subscript
+    % and moving everything up a bit
+axespos(:,2)=axespos(:,2)+addspace/2; %units in pixels now
+axespos=mat2cell(axespos,ones(size(axespos,1),1)); %reconversion
+set(allaxes,{'Position'},axespos);
+    %and the title a little bit more if needed
+    subplots=findobj(gcf,'Type','axes');
+    if size(subplots,1)>5
+        titlepos=get(figtitleh,'position');
+        titlepos(2)=titlepos(2)+addspace/10;
+        set(figtitleh,'position',titlepos);
+    end
+    %changing units back to relative, in case we want to resize the figure
+    set(allaxes,'Units','normalized')
+        % remove time label on sdf plot
+set(allaxes(2),'XTickLabel','');
+%% saving figure
+%basic png fig: 
+print(gcf, '-dpng', '-noui', '-opengl','-r600', exportfigname);
+delete(exportfig);
+%% end copied section
+% figure(guifigh);
+% allcurax=findall(guifigh,'type','axes');
+% for axnum=1:length(allcurax)
+% cla(allcurax(axnum))
+% end
 %clf('reset')
 end
 
@@ -733,7 +839,7 @@ print(gcf, '-dpng', '-noui', '-opengl','-r600', exportfigname);
 %reasonably low size / good definition pdf figure (but patch transparency not supported by ghostscript to generate pdf):
 %print(gcf, '-dpdf', '-noui', '-painters','-r600', exportfigname); 
 %svg format
-%plot2svg([exportfigname,'.svg'],gcf, 'png'); %only vector graphic export function that preserves alpha transparency
+plot2svg([exportfigname,'.svg'],gcf, 'png'); %only vector graphic export function that preserves alpha transparency
 
 % to preserve transparency, may use tricks with eps files. See: http://blogs.mathworks.com/loren/2007/12/11/making-pretty-graphs/
 

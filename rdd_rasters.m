@@ -405,6 +405,10 @@ while ~islast
                     train = [0];
                     if ~isempty( spk )
                         [train, last] = rex_spk2raster( spk, 1, length( h ) );
+                        if isempty(train)
+                            train=nan(1,length(h));
+                            last=length(h);
+                        end
                     end;
                     rasters = cat_variable_size_row( rasters, train );
                     %collect conditions (aka greycodes) times
