@@ -96,8 +96,8 @@ if length(varargin)>1
 else
     filename=[];
 end
-if strcmp(varargin{1},'to load')
-    batchplot(varargin{2},varargin{3},handles);
+if ischar(varargin{1})
+    batchplot(varargin,handles);
     return
 end
 set(findobj('tag','dispfilename'),'string',filename);
@@ -282,11 +282,13 @@ set(sdfplot,'YLim',newylim);
 
 % UIWAIT makes SummaryPlot wait for user response (see UIRESUME)
 % uiwait(handles.figure1);
-function batchplot(filelist,tasklist,handles)
+function batchplot(arguments,handles)
 global directory slash;
-% guifigh=gcf;
-% plotaxh=gca;
-% initaxdim=get(plotaxh,'Position');
+if ~isdir([directory,'figures',slash,arguments{1}])
+    mkdir([directory,'figures',slash,arguments{1}])
+end
+filelist=arguments{2};
+tasklist=arguments{3};
 algdir=[directory,'processed',slash,'aligned',slash];
 for algfile=1:length(filelist)
     filename=filelist{algfile};
@@ -303,7 +305,7 @@ set(findobj('tag','dispalignment'),'string',alignment);
 %findobj(handles.mainfig,'Type','axes','Tag','legend')
 figuresize=getpixelposition(handles.mainfig);
 figuresize(1:2)=[80 167];
-exportfigname=[directory,'figures\',filename,'_',tasktype,'_',alignment];
+exportfigname=[directory,'figures',slash,arguments{1},slash,filename,'_',tasktype,'_',alignment];
 exportfig=figure('color','white','position',figuresize);
 %figdimension=get(findobj('tag','mainfig'),'Position');
 
@@ -328,6 +330,7 @@ end
 %Plot rasters
 %rastersh = axes('Position', rasterdim, 'Layer','top','XTick',[],'YTick',[],'XColor','white','YColor','white');
 numrast=length(dataaligned);
+failed=zeros(numrast,1);
 clear heyevelline aligntype curdir;
 for rstplt=1:numrast
     rasters=dataaligned(rstplt).rasters;
@@ -336,6 +339,8 @@ for rstplt=1:numrast
     start=alignidx - plotstart;
     stop=alignidx + plotstop;
        
+    if ~ isempty(rasters)
+
     if start < 1
         start = 1;
     end
@@ -393,7 +398,7 @@ for rstplt=1:numrast
         try
             greytimes=viscuetimes(j,:)-start;
             greytimes(greytimes<0)=0;
-            greytimes(greytimes>stop)=stop;                                         
+            greytimes(greytimes>(plotstart+plotstop))=plotstart+plotstop;                                         
         catch %grey times out of designated period's limits
             greytimes=0;
         end
@@ -520,13 +525,17 @@ for rstplt=1:numrast
     end
     %get alignement type
     aligntype{rstplt}=dataaligned(rstplt).alignlabel;
-    
+    else
+         curdir{rstplt}='data';
+         aligntype{rstplt}='no';
+         failed(rstplt)=1;
+    end
 end
 %moving up all rasters now
 if numrast==1
     allrastpos=(get(hrastplot,'position'));
 else
-    allrastpos=cell2mat(get(hrastplot(1:numrast),'position'));
+    allrastpos=cell2mat(get(hrastplot(~failed),'position'));
 end
 
 disttotop=allrastpos(1,2)+allrastpos(1,4);
@@ -535,7 +544,7 @@ if disttotop<0.99 %if not already close to top of container
 end
 if numrast>1
     allrastpos=mat2cell(allrastpos,ones(1,size(allrastpos,1))); %reconversion to cell .. un brin penible
-    set(hrastplot(1:numrast),{'position'},allrastpos);
+    set(hrastplot(~failed),{'position'},allrastpos);
 else
     set(hrastplot,'position',allrastpos);
 end
