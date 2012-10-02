@@ -602,7 +602,7 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
         else
             continue
         end
-        xlswrite('procdata.xlsx', statinfo, monknum, sprintf('I%d',wline));              
+        xlswrite('procdata.xlsx', statinfo, monknum, sprintf('J%d',wline));              
         end
     else
         %% normal method
