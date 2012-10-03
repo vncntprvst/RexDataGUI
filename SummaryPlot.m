@@ -111,8 +111,8 @@ set(findobj('tag','dispalignment'),'string',alignment);
 figdimension=get(gca,'Position');
 rasterdim=[figdimension(1)*1.1 (figdimension(4)*0.66)+figdimension(2)*1.1 figdimension(3)*0.9 figdimension(4)*0.3];
 
-plotstart=300;
-plotstop=200;
+plotstart=1000;
+plotstop=500;
 fsigma=20;
 cc=lines(length(alignedata));
 
@@ -131,6 +131,13 @@ for i=1:numrast
     start=alignidx - plotstart;
     stop=alignidx + plotstop;
        
+    if start < 1
+        start = 1;
+    end
+    if stop > length(rasters)
+        stop = length(rasters);
+    end
+    
     %trials = size(rasters,1);
     isnantrial=zeros(1,size(rasters,1));
     
@@ -213,10 +220,12 @@ for i=1:numrast
     hylabel=ylabel(gca,'Firing rate (spikes/s)','FontName','calibri','FontSize',8);
     currylim=get(gca,'YLim');
     
+    if ~isempty(rasters)
     % drawing the alignment bar
     patch([repmat((alignidx-start)-2,1,2) repmat((alignidx-start)+2,1,2)], ...
         [[0 currylim(2)] fliplr([0 currylim(2)])], ...
         [0 0 0 0],[1 0 0],'EdgeColor','none','FaceAlpha',0.5);
+    end
     
     %Plot eye velocities
     heyevelplot=subplot(numsubplot,1,(numsubplot*2/3)+1:numsubplot,'Layer','top','Parent', handles.mainfig);
@@ -224,7 +233,7 @@ for i=1:numrast
     hxlabel=xlabel(gca,'Time (ms)','FontName','calibri','FontSize',8);
     
     hold on;
-    
+    if ~isempty(rasters)
     eyevel=alignedata(i).eyevel;
     eyevel=mean(eyevel(:,start:stop));
     heyevelline(i)=plot(eyevel,'Color',cc(i,:),'LineWidth',1);
@@ -245,7 +254,10 @@ for i=1:numrast
     % get directions for the legend
     curdir{i}=alignedata(i).dir;
     aligntype{i}=alignedata(i).alignlabel;
-    
+    else
+    curdir{i}='no';
+    aligntype{i}='data';
+    end
 end
 %moving up all rasters now
 if numrast==1
@@ -273,11 +285,20 @@ set(heyevelplot,'position',eyevelplotpos);
 % plot a legend in this last graph
 clear spacer
 spacer(1:numrast,1)={' '};
+%cellfun('isempty',{alignedata(:).dir})
 hlegdir = legend(heyevelline, strcat(aligntype',spacer,curdir'),'Location','NorthWest');
 set(hlegdir,'Interpreter','none', 'Box', 'off','LineWidth',1.5,'FontName','calibri','FontSize',9);
 
 % setting sdf plot y axis
-newylim=[0, ceil(max(max(cell2mat(get(findobj(sdfplot,'Type','line'),'YDATA'))))/10)*10]; %rounding up to the decimal
+ylimdata=get(findobj(sdfplot,'Type','line'),'YDATA');
+if sum((cell2mat(cellfun(@(x) logical(isnan(sum(x))), ylimdata, 'UniformOutput', false)))) %if NaN data
+ylimdata=ylimdata(~(cell2mat(cellfun(@(x) logical(isnan(sum(x))),...
+    ylimdata, 'UniformOutput', false))));
+end
+if sum(logical(cellfun(@(x) length(x),ylimdata)-1))~=length(ylimdata) %some strange data with a single value
+    ylimdata=ylimdata(logical(cellfun(@(x) length(x),ylimdata)-1));
+end
+newylim=[0, ceil(max(max(cell2mat(ylimdata)))/10)*10]; %rounding up to the decimal
 set(sdfplot,'YLim',newylim);
 
 % UIWAIT makes SummaryPlot wait for user response (see UIRESUME)
@@ -848,7 +869,7 @@ print(gcf, '-dpng', '-noui', '-opengl','-r600', exportfigname);
 %reasonably low size / good definition pdf figure (but patch transparency not supported by ghostscript to generate pdf):
 %print(gcf, '-dpdf', '-noui', '-painters','-r600', exportfigname); 
 %svg format
-plot2svg([exportfigname,'.svg'],gcf, 'png'); %only vector graphic export function that preserves alpha transparency
+%plot2svg([exportfigname,'.svg'],gcf, 'png'); %only vector graphic export function that preserves alpha transparency
 
 % to preserve transparency, may use tricks with eps files. See: http://blogs.mathworks.com/loren/2007/12/11/making-pretty-graphs/
 
