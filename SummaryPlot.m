@@ -115,6 +115,9 @@ plotstart=1000;
 plotstop=500;
 fsigma=20;
 cc=lines(length(alignedata));
+if size(cc,1)==8
+    cc(8,:)=[0 0.75 0];
+end
 
 numsubplot=length(alignedata)*3; %dividing the panel in three compartments with wequal number of subplots
 if numsubplot==3
@@ -518,7 +521,7 @@ for rstplt=1:numrast
         sacdeg(eyetr)=360-sacdeg(eyetr); % mirror image;
     end
     end
-    % a quick fix to be ableto put "upwards" directions together
+    % a quick fix to be able to put "upwards" directions together
     distrib=hist(sacdeg,3); %floor(length(sacdeg)/2)
     if max(bwlabel(distrib,4))>1 && distrib(1)>1 && distrib(end)>1 %=bimodal distribution with more than 1 outlier
     sacdeg=sacdeg+45;
