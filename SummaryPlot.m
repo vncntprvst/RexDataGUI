@@ -294,6 +294,9 @@ set(hlegdir,'Interpreter','none', 'Box', 'off','LineWidth',1.5,'FontName','calib
 
 % setting sdf plot y axis
 ylimdata=get(findobj(sdfplot,'Type','line'),'YDATA');
+if ~iscell(ylimdata)
+    ylimdata={ylimdata};
+end
 if sum((cell2mat(cellfun(@(x) logical(isnan(sum(x))), ylimdata, 'UniformOutput', false)))) %if NaN data
 ylimdata=ylimdata(~(cell2mat(cellfun(@(x) logical(isnan(sum(x))),...
     ylimdata, 'UniformOutput', false))));
