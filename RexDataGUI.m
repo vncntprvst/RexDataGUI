@@ -558,7 +558,7 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
             if ~isempty([getaligndata.trials]) % if anything to make stats on and export, that is
             
              %% first pass at stats
-            [p_sac,h_sac]=raststats(getaligndata);
+            [p_sac,h_sac,p_rmanov,mcstats]=raststats(getaligndata);
             
             for psda=1:length(getaligndata)
             getaligndata(psda).stats.p=p_sac(psda,:);
@@ -579,12 +579,11 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
             getaligndata(psda).peakramp.auc=dirauc; % area under curve
             getaligndata(psda).peakramp.slopes=dirslopes; % slope of activity to peak (or drought, if negative) 
             
-            %% second passe at stats
-            [p_sac,h_sac,rmanov,mcstats]=raststats(getaligndata);
-            
             for psda=1:length(getaligndata)
             getaligndata(psda).stats.p=p_sac(psda,:);
             getaligndata(psda).stats.h=h_sac(psda,:);
+            getaligndata(psda).stats.p_rmanov=p_rmanov(psda,:);
+            getaligndata(psda).stats.mcstats=mcstats(psda,:);
             end
             
             % export data
@@ -592,7 +591,7 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
                 guidata(findobj('Tag','exportdata'),getaligndata);
                 exportdata_Callback(findobj('tag','exportdata'), eventdata, handles);
                 % check if statistically significant saccade activity in any alignment   
-                sumstatsacs=sum(arrayfun(@(x) sum(x{:}.h), {getaligndata(~cellfun(@isempty, {getaligndata.stats})).stats}));
+                sumstatsacs=sum(arrayfun(@(x) nansum(x{:}.h), {getaligndata(~cellfun(@isempty, {getaligndata.alignidx})).stats}));
             else
                 sumstatsacs=0;
             end
@@ -611,21 +610,83 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
             end
             Quit(exl);
             
-            activreport='Sac activity found: ';
+            activreport='';
+            peaktime='';
+            profile='';
+            dirselective='';
             if logical(sumstatsacs)
-                if logical(sum(arrayfun(@(x) x{:}.h(1), {getaligndata(~cellfun(@isempty, {getaligndata.stats})).stats})))
-                activreport = [activreport, 'pre_sac vs baseline '];
+                if logical(nansum(arrayfun(@(x) x{:}.h(1), {getaligndata(~cellfun(@isempty, {getaligndata.stats})).stats})))
+                activreport = [activreport, 'presac_baseline '];
                 end
-                if logical(sum(arrayfun(@(x) x{:}.h(2), {getaligndata(~cellfun(@isempty, {getaligndata.stats})).stats})))
-                activreport = [activreport, 'pre_post difference '];
+                if logical(nansum(arrayfun(@(x) x{:}.h(2), {getaligndata(~cellfun(@isempty, {getaligndata.stats})).stats})))
+                activreport = [activreport, 'presac_postsac '];
                 end
-                if logical(sum(arrayfun(@(x) x{:}.h(3), {getaligndata(~cellfun(@isempty, {getaligndata.stats})).stats})))
-                activreport = [activreport, 'perisac vs baseline'];
+                if logical(nansum(arrayfun(@(x) x{:}.h(3), {getaligndata(~cellfun(@isempty, {getaligndata.stats})).stats})))
+                activreport = [activreport, 'perisac_baseline'];
                 end
-                statinfo={'1',activreport};
+                if logical(nansum(p_rmanov<0.05))
+                    statinfo={'2',activreport};
+                else
+                    statinfo={'1',activreport};
+                end
+            %% attributes   
+            % peak cross-correlation time
+            
+            [~,pkdistrib]=hist(peakcct,4); 
+            if (pkdistrib(1)<0 && pkdistrib(2)<0) && (pkdistrib(3)>0 && pkdistrib(4)>0)
+                if median(abs(peakcct))>10
+                peaktime='pre_post';
+                else
+                peaktime='perisac';
+                end
+            elseif sum(pkdistrib>0)==4
+                if median(peakcct)>10
+                    peaktime='postsac';
+                else
+                    peaktime='perisac';
+                end
+            elseif sum(pkdistrib<0)==4
+                if median(peakcct)<-10
+                    peaktime='presac';
+                else
+                    peaktime='perisac';
+                end
             else
-                activreport = 'no sac activity found';
-                statinfo={'0',activreport};
+                if min(pkdistrib)>-10 && max(pkdistrib)<10
+                    peaktime='perisac';
+                else
+                    peaktime='mixed';
+                end
+            end
+            
+            % main sdf peak, within -200/+199 of aligntime
+                if sum(logical(hist(peaksdf,length(peaksdf))))>floor(length(peaksdf)/2) && max(peaksdf)>2*min(peaksdf)
+                    dirselective='dirselect';
+                else
+                    dirselective='nonselect';
+                end
+                
+% area under curve and slope
+            
+            if logical(sum(dirslopes>400 & dirauc>2000))
+                profile=[profile,'ramp_burst '];
+            end
+            if logical(sum(dirslopes>400 & dirauc<1500))
+                profile=[profile,'burst '];
+            end
+            if logical(sum((dirslopes<0 & dirslopes>-400) & dirauc<-2000))
+                profile=[profile,'suppression '];
+            end
+            
+            else
+                if logical(sum(p_rmanov<0.05))
+                    activreport = 'rmanov positive';
+                    statinfo={'0.5',activreport};
+                else
+                    activreport = 'no sac activity';
+                    statinfo={'0',activreport};
+                end
+                
             end
             
         cd(directory);   
@@ -635,7 +696,10 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
         else
             continue
         end
-        xlswrite('procdata.xlsx', statinfo, monknum, sprintf('J%d',wline));              
+        xlswrite('procdata.xlsx', statinfo, monknum, sprintf('J%d',wline));       
+        xlswrite('procdata.xlsx', {peaktime}, monknum, sprintf('M%d',wline));  
+        xlswrite('procdata.xlsx', {profile}, monknum, sprintf('N%d',wline));  
+        xlswrite('procdata.xlsx', {dirselective}, monknum, sprintf('O%d',wline));  
         end
     else
         %% normal method
@@ -662,11 +726,22 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
         dataaligned=rdd_rasters_sdf(rdd_filename, trialdirs,1); %align data, plot rasters
         
         %% do stats
-        [p_sac,h_sac]=raststats(dataaligned);
+        [p_sac,h_sac,p_rmanov,mcstats]=raststats(dataaligned);
         for psda=1:length(dataaligned)
             dataaligned(psda).stats.p=p_sac(psda,:);
             dataaligned(psda).stats.h=h_sac(psda,:);
         end
+        
+        %additional measures: cc and auc
+            % cross-correlation values: pretty reliable indicator to sort out presac, perisac and postsac activities
+            % possible limits are:
+            % pressac <-10ms before sac , >-10ms perisac <+10ms, <10ms postsac
+            [peakcct, peaksdf]=crosscorel(rdd_filename,dataaligned,'all',0); %Get peakcc for all directions. Don't plot
+            % area under curve: separate cells with low baseline FR and sharp burst from higher baseline neurons, especially ramping ones
+            % possible limit at 2000
+            [dirauc, dirslopes, peaksdft]=findauc(rdd_filename,dataaligned,'all'); %Get auc, slopes, peaksdft for all directions
+            
+        
         %% Present statistics
         pdata = {};
         stat_dir = {};
@@ -675,7 +750,7 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
         % Create table data
         if any(sum(h_sac,1))
             pdata=num2cell(p_sac);
-            stat_dir ={datalign.dir};
+            stat_dir ={dataaligned.dir};
             set(findobj('Tag','wilcoxontable'),'Data',pdata,'RowName',stat_dir);
         end
 
