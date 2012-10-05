@@ -553,9 +553,42 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
                 continue
             end
             % process file
-            getaligndata = rdd_rasters_sdf(procname, trialdirs, 0, 1); % align data, don't plot rasters, do stats but don't show them
+            getaligndata = rdd_rasters_sdf(procname, trialdirs, 0); % align data, don't plot rasters
+            
+            if ~isempty([getaligndata.trials]) % if anything to make stats on and export, that is
+            
+             %% first pass at stats
+            [p_sac,h_sac]=raststats(getaligndata);
+            
+            for psda=1:length(getaligndata)
+            getaligndata(psda).stats.p=p_sac(psda,:);
+            getaligndata(psda).stats.h=h_sac(psda,:);
+            end
+            %additional measures: cc and auc
+            % cross-correlation values: pretty reliable indicator to sort out presac, perisac and postsac activities
+            % possible limits are:
+            % pressac <-10ms before sac , >-10ms perisac <+10ms, <10ms postsac
+            [peakcct, peaksdf]=crosscorel(procname,getaligndata,'all',0); %Get peakcc for all directions. Don't plot
+            % area under curve: separate cells with low baseline FR and sharp burst from higher baseline neurons, especially ramping ones
+            % possible limit at 2000
+            [dirauc, dirslopes, peaksdft]=findauc(procname,getaligndata,'all'); %Get auc, slopes, peaksdft for all directions
+            
+            getaligndata(psda).peakramp.peakcct=peakcct; % peak cross-correlation time
+            getaligndata(psda).peakramp.peaksdf=peaksdf; % main sdf peak, within -200/+199 of aligntime
+            getaligndata(psda).peakramp.peaksdf=peaksdft; % 
+            getaligndata(psda).peakramp.auc=dirauc; % area under curve
+            getaligndata(psda).peakramp.slopes=dirslopes; % slope of activity to peak (or drought, if negative) 
+            
+            %% second passe at stats
+            [p_sac,h_sac,rmanov,mcstats]=raststats(getaligndata);
+            
+            for psda=1:length(getaligndata)
+            getaligndata(psda).stats.p=p_sac(psda,:);
+            getaligndata(psda).stats.h=h_sac(psda,:);
+            end
+            
             % export data
-            if ~isempty([getaligndata.trials]) % if anything to export, that is
+            
                 guidata(findobj('Tag','exportdata'),getaligndata);
                 exportdata_Callback(findobj('tag','exportdata'), eventdata, handles);
                 % check if statistically significant saccade activity in any alignment   
@@ -626,7 +659,26 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
         %set(trialdatapanelH,'UserData',whatever might be needed);
         
         rdd_trialdata(rdd_filename, trialnumber); % add 1 to make sure it reloads file
-        dataaligned=rdd_rasters_sdf(rdd_filename, trialdirs,1,1,1); %align data, plot rasters, do stats and show them. 
+        dataaligned=rdd_rasters_sdf(rdd_filename, trialdirs,1); %align data, plot rasters
+        
+        %% do stats
+        [p_sac,h_sac]=raststats(dataaligned);
+        for psda=1:length(dataaligned)
+            dataaligned(psda).stats.p=p_sac(psda,:);
+            dataaligned(psda).stats.h=h_sac(psda,:);
+        end
+        %% Present statistics
+        pdata = {};
+        stat_dir = {};
+        set(findobj('Tag','wilcoxontable'),'Data',pdata,'RowName',[]); %Clears previous table
+        
+        % Create table data
+        if any(sum(h_sac,1))
+            pdata=num2cell(p_sac);
+            stat_dir ={datalign.dir};
+            set(findobj('Tag','wilcoxontable'),'Data',pdata,'RowName',stat_dir);
+        end
+
         guidata(findobj('Tag','exportdata'),dataaligned);
     end
 end
