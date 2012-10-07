@@ -1,5 +1,6 @@
-function [alignedrasters, alignindex, trialindex, alltimefromtrig, ...
-    alltimetotrig, eyehoriz, eyevert, eyevelocity, amplitudes, peakvels,...
+function [alignedrasters, alignindex, trialindex, alltrigtosac, ...
+    allsactotrig, alltrigtovis, allvistotrig,eyehoriz, eyevert, ....
+    eyevelocity, amplitudes, peakvels,...
     peakaccs, allonoffcodetime,badidx,allssd] = ...
     rdd_rasters( name, spikechannel, aligntocode, noneofcodes,...
     allowbadtrials, alignsacnum, aligntype, collapse, conditions)
@@ -59,13 +60,15 @@ function [alignedrasters, alignindex, trialindex, alltimefromtrig, ...
 global rexnumtrials;
 
 tasktype=get(findobj('Tag','taskdisplay'),'String');
-
+[~, ~, tgtcode, tgtoffcode] = taskfindecode(tasktype);
 alignedrasters=[];
 sphisto=[];
 alignindex=[];
 trialindex=[];
-timefromtrig=[];
-timetotrig=[];
+trigtosac=[];
+sactotrig=[];
+trigtovis=[];
+vistotrig=[];
 eyehoriz=[];
 eyevert=[];
 eyevelocity=[];
@@ -99,8 +102,10 @@ eyevert = [];
 eyevelocity = [];
 allonoffcodetime = [];
 onoffcodetime=[];
-alltimefromtrig=[];
-alltimetotrig=[];
+alltrigtosac=[];
+allsactotrig=[];
+alltrigtovis=[];
+allvistotrig=[];
 badidx=[];
 allssd=[];
 % allcondtime = [];
@@ -349,26 +354,43 @@ while ~islast
                     end
                                         
                     % trigger times
-                    % beginning of trial trigger
+                    if (tgtcode<=1000)
+                        ecodeson=shortecodout;
+                    else
+                        ecodeson=ecodeout;
+                    end
+                    if (tgtoffcode<=1000)
+                        ecodesoff=shortecodout;
+                    else
+                        ecodesoff=ecodeout;
+                    end
+                        visevents=[etimeout(ismember(ecodeson,tgtcode)), etimeout(ismember(ecodesoff,tgtoffcode))]-etimeout(1)-1;
+
+                    % recordings with trigger channel
                     if find(ecodeout==1502) % Trigger code
-                        triggercode=1;
-                        timefromtrig=aligntime-etimeout(1)-1; %trigger code is 1ms before 1001                    
-                        
+%                         triggercode=1;
+                        trigtosac=aligntime-etimeout(1)-1; %trigger code is 1ms before 1001                    
+                        trigtovis=max(visevents(visevents<trigtosac)); %the latest visual event occuring before alignment time
                         if find(ecodeout==1030)
-                            timetotrig=etimeout(find(ecodeout==1502,1,'last'))+1-aligntime;
+                            sactotrig=etimeout(find(ecodeout==1502,1))+1-aligntime; %the second trigger channel is actually the start of the next trial
+                            vistotrig=etimeout(find(ecodeout==1502,1))+1-max(visevents(visevents<trigtosac)+etimeout(1)+1);
                         else
-                            timetotrig=NaN;
+                            sactotrig=NaN;
+                            vistotrig=NaN;
                         end
                         
                     else %older recordings without trigger code
-                        triggercode=0;
-                        timefromtrig=aligntime-etimeout(1)-1; %in case there is a trigger channel available in the SH recording
+%                         triggercode=0;
+                        trigtosac=aligntime-etimeout(1)-1; %in case there is a trigger channel available in the SH recording
+                        trigtovis=max(visevents(visevents<trigtosac)); %the latest visual event occuring before alignment time
                         if find(ecodeout==1030) %good trial
-                            timetotrig=etimeout(find(ecodeout==1030,1))+1-aligntime;%1ms between reward code and valve opening
+                            sactotrig=etimeout(find(ecodeout==1030,1))+1-aligntime;%1ms between reward code and valve opening
+                            vistotrig=etimeout(find(ecodeout==1030,1))+1-max(visevents(visevents<trigtosac)+etimeout(1)+1);
                         else %wrong trial
-                            timetotrig=NaN;
+                            sactotrig=NaN;
+                            vistotrig=NaN;
                         end
-                        if timetotrig<0
+                        if sactotrig<0
                             ecodeout;
                         end
                     end
@@ -426,8 +448,10 @@ while ~islast
                     allonoffcodetime=[allonoffcodetime {onoffcodetime}];
                     
                     %and collect trigger alignments
-                    alltimefromtrig=[alltimefromtrig timefromtrig];
-                    alltimetotrig=[alltimetotrig timetotrig]; 
+                    alltrigtosac=[alltrigtosac trigtosac];
+                    allsactotrig=[allsactotrig sactotrig]; 
+                    alltrigtovis=[alltrigtovis trigtovis];
+                    allvistotrig=[allvistotrig vistotrig]; 
                     
                     
                     if length(h)<length(train)

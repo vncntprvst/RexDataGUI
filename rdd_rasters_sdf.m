@@ -337,7 +337,7 @@ end
 nonecodes=[17385 16386];
 
 % variable to save aligned data
-datalign=struct('dir',{},'rasters',{},'trials',{},'timefromtrig',{},'timetotrig',{},'alignidx',{},'eyeh',{},'eyev',{},'eyevel',{},'amplitudes',{},...
+datalign=struct('dir',{},'rasters',{},'trials',{},'trigtosac',{},'sactotrig',{},'trigtovis',{},'vistotrig',{},'alignidx',{},'eyeh',{},'eyev',{},'eyevel',{},'amplitudes',{},...
     'peakvels',{},'peakaccs',{},'allgreyareas',{},'stats',{},'alignlabel',{},'savealignname',{});
 if strcmp(get(get(findobj('Tag','showdirpanel'),'SelectedObject'),'Tag'),'seleccompall') && sum(secondcode)==0
     singlerastplot=1;
@@ -461,11 +461,11 @@ for cnc=1:numcodes
         includebad=0;
         numplots=numcodes;
     end
-    [rasters,aidx, trialidx, timefromtrigs, timetotrigs, eyeh,eyev,eyevel,...
+    [rasters,aidx, trialidx, trigtosacs, sactotrigs, trigtovis, vistotrigs, eyeh,eyev,eyevel,...
         amplitudes,peakvels,peakaccs,allgreyareas,badidx,ssd] = rdd_rasters( rdd_filename, spikechannel,...
         allaligncodes(cnc,:), nonecodes, includebad, alignsacnum, aligntype, collapsecode, adjconditions);
     
-    
+
     if isempty( rasters )
         disp( 'No raster could be generated (rex_rasters_trialtype returned empty raster)' );
         continue;
@@ -475,8 +475,10 @@ for cnc=1:numcodes
         datalign(cnc).rasters=rasters(canceledtrials,:);
         datalign(cnc).alignidx=aidx;
         datalign(cnc).trials=trialidx(canceledtrials);
-        datalign(cnc).timefromtrig=timefromtrigs(canceledtrials);
-        datalign(cnc).timetotrig=timetotrigs(canceledtrials);
+        datalign(cnc).trigtosac=trigtosacs(canceledtrials);
+        datalign(cnc).sactotrig=sactotrigs(canceledtrials);
+        datalign(cnc).trigtovis=trigtovis(canceledtrials);
+        datalign(cnc).vistotrig=vistotrigs(canceledtrials);
         datalign(cnc).eyeh=eyeh(canceledtrials,:);
         datalign(cnc).eyev=eyev(canceledtrials,:);
         datalign(cnc).eyevel=eyevel(canceledtrials,:);
@@ -492,8 +494,10 @@ for cnc=1:numcodes
         datalign(cnc+1).rasters=rasters(canceledtrials,:);
         datalign(cnc+1).alignidx=aidx;
         datalign(cnc+1).trials=trialidx(canceledtrials);
-        datalign(cnc+1).timefromtrig=timefromtrigs(canceledtrials);
-        datalign(cnc+1).timetotrig=timetotrigs(canceledtrials);
+        datalign(cnc+1).trigtosac=trigtosacs(canceledtrials);
+        datalign(cnc+1).sactotrig=sactotrigs(canceledtrials);
+        datalign(cnc+1).trigtovis=trigtovis(canceledtrials);
+        datalign(cnc+1).vistotrig=vistotrigs(canceledtrials);
         datalign(cnc+1).eyeh=eyeh(canceledtrials,:);
         datalign(cnc+1).eyev=eyev(canceledtrials,:);
         datalign(cnc+1).eyevel=eyevel(canceledtrials,:);
@@ -512,8 +516,10 @@ for cnc=1:numcodes
         datalign(cnc).rasters=rasters(shortamps,:);
         datalign(cnc).alignidx=aidx;
         datalign(cnc).trials=trialidx(shortamps);
-        datalign(cnc).timefromtrig=timefromtrigs(shortamps);
-        datalign(cnc).timetotrig=timetotrigs(shortamps);
+        datalign(cnc).trigtosac=trigtosacs(shortamps);
+        datalign(cnc).sactotrig=sactotrigs(shortamps);
+        datalign(cnc).trigtovis=trigtovis(shortamps);
+        datalign(cnc).vistotrig=vistotrigs(shortamps);
         datalign(cnc).eyeh=eyeh(shortamps,:);
         datalign(cnc).eyev=eyev(shortamps,:);
         datalign(cnc).eyevel=eyevel(shortamps,:);
@@ -528,8 +534,10 @@ for cnc=1:numcodes
         datalign(cnc).rasters=rasters(medamps,:);
         datalign(cnc).alignidx=aidx;
         datalign(cnc).trials=trialidx(medamps);
-        datalign(cnc).timefromtrig=timefromtrigs(medamps);
-        datalign(cnc).timetotrig=timetotrigs(medamps);
+        datalign(cnc).trigtosac=trigtosacs(medamps);
+        datalign(cnc).sactotrig=sactotrigs(medamps);
+        datalign(cnc).trigtovis=trigtovis(medamps);
+        datalign(cnc).vistotrig=vistotrigs(medamps);
         datalign(cnc).eyeh=eyeh(medamps,:);
         datalign(cnc).eyev=eyev(medamps,:);
         datalign(cnc).eyevel=eyevel(medamps,:);
@@ -544,8 +552,10 @@ for cnc=1:numcodes
         datalign(cnc).rasters=rasters(longamps,:);
         datalign(cnc).alignidx=aidx;
         datalign(cnc).trials=trialidx(longamps);
-        datalign(cnc).timefromtrig=timefromtrigs(longamps);
-        datalign(cnc).timetotrig=timetotrigs(longamps);
+        datalign(cnc).trigtosac=trigtosacs(longamps);
+        datalign(cnc).sactotrig=sactotrigs(longamps);
+        datalign(cnc).trigtovis=trigtovis(longamps);
+        datalign(cnc).vistotrig=vistotrigs(longamps);
         datalign(cnc).eyeh=eyeh(longamps,:);
         datalign(cnc).eyev=eyev(longamps,:);
         datalign(cnc).eyevel=eyevel(longamps,:);
@@ -559,8 +569,10 @@ for cnc=1:numcodes
         datalign(cnc).rasters=rasters;
         datalign(cnc).alignidx=aidx;
         datalign(cnc).trials=trialidx;
-        datalign(cnc).timefromtrig=timefromtrigs;
-        datalign(cnc).timetotrig=timetotrigs;
+        datalign(cnc).trigtosac=trigtosacs;
+        datalign(cnc).sactotrig=sactotrigs;
+        datalign(cnc).trigtovis=trigtovis;
+        datalign(cnc).vistotrig=vistotrigs;
         datalign(cnc).eyeh=eyeh;
         datalign(cnc).eyev=eyev;
         datalign(cnc).eyevel=eyevel;
@@ -627,20 +639,20 @@ if plotrasts
         end
         
         aidx=datalign(cnp).alignidx;
-        trialidx=datalign(cnp).trials;
-        timefromtrigs=datalign(cnp).timefromtrig;
-        timetotrigs=datalign(cnp).timetotrig;
-        eyeh=datalign(cnp).eyeh;
-        eyev=datalign(cnp).eyev;
-        eyevel=datalign(cnp).eyevel;
+%         trialidx=datalign(cnp).trials;
+%         trigtosacs=datalign(cnp).trigtosac;
+%         sactotrigs=datalign(cnp).sactotrig;
+%         eyeh=datalign(cnp).eyeh;
+%         eyev=datalign(cnp).eyev;
+%         eyevel=datalign(cnp).eyevel;
         allgreyareas=datalign(cnp).allgreyareas;
-        amplitudes=datalign(cnp).amplitudes;
-        peakvels=datalign(cnp).peakvels;
-        peakaccs=datalign(cnp).peakaccs;
-        badidx=datalign(cnp).bad;
-        if strcmp(aligntype,'stop')
-            ssd=datalign(cnp).ssd;
-        end
+%         amplitudes=datalign(cnp).amplitudes;
+%         peakvels=datalign(cnp).peakvels;
+%         peakaccs=datalign(cnp).peakaccs;
+%         badidx=datalign(cnp).bad;
+%         if strcmp(aligntype,'stop')
+%             ssd=datalign(cnp).ssd;
+%         end
         
         % adjust temporal axis
         start = aidx - mstart;
