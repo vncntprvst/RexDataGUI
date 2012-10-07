@@ -556,10 +556,9 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
             getaligndata = rdd_rasters_sdf(procname, trialdirs, 0); % align data, don't plot rasters
             
             if ~isempty([getaligndata.trials]) % if anything to make stats on and export, that is
-            
+            getaligndata=getaligndata(~cellfun('isempty',{getaligndata.alignidx}));
              %% first pass at stats
             [p_sac,h_sac,p_rmanov,mcstats]=raststats(getaligndata);
-            
             for psda=1:length(getaligndata)
             getaligndata(psda).stats.p=p_sac(psda,:);
             getaligndata(psda).stats.h=h_sac(psda,:);
@@ -587,11 +586,13 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
             end
             
             % export data
-            
+            if isempty(getaligndata(1).savealignname)
+            getaligndata(1).savealignname = cat( 2, directory, 'processed',slash, 'aligned',slash, procname, '_', getaligndata(1).alignlabel);
+            end
                 guidata(findobj('Tag','exportdata'),getaligndata);
                 exportdata_Callback(findobj('tag','exportdata'), eventdata, handles);
                 % check if statistically significant saccade activity in any alignment   
-                sumstatsacs=sum(arrayfun(@(x) nansum(x{:}.h), {getaligndata(~cellfun(@isempty, {getaligndata.alignidx})).stats}));
+                sumstatsacs=sum(arrayfun(@(x) nansum(x{:}.h), {getaligndata(~cellfun(@isempty, {getaligndata.stats})).stats}));
             else
                 sumstatsacs=0;
             end
@@ -724,7 +725,7 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
         
         rdd_trialdata(rdd_filename, trialnumber); % add 1 to make sure it reloads file
         dataaligned=rdd_rasters_sdf(rdd_filename, trialdirs,1); %align data, plot rasters
-        
+        dataaligned=dataaligned(~cellfun('isempty',{dataaligned.alignidx}));
         %% do stats
         [p_sac,h_sac,p_rmanov,mcstats]=raststats(dataaligned);
         for psda=1:length(dataaligned)
@@ -779,7 +780,6 @@ dataaligned=guidata(hObject);
 savealignname=dataaligned.savealignname;
 save(savealignname,'dataaligned','-v7.3');
 
-
 %save some data to match with SH data analysis
 % about dataaligned:
 % datalign.timefromtrig and datalign.timetotrig represent time from start
@@ -801,15 +801,19 @@ rex2sh.starttrigs=recdata.alltrigin';
 rex2sh.endtrigs=recdata.alltrigout';
 rex2sh.rewtimes=recdata.allrew';
 %prealloc
-timefromtrig=nan(size(rex2sh.goodtrials));
-timetotrig=nan(size(rex2sh.goodtrials));
+trigtosac=nan(size(rex2sh.goodtrials));
+sactotrig=nan(size(rex2sh.goodtrials));
+trigtovis=nan(size(rex2sh.goodtrials));
+vistotrig=nan(size(rex2sh.goodtrials));
 trialdir=cell(size(rex2sh.goodtrials));
 alignlabel=cell(size(rex2sh.goodtrials));
 if logical(sum(rex2sh.goodtrials))
     for i=1:length(dataaligned)
         if ~isempty(dataaligned(i).trials)
-        timefromtrig((dataaligned(i).trials),1)=dataaligned(i).timefromtrig;
-        timetotrig((dataaligned(i).trials),1)=dataaligned(i).timetotrig;
+        trigtosac((dataaligned(i).trials),1)=dataaligned(i).trigtosac;
+        sactotrig((dataaligned(i).trials),1)=dataaligned(i).sactotrig;
+        trigtovis((dataaligned(i).trials),1)=dataaligned(i).trigtovis;
+        vistotrig((dataaligned(i).trials),1)=dataaligned(i).vistotrig;
         trialdir(dataaligned(i).trials)={dataaligned(i).dir};
         alignlabel(dataaligned(i).trials)={dataaligned(i).alignlabel};
         end
@@ -817,12 +821,14 @@ if logical(sum(rex2sh.goodtrials))
 end
 rex2sh.align=alignlabel;
 rex2sh.dir=trialdir;
-rex2sh.timefromtrig=timefromtrig;
-rex2sh.timetotrig=timetotrig;
+rex2sh.trigtosac=trigtosac;
+rex2sh.sactotrig=sactotrig;
+rex2sh.trigtovis=trigtovis;
+rex2sh.vistotrig=vistotrig;
 
 savealignsh=cat(2,savealignname,'_2SH');
 save(savealignsh, '-struct','rex2sh','goodtrials','starttrigs',...
-    'endtrigs','rewtimes','align','dir','timefromtrig','timetotrig','-v7.3');
+    'endtrigs','rewtimes','align','dir','trigtosac','sactotrig','trigtovis','vistotrig','-v7.3');
 
 % --- Executes during object creation, after setting all properties.
 function displaymfiles_CreateFcn(hObject, eventdata, handles)
