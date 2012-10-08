@@ -61,5 +61,5 @@ end;
 
 success = 1;
 load( rexmatname );
-disp( 'Loading...');
+disp( ['Loading ' rexmatname]);
 
