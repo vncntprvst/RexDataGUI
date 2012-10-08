@@ -448,7 +448,7 @@ if strcmp(get(gcf,'SelectionType'),'normal') && ~strcmp(eventdata,'rightclkevt')
         %displaymfiles_Callback(hObject, eventdata, handles)
     end
 elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt')
-    
+    cd(directory);
     s=dbstatus; %little trick to prevent removal of breakpoints with clear
     save('myBreakpoints.mat', 's');
     clear functions;
