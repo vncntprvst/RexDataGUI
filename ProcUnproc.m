@@ -235,7 +235,7 @@ for rftpnb = 1:length(allrftoproc)
             end
             
        %File name, Session Location, Depth, Recording #, Task, Lobule, Layer, Activity, Comparison, Processing notes, Checked   
-        writeinfo={procname,sessionid,recloc,recdepth,recnum,rectask,' ',' ',' ',' ',' ',' ',' ',' ',' ',diarycontent};
+        writeinfo={procname,sessionid,recloc,' ',recdepth,recnum,rectask,' ',' ',' ',' ',' ',' ',' ',' ',' ',diarycontent};
         %cd to directory and save data in spreadsheet
         cd(directory);
         [~,pfilelist] = xlsread('procdata.xlsx',monknum,['A2:A' num2str(numrows)]);

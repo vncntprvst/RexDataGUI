@@ -697,10 +697,10 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
         else
             continue
         end
-        xlswrite('procdata.xlsx', statinfo, monknum, sprintf('J%d',wline));       
-        xlswrite('procdata.xlsx', {peaktime}, monknum, sprintf('M%d',wline));  
-        xlswrite('procdata.xlsx', {profile}, monknum, sprintf('N%d',wline));  
-        xlswrite('procdata.xlsx', {dirselective}, monknum, sprintf('O%d',wline));  
+        xlswrite('procdata.xlsx', statinfo, monknum, sprintf('K%d',wline));       
+        xlswrite('procdata.xlsx', {peaktime}, monknum, sprintf('N%d',wline));  
+        xlswrite('procdata.xlsx', {profile}, monknum, sprintf('O%d',wline));  
+        xlswrite('procdata.xlsx', {dirselective}, monknum, sprintf('P%d',wline));  
         end
     else
         %% normal method
