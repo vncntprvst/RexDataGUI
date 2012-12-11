@@ -435,12 +435,14 @@ if strcmp(tasktype,'optiloc')
         %default, nothing to change
     elseif strcmp(ol_instruct,'amplitudes') && singlerastplot
         singlerastplot=0;
-    elseif strcmp(ol_instruct,'directions mleft') || strcmp(ol_instruct,'amplitudes mleft')
-        numcodes=ceil(numcodes/2);
-        allaligncodes=allaligncodes(allaligncodes==7011 | allaligncodes==7012 | allaligncodes==7013);
-    elseif strcmp(ol_instruct,'directions mright') || strcmp(ol_instruct,'amplitudes mright')
-        numcodes=ceil(numcodes/2);
-        allaligncodes=allaligncodes(allaligncodes==7015 | allaligncodes==7016 | allaligncodes==7017);
+    elseif strcmp(ol_instruct,'directions and amplitudes') && singlerastplot
+        singlerastplot=0;
+%     elseif strcmp(ol_instruct,'directions mleft') || strcmp(ol_instruct,'amplitudes mleft')
+%         numcodes=ceil(numcodes/2);
+%         allaligncodes=allaligncodes(allaligncodes==7011 | allaligncodes==7012 | allaligncodes==7013);
+%     elseif strcmp(ol_instruct,'directions mright') || strcmp(ol_instruct,'amplitudes mright')
+%         numcodes=ceil(numcodes/2);
+%         allaligncodes=allaligncodes(allaligncodes==7015 | allaligncodes==7016 | allaligncodes==7017);
     end
 end
 
@@ -455,8 +457,8 @@ for cnc=1:numcodes
     elseif strcmp(tasktype,'base2rem50')
         adjconditions=[conditions(cnc,:);conditions(cnc+numcodes,:);conditions(cnc+2*numcodes,:)];
         numplots=numcodes;
-    elseif strcmp(ol_instruct,'amplitudes') && singlerastplot
-        numplots=numcodes+2;
+    elseif logical(sum(strfind(ol_instruct,'amplitudes')))
+        numplots=numcodes*3;
     else
         includebad=0;
         numplots=numcodes;
@@ -509,10 +511,20 @@ for cnc=1:numcodes
         datalign(cnc+1).ssd=ssd(canceledtrials,:);
         %             datalign(cnc+1).condtimes=condtimes(canceledtrials);
         elseif strcmp(tasktype,'optiloc') && logical(sum(strfind(ol_instruct,'amplitudes')))
-        apmdistrib=hist(abs(amplitudes),[4,12,20]);
-        allamps=(sort(abs(amplitudes)));
-        shortamps=(abs(amplitudes)<allamps(apmdistrib(1)))';
-        datalign(cnc).alignlabel='4dg';
+        % compare amp distrib with expected distrib, typically [4,12,20]
+        if ~sum(hist(abs(amplitudes),[4,12,20])==hist(abs(amplitudes),3))==3 %case when amps are not dixtributed as expected
+            [~, apmbounds]=hist(abs(amplitudes),3);
+            disp('unequal amp distrib in rdd_rasters_sdf line 515');
+            pause;
+        else
+            shortampslim=4;
+            medampslim=12;
+            longampslim=20;
+        end
+        %allamps=(sort(abs(amplitudes)));
+        
+        shortamps=abs(amplitudes)<shortampslim; %(abs(amplitudes)<allamps(apmdistrib(1)))';
+        datalign(cnc).alignlabel=[alignlabel,'4dg'];
         datalign(cnc).rasters=rasters(shortamps,:);
         datalign(cnc).alignidx=aidx;
         datalign(cnc).trials=trialidx(shortamps);
@@ -529,41 +541,41 @@ for cnc=1:numcodes
         datalign(cnc).peakaccs=peakaccs(shortamps);
         datalign(cnc).bad=badidx(shortamps);
         
-        medamps=abs(amplitudes)<allamps(apmdistrib(2));
-        datalign(cnc).alignlabel='12dg';
-        datalign(cnc).rasters=rasters(medamps,:);
-        datalign(cnc).alignidx=aidx;
-        datalign(cnc).trials=trialidx(medamps);
-        datalign(cnc).trigtosac=trigtosacs(medamps);
-        datalign(cnc).sactotrig=sactotrigs(medamps);
-        datalign(cnc).trigtovis=trigtovis(medamps);
-        datalign(cnc).vistotrig=vistotrigs(medamps);
-        datalign(cnc).eyeh=eyeh(medamps,:);
-        datalign(cnc).eyev=eyev(medamps,:);
-        datalign(cnc).eyevel=eyevel(medamps,:);
-        datalign(cnc).allgreyareas=allgreyareas(:,medamps);
-        datalign(cnc).amplitudes=amplitudes(medamps);
-        datalign(cnc).peakvels=peakvels(medamps);
-        datalign(cnc).peakaccs=peakaccs(medamps);
-        datalign(cnc).bad=badidx(medamps);
+        medamps=abs(amplitudes)<medampslim;
+        datalign(cnc+numcodes).alignlabel=[alignlabel,'12dg'];
+        datalign(cnc+numcodes).rasters=rasters(medamps,:);
+        datalign(cnc+numcodes).alignidx=aidx;
+        datalign(cnc+numcodes).trials=trialidx(medamps);
+        datalign(cnc+numcodes).trigtosac=trigtosacs(medamps);
+        datalign(cnc+numcodes).sactotrig=sactotrigs(medamps);
+        datalign(cnc+numcodes).trigtovis=trigtovis(medamps);
+        datalign(cnc+numcodes).vistotrig=vistotrigs(medamps);
+        datalign(cnc+numcodes).eyeh=eyeh(medamps,:);
+        datalign(cnc+numcodes).eyev=eyev(medamps,:);
+        datalign(cnc+numcodes).eyevel=eyevel(medamps,:);
+        datalign(cnc+numcodes).allgreyareas=allgreyareas(:,medamps);
+        datalign(cnc+numcodes).amplitudes=amplitudes(medamps);
+        datalign(cnc+numcodes).peakvels=peakvels(medamps);
+        datalign(cnc+numcodes).peakaccs=peakaccs(medamps);
+        datalign(cnc+numcodes).bad=badidx(medamps);
 
-        longamps=abs(amplitudes)<allamps(apmdistrib(3));
-        datalign(cnc).alignlabel='20dg';
-        datalign(cnc).rasters=rasters(longamps,:);
-        datalign(cnc).alignidx=aidx;
-        datalign(cnc).trials=trialidx(longamps);
-        datalign(cnc).trigtosac=trigtosacs(longamps);
-        datalign(cnc).sactotrig=sactotrigs(longamps);
-        datalign(cnc).trigtovis=trigtovis(longamps);
-        datalign(cnc).vistotrig=vistotrigs(longamps);
-        datalign(cnc).eyeh=eyeh(longamps,:);
-        datalign(cnc).eyev=eyev(longamps,:);
-        datalign(cnc).eyevel=eyevel(longamps,:);
-        datalign(cnc).allgreyareas=allgreyareas(:,longamps);
-        datalign(cnc).amplitudes=amplitudes(longamps);
-        datalign(cnc).peakvels=peakvels(longamps);
-        datalign(cnc).peakaccs=peakaccs(longamps);
-        datalign(cnc).bad=badidx(longamps);
+        longamps=abs(amplitudes)<longampslim;
+        datalign(cnc+2*numcodes).alignlabel=[alignlabel,'20dg'];
+        datalign(cnc+2*numcodes).rasters=rasters(longamps,:);
+        datalign(cnc+2*numcodes).alignidx=aidx;
+        datalign(cnc+2*numcodes).trials=trialidx(longamps);
+        datalign(cnc+2*numcodes).trigtosac=trigtosacs(longamps);
+        datalign(cnc+2*numcodes).sactotrig=sactotrigs(longamps);
+        datalign(cnc+2*numcodes).trigtovis=trigtovis(longamps);
+        datalign(cnc+2*numcodes).vistotrig=vistotrigs(longamps);
+        datalign(cnc+2*numcodes).eyeh=eyeh(longamps,:);
+        datalign(cnc+2*numcodes).eyev=eyev(longamps,:);
+        datalign(cnc+2*numcodes).eyevel=eyevel(longamps,:);
+        datalign(cnc+2*numcodes).allgreyareas=allgreyareas(:,longamps);
+        datalign(cnc+2*numcodes).amplitudes=amplitudes(longamps);
+        datalign(cnc+2*numcodes).peakvels=peakvels(longamps);
+        datalign(cnc+2*numcodes).peakaccs=peakaccs(longamps);
+        datalign(cnc+2*numcodes).bad=badidx(longamps);
         
     else
         datalign(cnc).rasters=rasters;
@@ -745,7 +757,15 @@ if plotrasts
         % Direction already flipped left/ right in find_saccades_3 line 183
         % (see rex_process > find_saccades_3)
         if cnp>numcodes
-            aligncodeidx=max(numcodes);
+            if strcmp(tasktype,'optiloc')
+                if cnp<1+(numcodes*2)
+                    aligncodeidx=cnp-numcodes;
+                else
+                    aligncodeidx=cnp-2*numcodes;
+                end
+            else
+                aligncodeidx=max(numcodes);
+            end
         else
             aligncodeidx=cnp;
         end
@@ -811,8 +831,13 @@ if plotrasts
     end
 end
 
-% last item: save name
-datalign(1).savealignname = cat( 2, directory, 'processed',slash, 'aligned',slash, rdd_filename, '_', cell2mat(unique({datalign.alignlabel})));
+%% last item: save name
+if strcmp(tasktype,'optiloc')
+    parsename=unique(cellfun(@(x) x(1:(regexp(x,'\d+')-1)), unique({datalign.alignlabel}), 'UniformOutput', false)); %e.g., {sac}, instead of {'sac12dg','sac20dg','sac4dg'}
+else
+    parsename=unique({datalign.alignlabel});
+end
+datalign(1).savealignname = cat( 2, directory, 'processed',slash, 'aligned',slash, rdd_filename, '_', cell2mat(parsename));
 
 % comparison of raster from different methods
 %    figure(21);

@@ -36,6 +36,10 @@ elseif strcmp(monkeydirselected,'sixxselect')
     if ~strcmp(name(1),'S')
         name=cat(2,'S', name);
     end
+elseif strcmp(monkeydirselected,'hildaselect')
+    if ~strcmp(name(1),'H')
+        name=cat(2,'H', name);
+    end
 end
 
 namelength = length( name );
@@ -45,11 +49,11 @@ if ~strcmpi(  name( namelength-3:namelength ) , '.mat' )
 end;
 if ~exist( rexmatname, 'file' ) && ~skip
     disp( 'File to be processed...');
-    if findstr(name,'gap')
-        success = rex_process_gaptask( name ); %specifically to analyse gap tasks
-    else
+%     if findstr(name,'gap')
+%         success = rex_process_gaptask( name ); %specifically to analyse gap tasks
+%     else
         success = rex_process( name );
-    end
+%     end
     if ~success
         disp( 'Failed to process file...');
         return;
