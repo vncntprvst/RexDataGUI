@@ -278,6 +278,9 @@ if strcmp(monkeydirselected,'rigelselect')
 elseif strcmp(monkeydirselected,'sixxselect')
     monkeydir = [directory,'Sixx',slash]; %'B:\data\Recordings\Sixx';
     procdir = [directory,'processed',slash,'Sixx',slash];
+elseif strcmp(monkeydirselected,'hildaselect')
+    monkeydir = [directory,'Hilda',slash]; %'B:\data\Recordings\Sixx';
+    procdir = [directory,'processed',slash,'Hilda',slash];
 end
 
 % determines computer type
@@ -304,6 +307,14 @@ if strcmp(monkeydirselected,'rigelselect')
 elseif strcmp(monkeydirselected,'sixxselect')
     if ~strcmp(rfname(1),'S')
         procname=cat(2,'S', rfname);
+        set(findobj('Tag','filenamedisplay'),'String',procname);
+    else
+        procname=rfname;
+        set(findobj('Tag','filenamedisplay'),'String',rfname);
+    end
+elseif strcmp(monkeydirselected,'hildaselect')
+    if ~strcmp(rfname(1),'H')
+        procname=cat(2,'H', rfname);
         set(findobj('Tag','filenamedisplay'),'String',procname);
     else
         procname=rfname;
@@ -855,8 +866,10 @@ if strcmp(archst, 'maci64')
     end
     slash = '/';
 elseif strcmp(archst, 'win32') || strcmp(archst, 'win64')
-    if strcmp(getenv('username'),'SommerVD') || strcmp(getenv('username'),'DangerZone')
+    if strcmp(getenv('username'),'SommerVD')
         directory = 'C:\Data\Recordings\';
+    elseif strcmp(getenv('username'),'DangerZone')
+        directory = 'E:\data\Recordings\';
     else
         directory = 'B:\data\Recordings\';
     end
@@ -1278,7 +1291,11 @@ function plotsummary_Callback(hObject, eventdata, handles)
 filename=get(findobj('Tag','filenamedisplay'),'String');
 tasktype=get(findobj('Tag','taskdisplay'),'String');
 dataaligned=guidata(findobj('Tag','exportdata'));
-SummaryPlot(dataaligned,filename,tasktype);
+if strcmp(tasktype,'optiloc')
+    SummaryPlot_ol(dataaligned,filename,tasktype);
+else
+    SummaryPlot(dataaligned,filename,tasktype);
+end
 
 % --- Executes on button press in rastersandsdf_tab.
 function rastersandsdf_tab_Callback(hObject, eventdata, handles)

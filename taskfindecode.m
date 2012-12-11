@@ -61,6 +61,13 @@ elseif strcmp(tasktype,'fixation')
     tgtcode=fixcode;
     tgtoffcode=103; %none
     saccode=441;
+elseif strcmp(tasktype,'gapsac')
+    basecode=604;
+    fixcode=624;
+    fixoffcode=664;
+    tgtcode=684;
+    tgtoffcode=103;
+    saccode=704;
 else
     disp('task type no recognized');
     return

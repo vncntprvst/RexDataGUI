@@ -51,8 +51,10 @@ function SummaryPlot_OpeningFcn(hObject, eventdata, handles, varargin)
 % handles    structure with handles and user data (see GUIDATA)
 % varargin   command line arguments to SummaryPlot (see VARARGIN)
 global directory slash;
-if strcmp(getenv('username'),'SommerVD') || strcmp(getenv('username'),'DangerZone')
+if strcmp(getenv('username'),'SommerVD')
     directory = 'C:\Data\Recordings\';
+elseif strcmp(getenv('username'),'DangerZone')
+    directory = 'E:\data\Recordings\';
 else
     directory = 'B:\data\Recordings\';
 end
@@ -102,6 +104,10 @@ if ischar(varargin{1})
     else
         batchplot(varargin,handles);
     end
+    return
+end
+if strcmp(tasktype,'optiloc')
+    optilocplot(varargin,handles);
     return
 end
 set(findobj('tag','dispfilename'),'string',filename);
@@ -185,7 +191,7 @@ for i=1:numrast
         try
             greytimes=viscuetimes(j,:)-start;
             greytimes(greytimes<0)=0;
-            greytimes(greytimes>stop)=stop;
+            greytimes(greytimes>(stop-start))=stop-start;
         catch %grey times out of designated period's limits
             greytimes=0;
         end
@@ -288,6 +294,9 @@ end
 eyevelplotpos=get(heyevelplot,'position');
 eyevelplotpos(1,2)=eyevelplotpos(1,2)-(eyevelplotpos(1,2))/1.5;
 set(heyevelplot,'position',eyevelplotpos);
+% x axis tick labels
+set(heyevelplot,'XTick',[0:50:(stop-start)]);
+set(heyevelplot,'XTickLabel',[-plotstart:50:plotstop]);
 
 % plot a legend in this last graph
 clear spacer
@@ -295,6 +304,7 @@ spacer(1:numrast,1)={' '};
 %cellfun('isempty',{alignedata(:).dir})
 hlegdir = legend(heyevelline, strcat(aligntype',spacer,curdir'),'Location','NorthWest');
 set(hlegdir,'Interpreter','none', 'Box', 'off','LineWidth',1.5,'FontName','calibri','FontSize',9);
+
 
 % setting sdf plot y axis
 ylimdata=get(findobj(sdfplot,'Type','line'),'YDATA');
@@ -310,6 +320,11 @@ if sum(logical(cellfun(@(x) length(x),ylimdata)-1))~=length(ylimdata) %some stra
 end
 newylim=[0, ceil(max(max(cell2mat(ylimdata)))/10)*10]; %rounding up to the decimal
 set(sdfplot,'YLim',newylim);
+% x axis tick labels
+set(sdfplot,'XTick',[0:50:(stop-start)]);
+set(sdfplot,'XTickLabel',[-plotstart:50:plotstop]);
+        
+
 
 function batchplot_as(arguments,handles)
 global directory slash;
@@ -1089,6 +1104,141 @@ for algfile=1:length(filelist)
     % end
     %clf('reset')
 end
+
+function optilocplot(arguments,handles)
+global directory slash;
+filename=arguments{2};
+tasktype=arguments{3};
+%algdir=[directory,'processed',slash,'aligned',slash];
+    set(findobj('tag','dispfilename'),'string',filename);
+    set(findobj('tag','disptaskname'),'string',tasktype);
+    
+alignedata=struct(arguments{1});
+alignment=alignedata(1,1).savealignname(max(strfind(alignedata(1,1).savealignname,'_'))+1:end);
+set(findobj('tag','dispalignment'),'string',alignment);
+
+%figdimension=get(findobj('tag','mainfig'),'Position');
+%figdimension=get(gca,'Position');
+%rasterdim=[figdimension(1)*1.1 (figdimension(4)*0.66)+figdimension(2)*1.1 figdimension(3)*0.9 figdimension(4)*0.3];
+
+plotstart=450;
+plotstop=200;
+fsigma=20;
+cc=lines(length(alignedata));
+if size(cc,1)==8
+    cc(8,:)=[0 0.75 0];
+end
+
+%setappdata(gcf, 'SubplotDefaultAxesLocation', [0, 0, 1, 1]);
+%Plot rasters
+%rastersh = axes('Position', rasterdim, 'Layer','top','XTick',[],'YTick',[],'XColor','white','YColor','white');
+numrast=length(alignedata);
+%figure1 = figure;
+
+%% define axes positions
+Positions={0,0,1,1;...
+    0.51,0.58,0.13,0.10;...
+    0.60,0.68,0.13,0.10;...
+    0.72,0.80,0.13,0.10;... 
+    %
+    0.56,0.45,0.13,0.10;...
+    0.70,0.45,0.13,0.10;...
+    0.84,0.45,0.13,0.10;...
+    %
+    0.51,0.32,0.13,0.10;...
+    0.60,0.22,0.13,0.10;...
+    0.72,0.10,0.13,0.10;...
+    %
+    0.30,0.60,0.13,0.10;...
+    0.20,0.70,0.13,0.10;...
+    0.10,0.80,0.13,0.10;...
+    %
+    0.40,0.50,0.13,0.10;...
+    0.20,0.50,0.13,0.10;...
+    0.10,0.50,0.13,0.10;...
+    %
+    0.30,0.30,0.13,0.10;...
+    0.20,0.20,0.13,0.10;...
+    0.10,0.10,0.13,0.10};
+
+%% draw bull's eye
+olaxes{1}=axes('Parent',handles.mainfig,'Position',[Positions{1,:}]);
+viscircles([100 100; 100 100; 100 100], [12;36;60],'EdgeColor','b'); %12,36,60 = 4,12,20 *3
+
+%% plot individual sdf
+for i=1:numrast
+    olaxes{i+1}=axes('Parent',handles.mainfig,'Position',[Positions{i+1,:}],...
+        'XTick',[],'YTick',[],'XColor','white','YColor','white','XTickLabel',[],'YTickLabel',[]);
+    box(olaxes{i+1},'off');
+    rasters=alignedata(i).rasters;
+    alignidx=alignedata(i).alignidx;
+    greyareas=alignedata(i).allgreyareas;
+    start=alignidx - plotstart;
+    stop=alignidx + plotstop;
+    
+    if start < 1
+        start = 1;
+    end
+    if stop > length(rasters)
+        stop = length(rasters);
+    end
+    
+    isnantrial=zeros(1,size(rasters,1));
+              for j=1:size(rasters,1) %checking raster trial by trial
+                if isnan(sum(rasters(j,start:stop)))
+                    isnantrial(j)=1;
+                    rasters(j,isnan(rasters(j,:)))=0;
+                end
+              end
+    % can't subplot raster, an object of class axes, can not be a child of class axes.
+    %hrastplot{i}=subplot(3,1,1,'Layer','top','XTick',[],'YTick',[],'XColor','white','YColor','white', 'Parent',olaxes{i+1});
+    
+    %Plot sdf
+    if size(rasters,1)==1 %if only one good trial
+        sumall=rasters(~isnantrial,start:stop);
+    else
+        sumall=sum(rasters(~isnantrial,start:stop));
+    end
+    sdf=spike_density(sumall,fsigma)./length(find(~isnantrial)); %instead of number of trials
+    
+    plot(sdf,'Color',cc(i,:),'LineWidth',1.8);
+    %title('Spike Density Function','FontName','calibri','FontSize',11);
+    % axis([0 stop-start 0 200])
+    axis(gca,'tight');
+    box off;
+    set(gca,'Color','white','TickDir','out','FontName','calibri','FontSize',8); %'YAxisLocation','rigth'
+    %     hxlabel=xlabel(gca,'Time (ms)','FontName','calibri','FontSize',8);
+    %     set(hxlabel,'Position',get(hxlabel,'Position') - [180 -0.2 0]); %doesn't stay there when export !
+    %hylabel=ylabel(gca,'Firing rate (spikes/s)','FontName','calibri','FontSize',8);
+    currylim=get(gca,'YLim');
+    
+    if ~isempty(rasters)
+        % drawing the alignment bar
+        patch([repmat((alignidx-start)-5,1,2) repmat((alignidx-start)+5,1,2)], ...
+            [[0 currylim(2)] fliplr([0 currylim(2)])], ...
+            [0 0 0 0],[1 0 0],'EdgeColor','none','FaceAlpha',0.5);
+    end 
+    
+    % setting sdf plot y axis
+% ylimdata=get(findobj(sdfplot,'Type','line'),'YDATA');
+% if ~iscell(ylimdata)
+%     ylimdata={ylimdata};
+% end
+% if sum((cell2mat(cellfun(@(x) logical(isnan(sum(x))), ylimdata, 'UniformOutput', false)))) %if NaN data
+%     ylimdata=ylimdata(~(cell2mat(cellfun(@(x) logical(isnan(sum(x))),...
+%         ylimdata, 'UniformOutput', false))));
+% end
+% if sum(logical(cellfun(@(x) length(x),ylimdata)-1))~=length(ylimdata) %some strange data with a single value
+%     ylimdata=ylimdata(logical(cellfun(@(x) length(x),ylimdata)-1));
+% end
+% newylim=[0, ceil(max(max(cell2mat(ylimdata)))/10)*10]; %rounding up to the decimal
+% set(sdfplot,'YLim',newylim);
+% x axis tick labels
+set(gca,'XTick',[0:100:(stop-start)]);
+set(gca,'XTickLabel',[-plotstart:100:plotstop]);
+    
+end
+
 
 % --- Outputs from this function are returned to the command line.
 function varargout = SummaryPlot_OutputFcn(hObject, eventdata, handles)

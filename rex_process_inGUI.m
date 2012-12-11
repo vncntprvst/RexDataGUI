@@ -522,8 +522,10 @@ outlandmismtch(2)={outliers};
 if logical(regexpi(rawdir(1:end-1),'Rigel$'))
     if strcmp(getenv('username'),'nick')
         procdir='/Users/nick/Dropbox/filesforNick/processed/Rigel/';
-    elseif strcmp(getenv('username'),'SommerVD') || strcmp(getenv('username'),'DangerZone')
+    elseif strcmp(getenv('username'),'SommerVD')
         procdir='C:\Data\Recordings\processed\Rigel\';
+    elseif strcmp(getenv('username'),'DangerZone')
+        procdir='E:\Data\Recordings\processed\Rigel\';
     else
         procdir='B:\data\Recordings\processed\Rigel\';
     end
@@ -533,8 +535,10 @@ if logical(regexpi(rawdir(1:end-1),'Rigel$'))
 elseif logical(regexpi(rawdir(1:end-1),'Sixx$'))
     if strcmp(getenv('username'),'nick')
         procdir='/Users/nick/Dropbox/filesforNick/processed/Sixx/';
-    elseif strcmp(getenv('username'),'SommerVD') || strcmp(getenv('username'),'DangerZone')
+    elseif strcmp(getenv('username'),'SommerVD')
         procdir='C:\Data\Recordings\processed\Sixx\';
+    elseif strcmp(getenv('username'),'DangerZone')
+        procdir='E:\Data\Recordings\processed\Sixx\';
     else
         procdir='B:\data\Recordings\processed\Sixx\';
     end
@@ -544,8 +548,10 @@ elseif logical(regexpi(rawdir(1:end-1),'Sixx$'))
 elseif logical(regexpi(rawdir(1:end-1),'Hilda$'))
     if strcmp(getenv('username'),'nick')
         procdir='/Users/nick/Dropbox/filesforNick/processed/Hilda/';
-    elseif strcmp(getenv('username'),'SommerVD') || strcmp(getenv('username'),'DangerZone')
+    elseif strcmp(getenv('username'),'SommerVD')
         procdir='C:\Data\Recordings\processed\Hilda\';
+    elseif strcmp(getenv('username'),'DangerZone')
+        procdir='E:\Data\Recordings\processed\Hilda\';
     else
         procdir='B:\data\Recordings\processed\Hilda\';
     end
@@ -562,8 +568,9 @@ rexnumtrials = next -1; %nt;
 
 allrexnotes = sprintf( '%s, converted on %s\n%d trials\n', rexloadedname, datestr( now ), rexnumtrials );
 disp(allrexnotes);
-save( newname, 'rexloadedname', 'rexnumtrials', 'alloriginaltrialnums', 'allnewtrialnums', 'allcodes', 'alltimes', 'allspkchan', 'allspk', 'allrates', ...
-    'allh', 'allv', 'allstart', 'allbad', 'alltrigin', 'alltrigout', 'allrew', 'alldeleted', 'allsacstart', 'allsacend',...
+save( newname, 'rexloadedname', 'rexnumtrials', 'alloriginaltrialnums', 'allnewtrialnums',...
+    'allcodes', 'alltimes', 'allspkchan', 'allspk', 'allrates', 'allh', 'allv', 'allstart',...
+    'allbad', 'alltrigin', 'alltrigout', 'allrew', 'alldeleted', 'allsacstart', 'allsacend',...
     'allspklen', 'allsaclen', 'allrexnotes', 'saccadeInfo','outlandmismtch','-v7.3'); %using '-v7.3' input arguments so that matfile loading runs well when retrieving data from file
 %removed allcodelen and alleyelen. allspklen should go too, and allrates be included
 %elsewhere

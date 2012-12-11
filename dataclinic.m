@@ -99,6 +99,7 @@ if strcmp(cure,'fixdircs') || strcmp(cure,'fixdirol')
     % wrong direction digit
     
     if strcmp(cure,'fixdirol')
+       if ~isempty(wrongdircode)
         if find(allgoodamps<0,1)==1
             wrongdircode=trialq(find(abs(anglediff)>45,1,'last'))+1;
             rangewtrials=wrongdircode:size(allcodes,1);
@@ -117,6 +118,7 @@ if strcmp(cure,'fixdircs') || strcmp(cure,'fixdirol')
                     findwrcd=findwrcd+200; % next ecode in line
                 end
             end
+       end
     elseif strcmp(cure,'fixdircs')
         if allcodes(wrongdircode,2)-basecode>4
             wrgdirdg=[allcodes(wrongdircode,2)-basecode allcodes(wrongdircode,2)-6044];

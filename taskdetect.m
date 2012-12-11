@@ -191,11 +191,11 @@ if ~isempty(curtasktype) && ~sum(find(codes==17385))
             ecodecueon=6;
             ecodesacstart=9;
             ecodesacend=10;
-        case 'gapsac' % to change !
+        case 'gapsac'
             ecodecueon=7;
             ecodesacstart=8;
             ecodesacend=9;
-        case 'delayedsac' % to change !
+        case 'delayedsac' % to change ?!
             disp('check task ecodes for delayedsac in taskdetect');
             ecodecueon=6;
             ecodesacstart=8;
