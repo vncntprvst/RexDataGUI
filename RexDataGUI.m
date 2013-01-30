@@ -779,7 +779,7 @@ load('myBreakpoints.mat');
 dbstop(s);
 rdd_filename=get(findobj('Tag','filenamedisplay'),'String');
 [rdd_nt, trialdirs] = data_info( rdd_filename );
-dataaligned=rdd_rasters_sdf(rdd_filename, trialdirs,1,1,1);
+dataaligned=rdd_rasters_sdf(rdd_filename, trialdirs,1);
 guidata(findobj('Tag','exportdata'),dataaligned);
 
 % --- Executes on button press in exportdata.
