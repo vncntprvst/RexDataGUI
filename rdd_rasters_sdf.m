@@ -296,12 +296,16 @@ elseif strcmp(get(get(findobj('Tag','showdirpanel'),'SelectedObject'),'Tag'),'se
     % rdd_rasters would know it had to collapse all
     % directions together
     alignseccodes= alignseccodes'; %secondcode;
+elseif size(alignseccodes,1)>0
+    collapsecode=1; % we want to plots, one for each type of code
+    aligncodes=aligncodes';
+    alignseccodes= alignseccodes';
+elseif strcmp(tasktype,'base2rem50')
+    collapsecode=0; % we want to plots, one for each type of code
+    aligncodes=aligncodes';
+    alignseccodes= alignseccodes';
 else
-    disp('Selected option: all directions'); %that's the 'selecalldir' tag
-    if strcmp(tasktype,'base2rem50')
-        aligncodes=aligncodes';
-        alignseccodes= alignseccodes';
-    end
+    disp('Selected option: all directions'); %correspond to 'selecalldir' tag
 end
 
 %% Grey area in raster
@@ -382,7 +386,7 @@ if sum(alignseccodes)
         secalignlabel='none';
     end
     
-    for numlab=(size(aligncodes,1)+size(alignseccodes,1))/2+1:size(aligncodes,1)+size(alignseccodes,1)
+    for numlab=size(aligncodes,1)+1:size(aligncodes,1)+size(alignseccodes,1)
         datalign(numlab).alignlabel =secalignlabel;
     end
 end
@@ -460,7 +464,7 @@ for cnc=1:numcodes
     elseif logical(sum(strfind(ol_instruct,'amplitudes')))
         numplots=numcodes*3;
     else
-        includebad=0;
+       % includebad=0;
         numplots=numcodes;
     end
     [rasters,aidx, trialidx, trigtosacs, sactotrigs, trigtovis, vistotrigs, eyeh,eyev,eyevel,...
