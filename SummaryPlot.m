@@ -211,7 +211,9 @@ for i=1:numrast
         %         end
         
     end
-    axis(gca, 'off', 'tight');
+    set(hrastplot(i),'xlim',[1 length(start:stop)]);
+    axis(gca, 'off'); % axis tight sets the axis limits to the range of the data.
+
     
     %Plot sdf
     sdfplot=subplot(numsubplot,1,(numsubplot/3)+1:(numsubplot/3)+(numsubplot/3),'Layer','top','Parent', handles.mainfig);
