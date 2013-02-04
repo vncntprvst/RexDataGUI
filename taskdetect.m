@@ -172,6 +172,19 @@ if ~isempty(curtasktype) && ~sum(find(codes==17385))
             ecodesacstart=8;
             ecodesacend=9;
         case 'base2rem50' %variable
+            if ecodetypes==6020 %memory guided
+            	ecodecueon=6;
+                ecodesacstart=9;
+                ecodesacend=10;
+            elseif ecodetypes==6040 % gap sac
+                ecodecueon=7;
+                ecodesacstart=8;
+                ecodesacend=9;
+            elseif ecodetypes==6080 %delayed sac
+                ecodecueon=6;
+                ecodesacstart=8;
+                ecodesacend=9;
+            end
         case 'st_saccades'
             ecodecueon=6;
             ecodesacstart=8;

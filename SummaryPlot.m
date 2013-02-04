@@ -55,6 +55,8 @@ if strcmp(getenv('username'),'SommerVD')
     directory = 'C:\Data\Recordings\';
 elseif strcmp(getenv('username'),'DangerZone')
     directory = 'E:\data\Recordings\';
+elseif strcmp(getenv('username'),'Radu')
+        directory = 'E:\Spike_Sorting\';
 else
     directory = 'B:\data\Recordings\';
 end
@@ -211,6 +213,7 @@ for i=1:numrast
     end
     set(hrastplot(i),'xlim',[1 length(start:stop)]);
     axis(gca, 'off'); % axis tight sets the axis limits to the range of the data.
+
     
     %Plot sdf
     sdfplot=subplot(numsubplot,1,(numsubplot/3)+1:(numsubplot/3)+(numsubplot/3),'Layer','top','Parent', handles.mainfig);
