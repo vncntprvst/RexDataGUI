@@ -870,6 +870,8 @@ elseif strcmp(archst, 'win32') || strcmp(archst, 'win64')
         directory = 'C:\Data\Recordings\';
     elseif strcmp(getenv('username'),'DangerZone')
         directory = 'E:\data\Recordings\';
+    elseif strcmp(getenv('username'),'Radu')
+        directory = 'E:\Spike_Sorting\';
     else
         directory = 'B:\data\Recordings\';
     end
