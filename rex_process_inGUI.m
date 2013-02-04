@@ -526,6 +526,8 @@ if logical(regexpi(rawdir(1:end-1),'Rigel$'))
         procdir='C:\Data\Recordings\processed\Rigel\';
     elseif strcmp(getenv('username'),'DangerZone')
         procdir='E:\Data\Recordings\processed\Rigel\';
+    elseif strcmp(getenv('username'),'Radu')
+        procdir = 'E:\Spike_Sorting\processed\Rigel\';
     else
         procdir='B:\data\Recordings\processed\Rigel\';
     end
@@ -539,6 +541,8 @@ elseif logical(regexpi(rawdir(1:end-1),'Sixx$'))
         procdir='C:\Data\Recordings\processed\Sixx\';
     elseif strcmp(getenv('username'),'DangerZone')
         procdir='E:\Data\Recordings\processed\Sixx\';
+    elseif strcmp(getenv('username'),'Radu')
+        procdir = 'E:\Spike_Sorting\processed\Sixx\';
     else
         procdir='B:\data\Recordings\processed\Sixx\';
     end
@@ -552,6 +556,8 @@ elseif logical(regexpi(rawdir(1:end-1),'Hilda$'))
         procdir='C:\Data\Recordings\processed\Hilda\';
     elseif strcmp(getenv('username'),'DangerZone')
         procdir='E:\Data\Recordings\processed\Hilda\';
+    elseif strcmp(getenv('username'),'Radu')
+        procdir = 'E:\Spike_Sorting\processed\Hilda\';
     else
         procdir='B:\data\Recordings\processed\Hilda\';
     end
