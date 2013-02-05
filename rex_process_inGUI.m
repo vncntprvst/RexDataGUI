@@ -522,7 +522,7 @@ outlandmismtch(2)={outliers};
 if logical(regexpi(rawdir(1:end-1),'Rigel$'))
     if strcmp(getenv('username'),'nick')
         procdir='/Users/nick/Dropbox/filesforNick/processed/Rigel/';
-    elseif strcmp(getenv('username'),'SommerVD')
+    elseif strcmp(getenv('username'),'SommerVD') || strcmp(getenv('username'),'LabV')
         procdir='C:\Data\Recordings\processed\Rigel\';
     elseif strcmp(getenv('username'),'DangerZone')
         procdir='E:\Data\Recordings\processed\Rigel\';
@@ -537,7 +537,7 @@ if logical(regexpi(rawdir(1:end-1),'Rigel$'))
 elseif logical(regexpi(rawdir(1:end-1),'Sixx$'))
     if strcmp(getenv('username'),'nick')
         procdir='/Users/nick/Dropbox/filesforNick/processed/Sixx/';
-    elseif strcmp(getenv('username'),'SommerVD')
+    elseif strcmp(getenv('username'),'SommerVD') || strcmp(getenv('username'),'LabV')
         procdir='C:\Data\Recordings\processed\Sixx\';
     elseif strcmp(getenv('username'),'DangerZone')
         procdir='E:\Data\Recordings\processed\Sixx\';
@@ -552,7 +552,7 @@ elseif logical(regexpi(rawdir(1:end-1),'Sixx$'))
 elseif logical(regexpi(rawdir(1:end-1),'Hilda$'))
     if strcmp(getenv('username'),'nick')
         procdir='/Users/nick/Dropbox/filesforNick/processed/Hilda/';
-    elseif strcmp(getenv('username'),'SommerVD')
+    elseif strcmp(getenv('username'),'SommerVD') || strcmp(getenv('username'),'LabV')
         procdir='C:\Data\Recordings\processed\Hilda\';
     elseif strcmp(getenv('username'),'DangerZone')
         procdir='E:\Data\Recordings\processed\Hilda\';

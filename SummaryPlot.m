@@ -51,7 +51,7 @@ function SummaryPlot_OpeningFcn(hObject, eventdata, handles, varargin)
 % handles    structure with handles and user data (see GUIDATA)
 % varargin   command line arguments to SummaryPlot (see VARARGIN)
 global directory slash;
-if strcmp(getenv('username'),'SommerVD')
+if strcmp(getenv('username'),'SommerVD') || strcmp(getenv('username'),'LabV')
     directory = 'C:\Data\Recordings\';
 elseif strcmp(getenv('username'),'DangerZone')
     directory = 'E:\data\Recordings\';

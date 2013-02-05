@@ -866,7 +866,7 @@ if strcmp(archst, 'maci64')
     end
     slash = '/';
 elseif strcmp(archst, 'win32') || strcmp(archst, 'win64')
-    if strcmp(getenv('username'),'SommerVD')
+    if strcmp(getenv('username'),'SommerVD') || strcmp(getenv('username'),'LabV')
         directory = 'C:\Data\Recordings\';
     elseif strcmp(getenv('username'),'DangerZone')
         directory = 'E:\data\Recordings\';
