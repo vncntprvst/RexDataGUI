@@ -60,6 +60,12 @@ function [alignedrasters, alignindex, trialindex, alltrigtosac, ...
 global rexnumtrials;
 
 tasktype=get(findobj('Tag','taskdisplay'),'String');
+if strcmp(tasktype,'gapstop')
+    multicodetask=1;
+else
+    multicodetask=0;
+end
+
 [~, ~, tgtcode, tgtoffcode] = taskfindecode(tasktype);
 alignedrasters=[];
 sphisto=[];
@@ -148,7 +154,7 @@ while ~islast
     if isempty(h) || isempty(ecodeout)
         cond_disp( 'Something wrong with trial, no data.' );
     else
-        if  collapse %for collapsed alignements
+        if  collapse || multicodetask%for collapsed alignements
 %             || multicode
             anyof = has_any_of( ecodeout, alignto );
             allof = 1;

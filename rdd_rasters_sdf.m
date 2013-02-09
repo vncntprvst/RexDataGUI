@@ -130,7 +130,7 @@ elseif ATPbuttonnb==3 % rewardnalign button
     ecodealign=rewcode;
 elseif ATPbuttonnb==8 % stopsignalign button
     if ~strcmp(tasktype,'gapstop')
-        %faire qqchose!!
+        %faire qqchose. Ou pas.
     else
         ecodealign=stopcode;
     end
@@ -298,7 +298,7 @@ elseif strcmp(get(get(findobj('Tag','showdirpanel'),'SelectedObject'),'Tag'),'se
     % directions together
     alignseccodes= alignseccodes'; %secondcode;
 elseif size(alignseccodes,1)>0
-    collapsecode=1; % we want to plots, one for each type of code
+    collapsecode=1; % we want two plots, one for each type of code
     aligncodes=aligncodes';
     alignseccodes= alignseccodes';
 elseif strcmp(tasktype,'base2rem50')
