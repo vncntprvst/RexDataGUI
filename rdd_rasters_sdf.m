@@ -140,7 +140,8 @@ elseif ATPbuttonnb==9 % other sac align
     alignsacnum=1; %that is n-th saccade following the alignment code, which for now will be the main saccade.
     % to be tested
     
-    %then there should be the error code button, and then listbox ecodes
+elseif ATPbuttonnb==5 % listbox ecodes
+    ecodealign=str2num(get(findobj('Tag','alignspececodes'),'String'));
 end
 
 
@@ -360,6 +361,8 @@ elseif strfind(ATPSelectedButton,'rew')
     alignlabel='rew';
 elseif strfind(ATPSelectedButton,'stop')
     alignlabel='stop';
+elseif strfind(ATPSelectedButton,'ecodesalign')
+    alignlabel='ecode';
 end
 
 if  singlerastplot || aligncodes(1)==1030 || aligncodes(1)== 17385
