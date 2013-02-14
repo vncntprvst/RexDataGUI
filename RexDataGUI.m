@@ -23,7 +23,7 @@ function varargout = RexDataGUI(varargin)
 %
 % See also: GUIDE, GUIDATA, GUIHANDLES
 
-% Last Modified by GUIDE v2.5 26-Sep-2012 14:11:45
+% Last Modified by GUIDE v2.5 12-Feb-2013 17:47:23
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -1479,3 +1479,10 @@ end
 % --- Executes on selection change in optiloc_popup.
 function optiloc_popup_Callback(hObject, eventdata, handles)
 % no action to do. 
+
+
+% --- Executes during object creation, after setting all properties.
+function hildaselect_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to hildaselect (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called

@@ -123,7 +123,7 @@ set(findobj('tag','dispalignment'),'string',alignment);
 figdimension=get(gca,'Position');
 rasterdim=[figdimension(1)*1.1 (figdimension(4)*0.66)+figdimension(2)*1.1 figdimension(3)*0.9 figdimension(4)*0.3];
 
-plotstart=800;
+plotstart=1000;
 plotstop=400;
 fsigma=20;
 cc=lines(length(alignedata));
