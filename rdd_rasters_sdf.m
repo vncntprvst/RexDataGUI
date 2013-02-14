@@ -126,7 +126,7 @@ if  ATPbuttonnb==6 % mainsacalign button
     ecodealign=saccode;
 elseif ATPbuttonnb==7 % tgtshownalign button
     ecodealign=tgtcode;
-elseif ATPbuttonnb==3 % rewardnalign button
+elseif ATPbuttonnb==4 % rewardnalign button
     ecodealign=rewcode;
 elseif ATPbuttonnb==8 % stopsignalign button
     if ~strcmp(tasktype,'gapstop')
