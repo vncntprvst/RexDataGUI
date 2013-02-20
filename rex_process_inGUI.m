@@ -19,6 +19,8 @@ function [success,outliers,curtasktype] = rex_process_inGUI( rexname, rawdir, re
 %     allcodelen allspklen alleyelen allsaclen allrexnotes;
 clearvars -global -except directory slash unprocfiles tasktype;
 global saccadeInfo tasktype;
+saccadeInfo=struct('status',[],'starttime',[],'endtime',[],'duration',[],'amplitude',[],...
+    'direction',[],'peakVelocity',[],'peakAcceleration',[],'latency',[]);
 
 if nargin<3
     reprocess=0;
