@@ -748,10 +748,10 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
             % cross-correlation values: pretty reliable indicator to sort out presac, perisac and postsac activities
             % possible limits are:
             % pressac <-10ms before sac , >-10ms perisac <+10ms, <10ms postsac
-            [peakcct, peaksdf]=crosscorel(rdd_filename,dataaligned,'all',0); %Get peakcc for all directions. Don't plot
+%             [peakcct, peaksdf]=crosscorel(rdd_filename,dataaligned,'all',0); %Get peakcc for all directions. Don't plot
             % area under curve: separate cells with low baseline FR and sharp burst from higher baseline neurons, especially ramping ones
             % possible limit at 2000
-            [dirauc, dirslopes, peaksdft]=findauc(rdd_filename,dataaligned,'all'); %Get auc, slopes, peaksdft for all directions
+%             [dirauc, dirslopes, peaksdft]=findauc(rdd_filename,dataaligned,'all'); %Get auc, slopes, peaksdft for all directions
             
         
         %% Present statistics

@@ -293,7 +293,7 @@ while ~islast
                             if strcmp(greytypes(i),'eyemvt') %adjust times to real saccade times
                                 % find which saccade is the "good" one (if any) in this trial
                                 try goodsacnum=find(~cellfun(@isempty,{curtrialsacInfo.latency}));  catch goodsacnum=0; end 
-                                if ~logical(sum(goodsacnum)) && ~strcmp(aligntype,'stop')
+                                if ~logical(sum(goodsacnum)) && (~strcmp(aligntype,'stop') && ~strcmp(aligntype,'touchbell'))
                                     s = sprintf('cannot display grey area for trial %d because saccade cannot be found. Removing erroneous trial',d);
                                     disp(s);
                                     alignmentfound = 0;
