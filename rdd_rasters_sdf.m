@@ -362,7 +362,13 @@ elseif strfind(ATPSelectedButton,'rew')
 elseif strfind(ATPSelectedButton,'stop')
     alignlabel='stop';
 elseif strfind(ATPSelectedButton,'ecodesalign')
-    alignlabel='ecode';
+    if ecodealign==421
+        alignlabel='touchbell';
+    elseif ecodealign==742
+        alignlabel='retarget';
+    else
+        alignlabel='ecode';
+    end
 end
 
 if  singlerastplot || aligncodes(1)==1030 || aligncodes(1)== 17385
