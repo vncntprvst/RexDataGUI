@@ -16,8 +16,6 @@ function [saccadeInfo, saccadeIdx] = find_saccades_3(trialnb,Saccvel,Saccacc,vel
 % See Behav Res Methods. 2010 Feb;42(1):188-204.
 % VP 11/2011
 global saccadeInfo;
-saccadeInfo=struct('status',[],'starttime',[],'endtime',[],'duration',[],'amplitude',[],...
-    'direction',[],'peakVelocity',[],'peakAcceleration',[],'latency',[]);
 
 verbose=0;
 
