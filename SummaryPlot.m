@@ -22,7 +22,7 @@ function varargout = SummaryPlot(varargin)
 
 % Edit the above text to modify the response to help SummaryPlot
 
-% Last Modified by GUIDE v2.5 19-Jun-2012 17:37:53
+% Last Modified by GUIDE v2.5 21-Feb-2013 23:14:00
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -116,7 +116,7 @@ set(findobj('tag','dispfilename'),'string',filename);
 set(findobj('tag','disptaskname'),'string',tasktype);
 
 alignedata=struct(varargin{1});
-alignment=alignedata(1,1).savealignname(max(strfind(alignedata(1,1).savealignname,'_'))+1:end);
+alignment=cell2mat(unique({alignedata.alignlabel}));
 set(findobj('tag','dispalignment'),'string',alignment);
 
 %figdimension=get(findobj('tag','mainfig'),'Position');
@@ -186,6 +186,7 @@ for i=1:numrast
         spiketimes=find(rasters(j,start:stop)); %converting from a matrix representation to a time collection, within selected time range
         if isnan(sum(rasters(j,start:stop)))
             isnantrial(j)=1;
+            spiketimes(find(isnan(rasters(j,start:stop))))=0; %#ok<FNDSB>
         end
         plot([spiketimes;spiketimes],[ones(size(spiketimes))*j;ones(size(spiketimes))*j-1],'color',cc(i,:),'LineStyle','-');
         
@@ -221,11 +222,12 @@ for i=1:numrast
     title('Spike Density Function','FontName','calibri','FontSize',11);
     hold on;
     if size(rasters,1)==1 %if only one good trial
-        sumall=rasters(~isnantrial,start:stop);
+        sumall=rasters(~isnantrial,start-fsigma:stop+fsigma);
     else
-        sumall=sum(rasters(~isnantrial,start:stop));
+        sumall=sum(rasters(~isnantrial,start-fsigma:stop+fsigma));
     end
     sdf=spike_density(sumall,fsigma)./length(find(~isnantrial)); %instead of number of trials
+    sdf=sdf(fsigma+1:end-fsigma);
     
     plot(sdf,'Color',cc(i,:),'LineWidth',1.8);
     % axis([0 stop-start 0 200])
@@ -306,6 +308,12 @@ set(heyevelplot,'XTickLabel',[-plotstart:100:plotstop]);
 clear spacer
 spacer(1:numrast,1)={' '};
 %cellfun('isempty',{alignedata(:).dir})
+if  logical(sum(cell2mat(strfind(aligntype,'error1'))) || sum(cell2mat(strfind(aligntype,'error2'))))
+    aligntype{~cellfun(@(x) (strcmp(x,'error1') || strcmp(x,'error2')), aligntype)}=...
+        ['good trial ' aligntype{~cellfun(@(x) (strcmp(x,'error1') || strcmp(x,'error2')), aligntype)}];
+    aligntype(cellfun(@(x) (strcmp(x,'error1') || strcmp(x,'error2')), aligntype))={'wrong trial'};
+
+end
 hlegdir = legend(heyevelline, strcat(aligntype',spacer,curdir'),'Location','NorthWest');
 set(hlegdir,'Interpreter','none', 'Box', 'off','LineWidth',1.5,'FontName','calibri','FontSize',9);
 
@@ -325,8 +333,8 @@ end
 newylim=[0, ceil(max(max(cell2mat(ylimdata)))/10)*10]; %rounding up to the decimal
 set(sdfplot,'YLim',newylim);
 % x axis tick labels
-set(sdfplot,'XTick',[0:50:(stop-start)]);
-set(sdfplot,'XTickLabel',[-plotstart:50:plotstop]);
+set(sdfplot,'XTick',[0:100:(stop-start)]);
+set(sdfplot,'XTickLabel',[-plotstart:100:plotstop]);
         
 
 
@@ -1431,9 +1439,19 @@ function exportfig_Callback(hObject, eventdata, handles)
 global filename tasktype directory;
 alignment=get(findobj('tag','dispalignment'),'string');
 subplots=findobj(handles.mainfig,'Type','axes');
-%findobj(handles.mainfig,'Type','axes','Tag','legend')
 figuresize=getpixelposition(handles.mainfig);
 figuresize(1:2)=[80 167];
+%% look if output plot is condensed and adjust plot
+if get(findobj('tag','pb_condensed'),'value') %condensed: superpose rasters and sdf, remove eye vel
+szeyevelplot=cellfun(@(x) x(4),get(subplots,'position'));
+szeyevelplot=szeyevelplot(cellfun(@(x) x(2),get(subplots,'position'))==min(cellfun(@(x) x(2),get(subplots,'position'))));
+subplots=subplots(cellfun(@(x) x(2),get(subplots,'position'))~=min(cellfun(@(x) x(2),get(subplots,'position'))));
+curlegpos=get(subplots(subplots==findobj(handles.mainfig,'Type','axes','Tag','legend')),'position');
+% curlegpos(2)=curlegpos(2)+szeyevelplot;
+% set(findobj(handles.mainfig,'Type','axes','Tag','legend'),'position',curlegpos);
+% figuresize(4)=figuresize(4)-szeyevelplot*figuresize(4);
+end
+%% 
 if size(filename,1)>1
     exportfn=filename{eventdata{1}};
     exporttsk=tasktype{eventdata{1}};
@@ -1459,33 +1477,76 @@ axespos=cell2mat(get(transferedaxes,'Position'));
 figtitleh = title(transferedaxes(find(axespos(:,2)==max(axespos(:,2)),1)),...
     ['File: ',exportfn,' - Task: ',exporttsk,' - Alignment: ',alignment]);
 set(figtitleh,'Interpreter','none'); %that prevents underscores turning charcter into subscript
-% and moving everything up a bit
+% and moving everything up or down
+if get(findobj('tag','pb_condensed'),'value')
+    % find sdf plot and move it up
+    sdfplotnb=axespos(:,2)==min(axespos(axespos(:,2)>min(axespos(:,2)),2));
+    sdfplotpos=axespos(sdfplotnb,:);
+    sdfplotpos(2)=min(axespos(axespos(:,2)>axespos(sdfplotnb,2),2))-25;
+set(transferedaxes(sdfplotnb),'Color', 'none');
+set(transferedaxes(sdfplotnb),'position',sdfplotpos);
+title(transferedaxes(sdfplotnb),'');
+    % find legend and move it up too 
+    legnb=find(axespos(:,2)==min(axespos(:,2)));
+    legplotpos=axespos(legnb,:);
+    legplotpos(2)=sdfplotpos(2)-75;
+    legplotpos(1)=figuresize(3)/2-legplotpos(3)/2;
+    set(transferedaxes(legnb),'position',legplotpos);
+%move everybody down
+axespos=cell2mat(get(transferedaxes,'Position'));
+axespos(:,2)=axespos(:,2)-min(axespos(:,2))+25;
+axespos=mat2cell(axespos,ones(size(axespos,1),1)); %reconversion
+set(transferedaxes,{'Position'},axespos);
+else
+    %move everybody up
 axespos(:,2)=axespos(:,2)+addspace/2; %units in pixels now
 axespos=mat2cell(axespos,ones(size(axespos,1),1)); %reconversion
 set(transferedaxes,{'Position'},axespos);
+end
 %and the title a little bit more if needed
 if size(subplots,1)>5
     titlepos=get(figtitleh,'position');
     titlepos(2)=titlepos(2)+addspace/10;
     set(figtitleh,'position',titlepos);
 end
-%changing units back to relative, in case we want to resize the figure
-set(transferedaxes,'Units','normalized')
+
+
+%final adjustements
+if ~get(findobj('tag','pb_condensed'),'value')
 % remove time label on sdf plot
 set(transferedaxes(2),'XTickLabel','');
+else
+    set(figtitleh,'units','pixels');
+    titpos=get(figtitleh,'position');
+    figpos=get(exportfig,'position');
+    figpos(4)=axespos{sdfplotnb}(2)+titpos(1)+50;
+    set(exportfig,'position',figpos);
+    set(figtitleh,'units','data');
+end
+
+%changing units back to relative, in case we want to resize the figure
+set(transferedaxes,'Units','normalized')
 %% saving figure
 % to check if file already exists and open it:
 % eval(['!' exportfigname '.pdf']);
+
+%print png
+if get(findobj('tag','pngexport'),'value')
 %basic png fig:
 newpos =  get(gcf,'Position')/60;
 set(gcf,'PaperUnits','inches','PaperPosition',newpos);
 print(gcf, '-dpng', '-noui', '-opengl','-r600', exportfigname);
+% -noui stands for: suppress the printing of user interface (ui) controls.
+end
 
+%print pdf
 %reasonably low size / good definition pdf figure (but patch transparency not supported by ghostscript to generate pdf):
 %print(gcf, '-dpdf', '-noui', '-painters','-r600', exportfigname);
-%svg format
-plot2svg([exportfigname,'.svg'],gcf, 'png'); %only vector graphic export function that preserves alpha transparency
 
+%print svg
+if get(findobj('tag','svgexport'),'value')
+plot2svg([exportfigname,'.svg'],gcf, 'png'); %only vector graphic export function that preserves alpha transparency
+end
 % to preserve transparency, may use tricks with eps files. See: http://blogs.mathworks.com/loren/2007/12/11/making-pretty-graphs/
 
 % export_fig solves the font embedding problem for illustrator (not adobe reader though), but is slower. Use -nocrop
@@ -1494,39 +1555,39 @@ plot2svg([exportfigname,'.svg'],gcf, 'png'); %only vector graphic export functio
 %for eps, use: print2eps(exportfigname,exportfig, '-noui', '-painters','-r300');
 
 % for higher (possibly) reso, could use print '-depsc2' format
-% peolpe use to include the '-adobecset' option for export to AI, but it
+% people used to include the '-adobecset' option for export to AI, but it
 % seems obsolete now
 % see painter's option explanations here:
 % http://www.mathworks.com/help/techdoc/creating_plots/f3-84337.html#f3-102410
-% -noui stands for: suppress printing of user interface controls.
+
 delete(exportfig);
 
 
-% --- Executes on button press in checkbox1.
-function checkbox1_Callback(hObject, eventdata, handles)
-% hObject    handle to checkbox1 (see GCBO)
+% --- Executes on button press in p_rasters.
+function p_rasters_Callback(hObject, eventdata, handles)
+% hObject    handle to p_rasters (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hint: get(hObject,'Value') returns toggle state of checkbox1
+% Hint: get(hObject,'Value') returns toggle state of p_rasters
 
 
-% --- Executes on button press in checkbox2.
-function checkbox2_Callback(hObject, eventdata, handles)
-% hObject    handle to checkbox2 (see GCBO)
+% --- Executes on button press in p_sdf.
+function p_sdf_Callback(hObject, eventdata, handles)
+% hObject    handle to p_sdf (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hint: get(hObject,'Value') returns toggle state of checkbox2
+% Hint: get(hObject,'Value') returns toggle state of p_sdf
 
 
-% --- Executes on button press in checkbox3.
-function checkbox3_Callback(hObject, eventdata, handles)
-% hObject    handle to checkbox3 (see GCBO)
+% --- Executes on button press in p_eyevel.
+function p_eyevel_Callback(hObject, eventdata, handles)
+% hObject    handle to p_eyevel (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hint: get(hObject,'Value') returns toggle state of checkbox3
+% Hint: get(hObject,'Value') returns toggle state of p_eyevel
 
 
 % --- Executes during object creation, after setting all properties.
@@ -1589,3 +1650,30 @@ function dispalignment_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
+
+% --- Executes on button press in pb_condensed.
+function pb_condensed_Callback(hObject, eventdata, handles)
+% hObject    handle to pb_condensed (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of pb_condensed
+
+
+% --- Executes on button press in pngexport.
+function pngexport_Callback(hObject, eventdata, handles)
+% hObject    handle to pngexport (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of pngexport
+
+
+% --- Executes on button press in svgexport.
+function svgexport_Callback(hObject, eventdata, handles)
+% hObject    handle to svgexport (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of svgexport
