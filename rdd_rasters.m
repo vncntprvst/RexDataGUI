@@ -244,16 +244,18 @@ while ~islast
                             sacamp=getfield(curtrialsacInfo, {find(ampsacofint>3,1)}, 'amplitude');
                             sacpeakpeakvel=getfield(curtrialsacInfo, {find(ampsacofint>3,1)}, 'peakVelocity');
                             sacpeakacc=getfield(curtrialsacInfo, {find(ampsacofint>3,1)}, 'peakAcceleration');
-                        elseif alignsacnum && length(ampsacofint>3)>= 2  % If we are looking for the n-th saccade after our found
-                            % alignment,
-                            nextgoodsac=find(ampsacofint>3,2);
-                            aligntime=getfield(curtrialsacInfo, {nextgoodsac(2)}, 'starttime');
-                            sacamp=getfield(curtrialsacInfo, {nextgoodsac(2)}, 'amplitude');
-                            sacpeakpeakvel=getfield(curtrialsacInfo, {nextgoodsac(2)}, 'peakVelocity');
-                            sacpeakacc=getfield(curtrialsacInfo, {nextgoodsac(2)}, 'peakAcceleration');
-                        elseif alignsacnum && length(ampsacofint>3)< 2 % no good n-th saccade
+                        elseif strcmp(aligntype,'corsac')  &&  find(ampsacofint>3,1)+1<=length(ampsacofint)% If we are looking for the n-th saccade after the main one
+                            nextgoodsac=find(ampsacofint>3,1)+1;
+                            aligntime=getfield(curtrialsacInfo, {nextgoodsac}, 'starttime');
+                            sacamp=getfield(curtrialsacInfo, {nextgoodsac}, 'amplitude');
+                            sacpeakpeakvel=getfield(curtrialsacInfo, {nextgoodsac}, 'peakVelocity');
+                            sacpeakacc=getfield(curtrialsacInfo, {nextgoodsac}, 'peakAcceleration');
+                        else % no good main saccade or n-th saccade
                             alignmentfound = 0;
                         end
+                        
+                        
+                        
                     end
                 end
                 if strcmp(aligntype,'stop')
