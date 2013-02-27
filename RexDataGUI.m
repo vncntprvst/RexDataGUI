@@ -278,6 +278,9 @@ if strcmp(monkeydirselected,'rigelselect')
 elseif strcmp(monkeydirselected,'sixxselect')
     monkeydir = [directory,'Sixx',slash]; %'B:\data\Recordings\Sixx';
     procdir = [directory,'processed',slash,'Sixx',slash];
+elseif strcmp(monkeydirselected,'hildaselect')
+    monkeydir = [directory,'Hilda',slash];
+    procdir = [directory,'processed',slash,'Hilda',slash];
 end
 
 % determines computer type

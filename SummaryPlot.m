@@ -115,8 +115,8 @@ set(findobj('tag','dispalignment'),'string',alignment);
 figdimension=get(gca,'Position');
 rasterdim=[figdimension(1)*1.1 (figdimension(4)*0.66)+figdimension(2)*1.1 figdimension(3)*0.9 figdimension(4)*0.3];
 
-plotstart=1000;
-plotstop=500;
+plotstart=400;
+plotstop=150;
 fsigma=20;
 cc=lines(length(alignedata));
 if size(cc,1)==8
@@ -1328,7 +1328,7 @@ print(gcf, '-dpng', '-noui', '-opengl','-r600', exportfigname);
 %reasonably low size / good definition pdf figure (but patch transparency not supported by ghostscript to generate pdf):
 %print(gcf, '-dpdf', '-noui', '-painters','-r600', exportfigname);
 %svg format
-%plot2svg([exportfigname,'.svg'],gcf, 'png'); %only vector graphic export function that preserves alpha transparency
+plot2svg([exportfigname,'.svg'],gcf, 'png'); %only vector graphic export function that preserves alpha transparency
 
 % to preserve transparency, may use tricks with eps files. See: http://blogs.mathworks.com/loren/2007/12/11/making-pretty-graphs/
 
