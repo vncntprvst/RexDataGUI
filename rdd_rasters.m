@@ -247,15 +247,16 @@ while ~islast
                         elseif strcmp(aligntype,'corsac')  &&  find(ampsacofint>3,1)+1<=length(ampsacofint)% If we are looking for the n-th saccade after the main one
                             nextgoodsac=find(ampsacofint>3,1)+1;
                             aligntime=getfield(curtrialsacInfo, {nextgoodsac}, 'starttime');
-                            sacamp=getfield(curtrialsacInfo, {nextgoodsac}, 'amplitude');
-                            sacpeakpeakvel=getfield(curtrialsacInfo, {nextgoodsac}, 'peakVelocity');
-                            sacpeakacc=getfield(curtrialsacInfo, {nextgoodsac}, 'peakAcceleration');
+                            if aligntime>etimeout(ecodeout==1030)
+                                alignmentfound = 0; % secondary saccade after reward. Not considered corrective saccade
+                            else
+                                sacamp=getfield(curtrialsacInfo, {nextgoodsac}, 'amplitude');
+                                sacpeakpeakvel=getfield(curtrialsacInfo, {nextgoodsac}, 'peakVelocity');
+                                sacpeakacc=getfield(curtrialsacInfo, {nextgoodsac}, 'peakAcceleration');
+                            end
                         else % no good main saccade or n-th saccade
                             alignmentfound = 0;
-                        end
-                        
-                        
-                        
+                        end        
                     end
                 end
                 if strcmp(aligntype,'stop')
