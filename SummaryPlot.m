@@ -1482,7 +1482,7 @@ if get(findobj('tag','pb_condensed'),'value')
     % find sdf plot and move it up
     sdfplotnb=axespos(:,2)==min(axespos(axespos(:,2)>min(axespos(:,2)),2));
     sdfplotpos=axespos(sdfplotnb,:);
-    sdfplotpos(2)=min(axespos(axespos(:,2)>axespos(sdfplotnb,2),2))-25;
+    sdfplotpos(2)=min(axespos(axespos(:,2)>axespos(sdfplotnb,2),2))-1;
 set(transferedaxes(sdfplotnb),'Color', 'none');
 set(transferedaxes(sdfplotnb),'position',sdfplotpos);
 title(transferedaxes(sdfplotnb),'');
