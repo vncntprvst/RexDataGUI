@@ -738,9 +738,10 @@ if plotrasts
             spiketimes=find(rasters(j,start:stop)); %converting from a matrix representation to a time collection, within selected time range
             if isnan(sum(rasters(j,start:stop)))
                 isnantrial{cnp}(j)=1;
-            end
+            else%end
             rastploth=plot([spiketimes;spiketimes],[ones(size(spiketimes))*j;ones(size(spiketimes))*j-1],'k-');
             uistack(rastploth,'down');
+            end
         end
         
         if exist('greylim1')

@@ -23,7 +23,7 @@ function varargout = RexDataGUI(varargin)
 %
 % See also: GUIDE, GUIDATA, GUIHANDLES
 
-% Last Modified by GUIDE v2.5 26-Sep-2012 14:11:45
+% Last Modified by GUIDE v2.5 27-Feb-2013 20:09:23
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -54,7 +54,8 @@ function RexDataGUI_OpeningFcn(hObject, eventdata, handles, varargin)
 
 % Choose default command line output for RexDataGUI
 handles.output = hObject;
-
+global replacespikes;
+replacespikes = 0
 % tiny design changes
 set(hObject,'DefaultTextFontName','Calibri'); %'Color',[0.9 .9 .8]
 % unprocfilebtxt=sprintf('Unprocessed\rfiles');
@@ -332,7 +333,7 @@ if exist(cat(2,procdir, procname,'.mat'), 'file')==2 %'B:\data\Recordings\proces
     end
 end
 if overwrite
-    [success,outliers]=rex_process_inGUI(rfname,monkeydir); %shouldn't need the rfpathname
+    [success,outliers,curtasktype]=rex_process_inGUI(rfname,monkeydir); %shouldn't need the rfpathname
     if success
         %then update the directory listing
         
@@ -536,7 +537,7 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
             procname=allftoanlz{i};
             
             if overwrite
-                [success,outliers]=rex_process_inGUI(procname,monkeydir); %shouldn't need the rfpathname
+                [success,outliers,curtasktype]=rex_process_inGUI(procname,monkeydir); %shouldn't need the rfpathname
                 % outliers are stored in file now
                 
                 if success
@@ -1479,3 +1480,52 @@ end
 % --- Executes on selection change in optiloc_popup.
 function optiloc_popup_Callback(hObject, eventdata, handles)
 % no action to do. 
+
+
+% --- Executes on button press in usespike2.
+function usespike2_Callback(hObject, eventdata, handles)
+% hObject    handle to usespike2 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+global replacespikes directory slash
+if get(hObject,'Value')
+    replacespikes = 1
+    set(handles.whichclus,'Enable','on')
+else
+    replacespikes = 0
+    set(handles.whichclus,'Enable','off')
+end
+% Hint: get(hObject,'Value') returns toggle state of usespike2
+
+
+
+function whichclus_Callback(hObject, eventdata, handles)
+% hObject    handle to whichclus (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of whichclus as text
+%        str2double(get(hObject,'String')) returns contents of whichclus as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function whichclus_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to whichclus (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes during object creation, after setting all properties.
+function usespike2_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to usespike2 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end

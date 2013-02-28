@@ -17,7 +17,7 @@ function [success] = rex_process( rexname )
 %     allcodes alltimes allspkchan allspk allrates ...
 %     allh allv allstart allbad alldeleted allsacstart allsacend...
 %     allcodelen allspklen alleyelen allsaclen allrexnotes;
-global saccadeInfo;
+global saccadeInfo replacespikes;
 
 % eventually, replace cat_variable_size_row nonsense with data structures
 
@@ -70,7 +70,29 @@ if strcmp( rez, 'Yes' )
     end;
 end;            
 
-
+%% Radu: if replacespikes, load data for it
+if replacespikes
+name = rexname(2:end);
+monkeydirselected=get(get(findobj('Tag','monkeyselect'),'SelectedObject'),'Tag');
+if strcmp(monkeydirselected,'sixxselect')
+load([directory 'Sixx' slash 'Spike2Exports' slash name 's.mat']);
+load([directory 'Sixx' slash 'Spike2Exports' slash name 't.mat']);
+elseif strcmp(monkeydirselected,'rigelselect')
+load([directory 'Rigel' slash 'Spike2Exports' slash name 's.mat']);
+load([directory 'Rigel' slash 'Spike2Exports' slash name 't.mat']);
+elseif strcmp(monkeydirselected,'hildaselect')
+load([directory 'Hilda' slash 'Spike2Exports' slash name 's.mat']);
+load([directory 'Hilda' slash 'Spike2Exports' slash name 't.mat']);    
+end
+eval(['data = V' name '_Ch6']);
+eval(['spk2trig = V' name '_Ch5']);
+global triggertimes
+triggertimes = round(spk2trig.times.*1e3);
+global spike2times
+spike2times = round(data.times.*1e3);
+global clustercodes
+clustercodes = data.codes(:,1);
+end
 next = 1;
 channel = -1;
 nt = rex_numtrials_raw( rexname, includeaborted );

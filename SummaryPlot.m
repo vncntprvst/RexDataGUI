@@ -186,9 +186,9 @@ for i=1:numrast
         spiketimes=find(rasters(j,start:stop)); %converting from a matrix representation to a time collection, within selected time range
         if isnan(sum(rasters(j,start:stop)))
             isnantrial(j)=1;
-        end
+        else%end
         plot([spiketimes;spiketimes],[ones(size(spiketimes))*j;ones(size(spiketimes))*j-1],'color',cc(i,:),'LineStyle','-');
-        
+        end
         % drawing the grey areas
         try
             greytimes=viscuetimes(j,:)-start;
