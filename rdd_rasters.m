@@ -66,6 +66,10 @@ else
     multicodetask=0;
 end
 
+if strcmp(aligntype,'stop') % get ssrt
+    mssrt=findssrt(name);
+end
+
 [~, ~, tgtcode, tgtoffcode] = taskfindecode(tasktype);
 alignedrasters=[];
 sphisto=[];
@@ -137,38 +141,38 @@ while ~islast
     [ecodeout, etimeout, spkchan, spk, arate, h, v, start_time, isbadtrial, curtrialsacInfo] = rdd_rex_trial(name, d);%, rdt_includeaborted);
     
     %if ~isbadtrial
-    	if logical(sum((ecodeout==2222)))  % had a weird case of a trial with ecode 2222. Don't know what that was. See file S110L4A5_12951
-            ecodeout(find(ecodeout==1035))=17385; % replace 1035 code by error code, to false positive on 1030
-            isbadtrial=1;
-        end
+    if logical(sum((ecodeout==2222)))  % had a weird case of a trial with ecode 2222. Don't know what that was. See file S110L4A5_12951
+        ecodeout(find(ecodeout==1035))=17385; % replace 1035 code by error code, to false positive on 1030
+        isbadtrial=1;
+    end
     %end
     %curdir=ecodeout(2)-floor(ecodeout(2)/10)*10;
     
-%     if strcmp(tasktype,'gapstop') || strcmp(tasktype,'base2rem50')
-%         multicode=1;
-%     else
-%         multicode=0;
-%     end
-%     
-
+    %     if strcmp(tasktype,'gapstop') || strcmp(tasktype,'base2rem50')
+    %         multicode=1;
+    %     else
+    %         multicode=0;
+    %     end
+    %
+    
     if isempty(h) || isempty(ecodeout)
         cond_disp( 'Something wrong with trial, no data.' );
     else
         if  collapse || multicodetask%for collapsed alignements
-%             || multicode
+            %             || multicode
             anyof = has_any_of( ecodeout, alignto );
             allof = 1;
         else
             allof = has_all_of( ecodeout, alignto );
             anyof=1;
         end
-    if logical(sum(find(noneofcodes==alignto(1)))) ... %in case the purpose IS to align to a noneof code
-            || allowbadtrials % or if we want the bad trials too
-        noneof = 1;
-        isbadtrial=~has_none_of(ecodeout, noneofcodes); %make sure trials with noneofcodes other than 17385 are tagged is bad
-    else
-        noneof = has_none_of( ecodeout, noneofcodes );
-    end
+        if logical(sum(find(noneofcodes==alignto(1)))) ... %in case the purpose IS to align to a noneof code
+                || allowbadtrials % or if we want the bad trials too
+            noneof = 1;
+            isbadtrial=~has_none_of(ecodeout, noneofcodes); %make sure trials with noneofcodes other than 17385 are tagged is bad
+        else
+            noneof = has_none_of( ecodeout, noneofcodes );
+        end
         
         %  If these are all true, we have found a trial matching the
         %  requested codes.  Now check for alignment, which might be a
@@ -200,11 +204,11 @@ while ~islast
                 alignmentfound = ecodeout( falign(1) );
                 aligntime = etimeout( falign( 1 ) ) * (arate / 1000);
                 
-                % get the alignment type. If it's a saccade align code, replace aligntime with the
-                % actual sac start (with new sac detection method:
-%                 ATPbuttonnb=find(strcmp(get(get(findobj('Tag','aligntimepanel'),'SelectedObject'),'Tag'), ...
-%                     get(findall(findobj('Tag','aligntimepanel')),'Tag')));
-
+                %% Adjust aligntime according to alignment type.
+                %If it's a saccade align code, replace aligntime with the actual sac start (with new sac detection method:
+                %                 ATPbuttonnb=find(strcmp(get(get(findobj('Tag','aligntimepanel'),'SelectedObject'),'Tag'), ...
+                %                     get(findall(findobj('Tag','aligntimepanel')),'Tag')));
+                
                 if  strcmp(aligntype,'sac') || strcmp(aligntype,'corsac') ...
                         || strcmp(aligntype,'error2')% mainsacalign button OR corrective saccade
                     ampsacofint=[];
@@ -212,25 +216,25 @@ while ~islast
                     if strcmp(tasktype,'tokens')
                         if strcmp(aligntype,'error2')
                             sacofint=nwsacstart>etimeout(falign(1)-2); % finding saccades occuring
-                                                                       % between the last token and
-                                                                       %the detected saccade (to the wrong target)
+                            % between the last token and
+                            %the detected saccade (to the wrong target)
                         else
-                        sacofint=nwsacstart>etimeout(falign(1))-40;  % the token task is special
-                        % in that we do not detect the saccade itself, but the eye leaving
-                        % the fixation window. The small delay (40ms) reflects that
+                            sacofint=nwsacstart>etimeout(falign(1))-40;  % the token task is special
+                            % in that we do not detect the saccade itself, but the eye leaving
+                            % the fixation window. The small delay (40ms) reflects that
                         end
                     else
                         sacofint=nwsacstart>etimeout(falign(1)-1); %considering all saccades occuring after the ecode
-                                                                %preceding the saccade ecode, which is often erroneous
+                        %preceding the saccade ecode, which is often erroneous
                     end
-                     if strcmp(tasktype,'st_saccades')  
-                               if nwsacstart(find(sacofint,1))-etimeout(7)<600 %there was a saccade during the delay period that went unnoticed by Rex saccade detection 
-                                   if abs(curtrialsacInfo(find(sacofint,1)).amplitude)>2 % keeping trials with saccades under 2 degrees, which happens pretty frequently with Sixx. 
-                                   sacofint=0;
-                                   alignmentfound = 0;
-                                   end
-                               end
-                     end
+                    if strcmp(tasktype,'st_saccades')
+                        if nwsacstart(find(sacofint,1))-etimeout(7)<600 %there was a saccade during the delay period that went unnoticed by Rex saccade detection
+                            if abs(curtrialsacInfo(find(sacofint,1)).amplitude)>2 % keeping trials with saccades under 2 degrees, which happens pretty frequently with Sixx.
+                                sacofint=0;
+                                alignmentfound = 0;
+                            end
+                        end
+                    end
                     for k=find(sacofint,1):length(sacofint)
                         ampsacofint(1,k)=abs(getfield(curtrialsacInfo, {k}, 'amplitude'));
                     end
@@ -239,7 +243,7 @@ while ~islast
                     if ~logical(sum(ampsacofint))
                         alignmentfound = 0;
                     elseif logical(sum(ampsacofint>3))
-                        if strcmp(aligntype,'sac') || strcmp(aligntype,'error2') 
+                        if strcmp(aligntype,'sac') || strcmp(aligntype,'error2')
                             aligntime=getfield(curtrialsacInfo, {find(ampsacofint>3,1)}, 'starttime');
                             sacamp=getfield(curtrialsacInfo, {find(ampsacofint>3,1)}, 'amplitude');
                             sacpeakpeakvel=getfield(curtrialsacInfo, {find(ampsacofint>3,1)}, 'peakVelocity');
@@ -256,21 +260,32 @@ while ~islast
                             end
                         else % no good main saccade or n-th saccade
                             alignmentfound = 0;
-                        end        
+                        end
                     end
                 end
+                
+                % If it's a stop alignement code, two different cases
                 if strcmp(aligntype,'stop')
-                        if ecodeout(9)==17385 || ecodeout(9)==16386
-                             ampsacofint=[];
-                             nwsacstart=cat(1,curtrialsacInfo.starttime);
-                             sacofint=nwsacstart>etimeout(falign(1));
-                             if sum(sacofint)
-                                  aligntime=getfield(curtrialsacInfo, {find(sacofint,1)}, 'starttime');
-                             else
-                                  alignmentfound = 0;
-                             end
+                    % for non-canceled stop trial, align to saccade
+                    % initiation
+                    if ecodeout(9)==17385 || ecodeout(9)==16386
+                        ampsacofint=[];
+                        nwsacstart=cat(1,curtrialsacInfo.starttime);
+                        sacofint=nwsacstart>etimeout(falign(1));
+                        if sum(sacofint)
+                            aligntime=getfield(curtrialsacInfo, {find(sacofint,1)}, 'starttime');
+                        else
+                            alignmentfound = 0;
                         end
-                 end
+                    end
+                    % for successfully canceled stop trials, align to stop
+                    % signal delay + stop signal reaction time
+                    if ~isnan(mssrt)
+                        aligntime=aligntime+mssrt;
+                    else
+                        alignmentfound=0;
+                    end
+                end
                 
                 %% now get the time of "grey area" ecodes
                 % used to get only times for selected conditions. Now get
@@ -281,67 +296,79 @@ while ~islast
                 
                 greytypes={'cue';'eyemvt';'fix'};
                 
-                    %caveat: some conditions may be 4 or 5 digits long,
-                    %such as user defined codes such as TOKSWCD (1501) 
-                    
-                    conditions(conditions>=1000)=floor(conditions(conditions>=1000)/10); %cut last digit off of them
+                %caveat: some conditions may be 4 or 5 digits long,
+                %such as user defined codes such as TOKSWCD (1501)
                 
-%                 greytypes=(greytypes(selectedgrey));
+                conditions(conditions>=1000)=floor(conditions(conditions>=1000)/10); %cut last digit off of them
+                
+                %                 greytypes=(greytypes(selectedgrey));
                 codepairnb=floor(size(conditions,2)/2);%there may be multiple code. See l. 421 as well as here (273)
-  %              if logical(sum(greycodes))
+                %              if logical(sum(greycodes))
                 shortecodout=floor(ecodeout./10);
-%                     if size(greycodes,1)>1 %more than one row: means several checkboxes are selected
-                        for i=1:size(conditions,1)
+                %                     if size(greycodes,1)>1 %more than one row: means several checkboxes are selected
+                for i=1:size(conditions,1)
+                    goodsacnum=0;
+                    if strcmp(greytypes(i),'eyemvt') %adjust times to real saccade times
+                        % find which saccade is the "good" one (if any) in this trial
+                        try
+                            goodsacnum=find(~cellfun(@isempty,{curtrialsacInfo.latency}));
+                        catch
                             goodsacnum=0;
-                            if strcmp(greytypes(i),'eyemvt') %adjust times to real saccade times
-                                % find which saccade is the "good" one (if any) in this trial
-                                try goodsacnum=find(~cellfun(@isempty,{curtrialsacInfo.latency}));  catch goodsacnum=0; end 
-                                if ~logical(sum(goodsacnum)) && (~strcmp(aligntype,'stop') && ~strcmp(aligntype,'touchbell'))
-                                    s = sprintf('cannot display grey area for trial %d because saccade cannot be found. Removing erroneous trial',d);
-                                    disp(s);
-                                    alignmentfound = 0;
-                                end
-                            end
-                                for j=1:size(conditions,2)
-                                    try fonoffcode(i,j) = find(shortecodout == conditions(i,j),1);  catch fonoffcode(i,j) = NaN; end %in multiple code tasks (eg, gapstop), may fail to find the code in the ecode list
-                                    try onoffcodetime(i,j) = etimeout(fonoffcode(i,j)) * (arate / 1000); catch onoffcodetime(i,j) = NaN; end
-                                end
-                                if logical(goodsacnum)
-                                    onoffcodetime(i,1)=getfield(curtrialsacInfo, {goodsacnum}, 'starttime');
-                                    onoffcodetime(i,1+codepairnb)=getfield(curtrialsacInfo, {goodsacnum}, 'endtime');
-                                end  
                         end
-%                     else % if only one conition selected
-%                         goodsacnum=0;
-%                         if strcmp(greytypes,'eyemvt') %adjust times to real saccade times
-%                                 % find which saccade is the "good" one (if any) in this trial
-%                         try goodsacnum=find(~cellfun(@isempty,{curtrialsacInfo.latency}));   catch goodsacnum=0; end                             
-%                         end
-%                             for j=1:size(greycodes,2)
-%                                 try fonoffcode(j) = find( shortecodout == greycodes(j),1); catch fonoffcode(j) = NaN; end
-%                                 try onoffcodetime(j) = etimeout(fonoffcode(j)) * (arate / 1000); catch onoffcodetime(j) = NaN; end
-%                             end
-%                                if logical(goodsacnum)
-%                                     onoffcodetime(1)=getfield(curtrialsacInfo, {goodsacnum}, 'starttime');
-%                                     onoffcodetime(1+codepairnb)=getfield(curtrialsacInfo, {goodsacnum}, 'endtime');
-%                                 end  
-%                     end
-  %              end
+                        if ~logical(sum(goodsacnum)) && (~strcmp(aligntype,'stop') && ~strcmp(aligntype,'touchbell'))
+                            s = sprintf('cannot display grey area for trial %d because saccade cannot be found. Removing erroneous trial',d);
+                            disp(s);
+                            alignmentfound = 0;
+                        end
+                    end
+                    for j=1:size(conditions,2)
+                        try
+                            fonoffcode(i,j) = find(shortecodout == conditions(i,j),1);
+                        catch
+                            fonoffcode(i,j) = NaN;
+                        end %in multiple code tasks (eg, gapstop), may fail to find the code in the ecode list
+                        try
+                            onoffcodetime(i,j) = etimeout(fonoffcode(i,j)) * (arate / 1000);
+                        catch
+                            onoffcodetime(i,j) = NaN;
+                        end
+                    end
+                    if logical(goodsacnum)
+                        onoffcodetime(i,1)=getfield(curtrialsacInfo, {goodsacnum}, 'starttime');
+                        onoffcodetime(i,1+codepairnb)=getfield(curtrialsacInfo, {goodsacnum}, 'endtime');
+                    end
+                end
+                %                     else % if only one conition selected
+                %                         goodsacnum=0;
+                %                         if strcmp(greytypes,'eyemvt') %adjust times to real saccade times
+                %                                 % find which saccade is the "good" one (if any) in this trial
+                %                         try goodsacnum=find(~cellfun(@isempty,{curtrialsacInfo.latency}));   catch goodsacnum=0; end
+                %                         end
+                %                             for j=1:size(greycodes,2)
+                %                                 try fonoffcode(j) = find( shortecodout == greycodes(j),1); catch fonoffcode(j) = NaN; end
+                %                                 try onoffcodetime(j) = etimeout(fonoffcode(j)) * (arate / 1000); catch onoffcodetime(j) = NaN; end
+                %                             end
+                %                                if logical(goodsacnum)
+                %                                     onoffcodetime(1)=getfield(curtrialsacInfo, {goodsacnum}, 'starttime');
+                %                                     onoffcodetime(1+codepairnb)=getfield(curtrialsacInfo, {goodsacnum}, 'endtime');
+                %                                 end
+                %                     end
+                %              end
                 
-                %% find condition times 
-%                 codepairnb=floor(size(conditions,2)/2);%there may be multiple code. See l. 421 as well as here (273)
-%                 shortecodout=floor(ecodeout./10);
-%                 for i=1:size(conditions,1)
-% 
-%                     for j=1:size(conditions,2)
-%                         try fcondcode(i,j) = find(shortecodout == conditions(i,j),1);  catch fcondcode(i,j) = NaN; end %in multiple code tasks (ie, gapstop), may fail to find the code in the ecode list
-%                         try condcodetime(i,j) = etimeout(fcondcode(i,j)) * (arate / 1000); catch condcodetime(i,j) = NaN; end
-%                     end
-% 
-%                 end
-%                 
-%                 condmattime = {condcodetime};
-%                 
+                %% find condition times
+                %                 codepairnb=floor(size(conditions,2)/2);%there may be multiple code. See l. 421 as well as here (273)
+                %                 shortecodout=floor(ecodeout./10);
+                %                 for i=1:size(conditions,1)
+                %
+                %                     for j=1:size(conditions,2)
+                %                         try fcondcode(i,j) = find(shortecodout == conditions(i,j),1);  catch fcondcode(i,j) = NaN; end %in multiple code tasks (ie, gapstop), may fail to find the code in the ecode list
+                %                         try condcodetime(i,j) = etimeout(fcondcode(i,j)) * (arate / 1000); catch condcodetime(i,j) = NaN; end
+                %                     end
+                %
+                %                 end
+                %
+                %                 condmattime = {condcodetime};
+                %
                 %% filling up alignindexlist with align times
                 %                if alignsacnum == 0
                 
@@ -352,7 +379,7 @@ while ~islast
                     badidx(nummatch)=isbadtrial;
                     if strcmp(aligntype,'stop')
                         if ecodeout(9)==17385 || ecodeout(9)==16386
-                             badidx(nummatch)=2; %non-cancelled trials
+                            badidx(nummatch)=2; %non-cancelled trials
                         end
                         if ecodeout(8)==1503 %with photodiode state timestamp
                             allssd(nummatch,1)=etimeout(:,9)-etimeout(:,7);
@@ -361,7 +388,7 @@ while ~islast
                             allssd(nummatch)=etimeout(:,8)-etimeout(:,7);
                         end
                     end
-                                        
+                    
                     % trigger times
                     if (tgtcode<=1000)
                         ecodeson=shortecodout;
@@ -373,12 +400,12 @@ while ~islast
                     else
                         ecodesoff=ecodeout;
                     end
-                        visevents=[etimeout(ismember(ecodeson,tgtcode)), etimeout(ismember(ecodesoff,tgtoffcode))]-etimeout(1)-1;
-
+                    visevents=[etimeout(ismember(ecodeson,tgtcode)), etimeout(ismember(ecodesoff,tgtoffcode))]-etimeout(1)-1;
+                    
                     % recordings with trigger channel
                     if find(ecodeout==1502) % Trigger code
-%                         triggercode=1;
-                        trigtosac=aligntime-etimeout(1)-1; %trigger code is 1ms before 1001                    
+                        %                         triggercode=1;
+                        trigtosac=aligntime-etimeout(1)-1; %trigger code is 1ms before 1001
                         trigtovis=max(visevents(visevents<trigtosac)); %the latest visual event occuring before alignment time
                         if find(ecodeout==1030)
                             sactotrig=etimeout(find(ecodeout==1502,1))+1-aligntime; %the second trigger channel is actually the start of the next trial
@@ -389,7 +416,7 @@ while ~islast
                         end
                         
                     else %older recordings without trigger code
-%                         triggercode=0;
+                        %                         triggercode=0;
                         trigtosac=aligntime-etimeout(1)-1; %in case there is a trigger channel available in the SH recording
                         trigtovis=max(visevents(visevents<trigtosac)); %the latest visual event occuring before alignment time
                         if find(ecodeout==1030) %good trial
@@ -443,24 +470,24 @@ while ~islast
                     end;
                     rasters = cat_variable_size_row( rasters, train );
                     %collect conditions (aka greycodes) times
-%                     trialonofftime=zeros(1,length(h));
-%                     for i=size(conditions,1):-1:1
-%                     onoffkeepcode=[onoffcodetime(i,find(~isnan(onoffcodetime(i,:)),1))...
-%                                     onoffcodetime(i,find(~isnan(onoffcodetime(i,:)),1)+codepairnb)];
-%                     trialonofftime(onoffkeepcode(1):onoffkeepcode(2))=i;
-%                     end
-%                     oldallonoffcodetime=cat_variable_size_row(oldallonoffcodetime, trialonofftime);
+                    %                     trialonofftime=zeros(1,length(h));
+                    %                     for i=size(conditions,1):-1:1
+                    %                     onoffkeepcode=[onoffcodetime(i,find(~isnan(onoffcodetime(i,:)),1))...
+                    %                                     onoffcodetime(i,find(~isnan(onoffcodetime(i,:)),1)+codepairnb)];
+                    %                     trialonofftime(onoffkeepcode(1):onoffkeepcode(2))=i;
+                    %                     end
+                    %                     oldallonoffcodetime=cat_variable_size_row(oldallonoffcodetime, trialonofftime);
                     if  ~(size(onoffcodetime,2)==2 && codepairnb==1)
-                    onoffkeepcode=[find(~isnan(onoffcodetime(1,:)),1) find(~isnan(onoffcodetime(1,:)),1)+codepairnb];
-                    onoffcodetime=onoffcodetime(:,onoffkeepcode);
+                        onoffkeepcode=[find(~isnan(onoffcodetime(1,:)),1) find(~isnan(onoffcodetime(1,:)),1)+codepairnb];
+                        onoffcodetime=onoffcodetime(:,onoffkeepcode);
                     end
                     allonoffcodetime=[allonoffcodetime {onoffcodetime}];
                     
                     %and collect trigger alignments
                     alltrigtosac=[alltrigtosac trigtosac];
-                    allsactotrig=[allsactotrig sactotrig]; 
+                    allsactotrig=[allsactotrig sactotrig];
                     alltrigtovis=[alltrigtovis trigtovis];
-                    allvistotrig=[allvistotrig vistotrig]; 
+                    allvistotrig=[allvistotrig vistotrig];
                     
                     
                     if length(h)<length(train)
@@ -483,27 +510,27 @@ while ~islast
                     eyevel = cat_variable_size_row( eyevel, filtvel);
                     
                     
-%                     if logical(sum(greycodes))
-%                         trialonofftime=zeros(1,length(h));
-%                         if size(greycodes,1)>1 %more than one row
-%                             for i=1:size(conditions,1)
-%                                 onoffkeepcode=[onoffcodetime(i,find(~isnan(onoffcodetime(i,:)),1))...
-%                                     onoffcodetime(i,find(~isnan(onoffcodetime(i,:)),1)+codepairnb)]; %keep the first pair of good codes
-%                                trialonofftime(onoffkeepcode(1):onoffkeepcode(2))=i; % a bit ridiculous, but simpler than keeping indexes in this code
-%                             end
-%                         else
-%                             onoffkeepcode=[onoffcodetime(1,find(~isnan(onoffcodetime(1,:)),1))...
-%                             onoffcodetime(1,find(~isnan(onoffcodetime(1,:)),1)+codepairnb)]; %keep the first pair of good codes
-%                             trialonofftime(onoffkeepcode(1):onoffkeepcode(2))=1;
-%                         end
-% 
-%                         allonoffcodetime=cat_variable_size_row(allonoffcodetime, trialonofftime);
-%                     end
+                    %                     if logical(sum(greycodes))
+                    %                         trialonofftime=zeros(1,length(h));
+                    %                         if size(greycodes,1)>1 %more than one row
+                    %                             for i=1:size(conditions,1)
+                    %                                 onoffkeepcode=[onoffcodetime(i,find(~isnan(onoffcodetime(i,:)),1))...
+                    %                                     onoffcodetime(i,find(~isnan(onoffcodetime(i,:)),1)+codepairnb)]; %keep the first pair of good codes
+                    %                                trialonofftime(onoffkeepcode(1):onoffkeepcode(2))=i; % a bit ridiculous, but simpler than keeping indexes in this code
+                    %                             end
+                    %                         else
+                    %                             onoffkeepcode=[onoffcodetime(1,find(~isnan(onoffcodetime(1,:)),1))...
+                    %                             onoffcodetime(1,find(~isnan(onoffcodetime(1,:)),1)+codepairnb)]; %keep the first pair of good codes
+                    %                             trialonofftime(onoffkeepcode(1):onoffkeepcode(2))=1;
+                    %                         end
+                    %
+                    %                         allonoffcodetime=cat_variable_size_row(allonoffcodetime, trialonofftime);
+                    %                     end
                     
                     % collect condition times
-%                     allcondtime = cat_variable_size_row(allcondtime, condmattime);
+                    %                     allcondtime = cat_variable_size_row(allcondtime, condmattime);
                     
-
+                    
                 end;
             end;
         end;
@@ -529,7 +556,7 @@ end;
 alignindex = max( alignindexlist );
 
 % alignindex is now the index (the column) in alignedrasters that is the
-% column to which all rows are aligned. 
+% column to which all rows are aligned.
 [alignedrasters,shift] = align_rows_on_indices( rasters, alignindexlist );
 
 %Do the same for the eye stuff.
@@ -539,11 +566,11 @@ eyevelocity = align_rows_on_indices( eyevel, alignindexlist );
 
 %add shift to grey areas times
 for shifttm=1:size(shift,1)
-allonoffcodetime(shifttm)={cell2mat(allonoffcodetime(shifttm))+shift(shifttm)};
+    allonoffcodetime(shifttm)={cell2mat(allonoffcodetime(shifttm))+shift(shifttm)};
 end
 % cell2mat(allonoffcodetime(1))
 % cell2mat(allonoffcodetime(1))+shift(1)
-% 
+%
 % foo = align_rows_on_indices(oldallonoffcodetime, alignindexlist );
 %     find(oldallonoffcodetime(1,:),1)
 %     find(foo(1,:),1)
