@@ -3,13 +3,53 @@ if nargin == 5
 whichclus = 1;
 end
 global triggertimes spike2times clustercodes
-whentrigs = triggertimes;
-whenspikes = spike2times;
+whentrigs = round(triggertimes.*1e3);
+whenspikes = round(spike2times.*1e3);
 whatcodes = clustercodes;
 %% recast in terms of REX times
-firststartind = find(ecodes == 1001,1);
-firststart = etimes(firststartind);
-offset = firststart-whentrigs(1);
+% find first good trial
+a = 0;
+foundit = 0;
+    trialstart = find(ecodes == 1001);
+	lastevent = length(ecodes);
+	trialend = [trialstart(2:end);lastevent];
+    starttrigs = zeros(length(trialstart),1);
+    endtrigs = zeros(length(trialstart),1);
+    for co = 1:length(trialstart)
+        starttrigs(co) = etimes(trialstart(co))-1;
+        nextcodes = ecodes(trialstart(co):trialend(co));
+        nexttimes = etimes(trialstart(co):trialend(co));
+        d = find(nextcodes == 1502,1);
+        if ~isempty(d)
+            endtrigs(co) = nexttimes(d);
+        else
+        d = find(nextcodes == 1030,1);
+        if ~isempty(d)
+            endtrigs(co) = nexttimes(d);
+        else
+            endtrigs(co) = NaN;
+        end
+        end
+    end
+while ~foundit
+    a = a+1;
+    nextcodes = ecodes(trialstart(a):trialend(a));
+    if ~sum(nextcodes == 17385)
+        foundit = 1;
+    end
+end
+int1 = endtrigs-starttrigs;
+int3 = int1(a);
+triglengths = round(diff(triggertimes).*1e3);
+b = find(triglengths>(int3-1)& triglengths<(int3+1));
+align = starttrigs(1:a);
+align = (align-align(end))./1000;
+align = triggertimes(b)+align(1);
+align = round(align.*1000);
+c = find(whentrigs==align,1);
+firsttrig = whentrigs(c);
+firststart = etimes(trialstart(a));
+offset =firststart-firsttrig;
 if 1
     fprintf('There are %d triggers\n',length(whentrigs));
     fprintf('There are %d start times\n',sum(ecodes == 1001));

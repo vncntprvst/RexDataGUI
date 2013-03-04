@@ -97,9 +97,9 @@ end
 eval(['data = V' name '_Ch6']);
 eval(['spk2trig = V' name '_Ch5']);
 global triggertimes
-triggertimes = round(spk2trig.times.*1e3);
+triggertimes = spk2trig.times;
 global spike2times
-spike2times = round(data.times.*1e3);
+spike2times = data.times;
 global clustercodes
 clustercodes = data.codes(:,1);
 end
