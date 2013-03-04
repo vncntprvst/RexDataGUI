@@ -43,7 +43,7 @@ end
 int1 = endtrigs-starttrigs;
 int3 = int1(a);
 triglengths = round(diff(triggertimes).*1e3);
-b = find(triglengths>(int3-1) & triglengths<(int3+1));
+b = find(triglengths>(int3-1) & triglengths<(int3+1),1);
 % align = starttrigs(1:a);
 % align = (align-align(end))./1000;
 % align = triggertimes(b)+align(1);
