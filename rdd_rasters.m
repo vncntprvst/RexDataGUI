@@ -266,24 +266,36 @@ while ~islast
                 
                 % If it's a stop alignement code, two different cases
                 if strcmp(aligntype,'stop')
-                    % for non-canceled stop trial, align to saccade
-                    % initiation
-                    if ecodeout(9)==17385 || ecodeout(9)==16386
-                        ampsacofint=[];
-                        nwsacstart=cat(1,curtrialsacInfo.starttime);
-                        sacofint=nwsacstart>etimeout(falign(1));
-                        if sum(sacofint)
-                            aligntime=getfield(curtrialsacInfo, {find(sacofint,1)}, 'starttime');
+                        if find(ecodeout==1503)
+                            ncecode=10;
                         else
-                            alignmentfound = 0;
+                            ncecode=9;
                         end
-                    end
-                    % for successfully canceled stop trials, align to stop
-                    % signal delay + stop signal reaction time
-                    if ~isnan(mssrt)
-                        aligntime=aligntime+mssrt;
+                    if isbadtrial % non-canceled stop trial
+                        % for non-canceled stop trial, align to saccade
+                        % initiation
+                        if ecodeout(ncecode)==17385 || ecodeout(ncecode)==16386
+                            ampsacofint=[];
+                            nwsacstart=cat(1,curtrialsacInfo.starttime);
+                            sacofint=nwsacstart>etimeout(falign(1)-1);
+                            ampsacofint=zeros(1,length(sacofint));
+                            for k=find(sacofint,1):length(sacofint)
+                                ampsacofint(1,k)=abs(getfield(curtrialsacInfo, {k}, 'amplitude'));
+                            end
+                            if sum(sacofint)
+                                aligntime=getfield(curtrialsacInfo, {find(ampsacofint>3,1)}, 'starttime');
+                            else
+                                alignmentfound = 0;
+                            end
+                        end
                     else
-                        alignmentfound=0;
+                        % for successfully canceled stop trials, align to stop
+                        % signal delay + stop signal reaction time
+                        if ~isnan(mssrt)
+                            aligntime=etimeout( falign( 1 ) ) * (arate / 1000)+round(mssrt);
+                        else
+                            alignmentfound=0;
+                        end
                     end
                 end
                 
