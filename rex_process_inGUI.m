@@ -17,8 +17,8 @@ function [success,outliers,curtasktype] = rex_process_inGUI( rexname, rawdir, re
 %     allcodes alltimes allspkchan allspk allrates ...
 %     allh allv allstart allbad alldeleted allsacstart allsacend...
 %     allcodelen allspklen alleyelen allsaclen allrexnotes;
-clearvars -global -except directory slash unprocfiles tasktype;
-global saccadeInfo tasktype;
+clearvars -global -except directory slash unprocfiles tasktype replacespikes;
+global saccadeInfo tasktype slash replacespikes directory;
 saccadeInfo=struct('status',[],'starttime',[],'endtime',[],'duration',[],'amplitude',[],...
     'direction',[],'peakVelocity',[],'peakAcceleration',[],'latency',[]);
 
@@ -82,6 +82,29 @@ if strcmp( rez, 'Yes' )
     end;
 end;
 
+%% Radu: if replacespikes, load data for it
+if replacespikes
+name = rexname(2:end);
+monkeydirselected=get(get(findobj('Tag','monkeyselect'),'SelectedObject'),'Tag');
+if strcmp(monkeydirselected,'sixxselect')
+load([directory 'Sixx' slash 'Spike2Exports' slash name 's.mat']);
+load([directory 'Sixx' slash 'Spike2Exports' slash name 't.mat']);
+elseif strcmp(monkeydirselected,'rigelselect')
+load([directory 'Rigel' slash 'Spike2Exports' slash name 's.mat']);
+load([directory 'Rigel' slash 'Spike2Exports' slash name 't.mat']);
+elseif strcmp(monkeydirselected,'hildaselect')
+load([directory 'Hilda' slash 'Spike2Exports' slash name 's.mat']);
+load([directory 'Hilda' slash 'Spike2Exports' slash name 't.mat']);    
+end
+eval(['data = V' name '_Ch6']);
+eval(['spk2trig = V' name '_Ch5']);
+global triggertimes
+triggertimes = spk2trig.times;
+global spike2times
+spike2times = data.times;
+global clustercodes
+clustercodes = data.codes(:,1);
+end
 
 next = 1;
 channel = -1;
@@ -115,7 +138,7 @@ for trialnumber = 1:nt
     end
     
     if isempty(h) || isempty(ecodeout)
-        disp( 'rex_process.m:  Something wrong with trial, no data.  The trial will be skipped, and trial numbers will shift in the converted file to reflect this.' );
+        disp( 'rex_process_inGUI.m:  Something wrong with trial, no data.  The trial will be skipped, and trial numbers will shift in the converted file to reflect this.' );
         %     elseif badtrial && ~includeaborted
         %         disp( 'rex_process.m:  Skipping bad trial.' );
     else
@@ -586,7 +609,7 @@ save( newname, 'rexloadedname', 'rexnumtrials', 'alloriginaltrialnums', 'allnewt
 
 %%
 success = 1;
-clearvars -global -except directory slash unprocfiles;
+clearvars -global -except directory slash unprocfiles replacespikes spike2times clustercodes triggertimes;
 close( wb );
 
 %% graphic verif if any bug:

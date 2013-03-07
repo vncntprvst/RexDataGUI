@@ -39,6 +39,13 @@ persistent trialstarttimes;
 persistent trialendtimes;
 persistent arecs;
 
+%% Radu: for spike2 cluster names
+persistent spike2aidx
+global replacespikes
+global spike2times
+global triggertimes
+global clustercodes
+
 NULL = 32768;  % -1 signed int
 BADCODE = 17385;
 
@@ -72,7 +79,19 @@ if ~strcmp(currecodename, ecname)
     
 	arecs = rex_arecs(name);
 	[ecodes, etimes] = rex_ecodes(name);
-	
+		if replacespikes
+            disp('I am about to replace ecodes.');
+            howmanyclus = max(clustercodes);
+            selclus = str2double(get(findobj('Tag','whichclus'),'String'));
+            if ~(selclus == round(selclus)) || selclus > howmanyclus || selclus < 1
+                fprintf('Invalis cluster selected. Maximum is %d Setting to cluster 1\n',howmanyclus);
+                set(findobj('Tag','whichclus'),'String','1');
+                selclus = 1;
+            end
+        [ecodes, etimes] = replaceecodes(ecodes,etimes,spike2times,triggertimes,clustercodes,selclus);
+        %[ecodes, etimes] = replaceecodes(ecodes,etimes);
+        spike2aidx = find(ecodes == -112);
+        end
 	% trial start and ends
 	trialstart = find(ecodes == 1001);
 	
@@ -170,9 +189,16 @@ end;
 % aidx = find(currcode == -112);
 % aoffset = currtime(aidx);
 % but rather look at all future -112s, and see if one fits the time frame.
-aidx = find( ecodes( idx1:end ) == -112 );
-temptimes = etimes( idx1:end );
-aoffset = temptimes( aidx );
+
+    if replacespikes
+        aidx = spike2aidx;
+        aoffset = etimes(spike2aidx);
+    else
+        aidx = find( ecodes( idx1:end ) == -112 );
+        temptimes = etimes( idx1:end );
+        aoffset = temptimes( aidx );
+    end
+
 
 
 % aidx = find( currcode == -112 );
@@ -289,6 +315,9 @@ if ~isempty(aidx)
 
                 if codeok & usrok & contok
                     adat = [adat; adata(:)];
+                    if replacespikes
+                    spike2aidx = spike2aidx(2:end);
+                    end
                 else
                     % something wrong - return null data for this trial
                     disp( 'something wrong, returning null data for this trial' );
