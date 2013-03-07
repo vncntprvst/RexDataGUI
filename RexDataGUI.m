@@ -23,7 +23,7 @@ function varargout = RexDataGUI(varargin)
 %
 % See also: GUIDE, GUIDATA, GUIHANDLES
 
-% Last Modified by GUIDE v2.5 12-Feb-2013 17:47:23
+% Last Modified by GUIDE v2.5 06-Mar-2013 20:29:37
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -54,7 +54,8 @@ function RexDataGUI_OpeningFcn(hObject, eventdata, handles, varargin)
 
 % Choose default command line output for RexDataGUI
 handles.output = hObject;
-
+global replacespikes;
+replacespikes = 0
 % tiny design changes
 set(hObject,'DefaultTextFontName','Calibri'); %'Color',[0.9 .9 .8]
 % unprocfilebtxt=sprintf('Unprocessed\rfiles');
@@ -1486,3 +1487,51 @@ function hildaselect_CreateFcn(hObject, eventdata, handles)
 % hObject    handle to hildaselect (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
+
+
+% --- Executes on button press in usespike2.
+function usespike2_Callback(hObject, eventdata, handles)
+% hObject    handle to usespike2 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+global replacespikes directory slash
+if get(hObject,'Value')
+    replacespikes = 1
+    set(handles.whichclus,'Enable','on')
+else
+    replacespikes = 0
+    set(handles.whichclus,'Enable','off')
+end
+% Hint: get(hObject,'Value') returns toggle state of usespike2
+
+
+
+function whichclus_Callback(hObject, eventdata, handles)
+% hObject    handle to whichclus (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of whichclus as text
+%        str2double(get(hObject,'String')) returns contents of whichclus as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function whichclus_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to whichclus (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Executes during object creation, after setting all properties.
+function text27_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to text27 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end

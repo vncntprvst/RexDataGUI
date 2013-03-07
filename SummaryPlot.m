@@ -187,9 +187,9 @@ for i=1:numrast
         if isnan(sum(rasters(j,start:stop)))
             isnantrial(j)=1;
             spiketimes(find(isnan(rasters(j,start:stop))))=0; %#ok<FNDSB>
-        end
+        else
         plot([spiketimes;spiketimes],[ones(size(spiketimes))*j;ones(size(spiketimes))*j-1],'color',cc(i,:),'LineStyle','-');
-        
+        end
         % drawing the grey areas
         try
             greytimes=viscuetimes(j,:)-start;
