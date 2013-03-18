@@ -23,7 +23,7 @@ function varargout = RexDataGUI(varargin)
 %
 % See also: GUIDE, GUIDATA, GUIHANDLES
 
-% Last Modified by GUIDE v2.5 06-Mar-2013 20:29:37
+% Last Modified by GUIDE v2.5 07-Mar-2013 23:16:53
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -1496,10 +1496,10 @@ function usespike2_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 global replacespikes directory slash
 if get(hObject,'Value')
-    replacespikes = 1
+    replacespikes = 1;
     set(handles.whichclus,'Enable','on')
 else
-    replacespikes = 0
+    replacespikes = 0;
     set(handles.whichclus,'Enable','off')
 end
 % Hint: get(hObject,'Value') returns toggle state of usespike2
@@ -1535,3 +1535,13 @@ function text27_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
+
+% --- Executes when selected object is changed in chanelspanel.
+function chanelspanel_SelectionChangeFcn(hObject, eventdata, handles)
+% hObject    handle to the selected object in chanelspanel 
+% eventdata  structure with the following fields (see UIBUTTONGROUP)
+%	EventName: string 'SelectionChanged' (read only)
+%	OldValue: handle of the previously selected object or empty if none was selected
+%	NewValue: handle of the currently selected object
+% handles    structure with handles and user data (see GUIDATA)

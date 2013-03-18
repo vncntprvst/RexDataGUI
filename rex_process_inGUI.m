@@ -84,20 +84,20 @@ end;
 
 %% Radu: if replacespikes, load data for it
 if replacespikes
-name = rexname(2:end);
+%name = rexname(2:end);
 monkeydirselected=get(get(findobj('Tag','monkeyselect'),'SelectedObject'),'Tag');
 if strcmp(monkeydirselected,'sixxselect')
-load([directory 'Sixx' slash 'Spike2Exports' slash name 's.mat']);
-load([directory 'Sixx' slash 'Spike2Exports' slash name 't.mat']);
+load([directory 'Sixx' slash 'Spike2Exports' slash rexname 's.mat']);
+load([directory 'Sixx' slash 'Spike2Exports' slash rexname 't.mat']);
 elseif strcmp(monkeydirselected,'rigelselect')
-load([directory 'Rigel' slash 'Spike2Exports' slash name 's.mat']);
-load([directory 'Rigel' slash 'Spike2Exports' slash name 't.mat']);
+load([directory 'Rigel' slash 'Spike2Exports' slash rexname 's.mat']);
+load([directory 'Rigel' slash 'Spike2Exports' slash rexname 't.mat']);
 elseif strcmp(monkeydirselected,'hildaselect')
-load([directory 'Hilda' slash 'Spike2Exports' slash name 's.mat']);
-load([directory 'Hilda' slash 'Spike2Exports' slash name 't.mat']);    
+load([directory 'Hilda' slash 'Spike2Exports' slash rexname 's.mat']);
+load([directory 'Hilda' slash 'Spike2Exports' slash rexname 't.mat']);    
 end
-eval(['data = V' name '_Ch6']);
-eval(['spk2trig = V' name '_Ch5']);
+eval(['data = ' rexname '_Ch7']); % find which channel contains the data ( H53L5A5_20901_Ch7.title = nw-801)
+eval(['spk2trig = ' rexname '_Ch5']);
 global triggertimes
 triggertimes = spk2trig.times;
 global spike2times
