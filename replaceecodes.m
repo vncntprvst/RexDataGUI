@@ -44,6 +44,10 @@ int1 = endtrigs-starttrigs;
 int3 = int1(a);
 triglengths = round(diff(triggertimes).*1e3);
 b = find(triglengths>(int3-1) & triglengths<(int3+1),1);
+if isempty(b)
+        errmess= sprintf('WARNING: Unable to find a pair of triggers that matches the length of the first trial.\n');
+        disp(errmess);
+end
 % align = starttrigs(1:a);
 % align = (align-align(end))./1000;
 % align = triggertimes(b)+align(1);
@@ -52,6 +56,9 @@ b = find(triglengths>(int3-1) & triglengths<(int3+1),1);
 firsttrig = whentrigs(b);
 firststart = starttrigs(a);
 offset =firststart-firsttrig;
+if isempty(offset)
+    offset = firststart-whentrigs(1);
+end
 if 1
     fprintf('There are %d triggers\n',length(whentrigs));
     fprintf('There are %d start times\n',sum(ecodes == 1001));
