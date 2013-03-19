@@ -17,7 +17,7 @@ function [success,outliers,curtasktype] = rex_process_inGUI( rexname, rawdir, re
 %     allcodes alltimes allspkchan allspk allrates ...
 %     allh allv allstart allbad alldeleted allsacstart allsacend...
 %     allcodelen allspklen alleyelen allsaclen allrexnotes;
-clearvars -global -except directory slash unprocfiles tasktype replacespikes triggertimes spike2times clustercodes;
+clearvars -global -except directory slash unprocfiles tasktype replacespikes;
 global saccadeInfo tasktype slash replacespikes directory;
 saccadeInfo=struct('status',[],'starttime',[],'endtime',[],'duration',[],'amplitude',[],...
     'direction',[],'peakVelocity',[],'peakAcceleration',[],'latency',[]);
@@ -562,6 +562,11 @@ if logical(regexpi(rawdir(1:end-1),'Rigel$'))
     if ~strcmp(rexname(1),'R')
         rexname=cat(2,'R',rexname);
     end
+    if replacespikes
+        rexname=cat(2,rexname,'_Sp2');
+    else
+        rexname=cat(2,rexname,'_REX');
+    end  
 elseif logical(regexpi(rawdir(1:end-1),'Sixx$'))
     if strcmp(getenv('username'),'nick')
         procdir='/Users/nick/Dropbox/filesforNick/processed/Sixx/';
@@ -577,6 +582,11 @@ elseif logical(regexpi(rawdir(1:end-1),'Sixx$'))
     if ~strcmp(rexname(1),'S')
         rexname=cat(2,'S',rexname);
     end
+    if replacespikes
+        rexname=cat(2,rexname,'_Sp2');
+    else
+        rexname=cat(2,rexname,'_REX');
+    end  
 elseif logical(regexpi(rawdir(1:end-1),'Hilda$'))
     if strcmp(getenv('username'),'nick')
         procdir='/Users/nick/Dropbox/filesforNick/processed/Hilda/';
@@ -592,6 +602,11 @@ elseif logical(regexpi(rawdir(1:end-1),'Hilda$'))
     if ~strcmp(rexname(1),'H')
         rexname=cat(2,'H',rexname);
     end
+    if replacespikes
+        rexname=cat(2,rexname,'_Sp2');
+    else
+        rexname=cat(2,rexname,'_REX');
+    end  
 end
 
 newname = cat( 2, procdir, rexname, '.mat' );
