@@ -96,8 +96,11 @@ elseif strcmp(monkeydirselected,'hildaselect')
 load([directory 'Hilda' slash 'Spike2Exports' slash rexname 's.mat']);
 load([directory 'Hilda' slash 'Spike2Exports' slash rexname 't.mat']);    
 end
-eval(['data = ' rexname '_Ch7']); % find which channel contains the data ( H53L5A5_20901_Ch7.title = nw-801)
-eval(['spk2trig = ' rexname '_Ch5']);
+% find which channel contains the data ( H53L5A5_20901_Ch7.title = nw-801)
+varlist=who; %list variables
+varlist=varlist(~cellfun(@isempty,strfind(varlist,rexname))); %restrict to the ones that start with the file name (the ones just loaded)
+eval(['data = ' cell2mat(varlist(cellfun(@isempty,strfind([cellfun(@(x) eval([x '.title']), varlist,'UniformOutput',false)],'trigger'))))]); 
+eval(['spk2trig = ' cell2mat(varlist(~cellfun(@isempty,strfind([cellfun(@(x) eval([x '.title']), varlist,'UniformOutput',false)],'trigger'))))]);
 global triggertimes
 triggertimes = spk2trig.times;
 global spike2times
