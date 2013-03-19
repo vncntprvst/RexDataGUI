@@ -4,6 +4,7 @@ whichclus = 1;
 end
 global triggertimes spike2times clustercodes
 whentrigs = round(triggertimes.*1e3);
+striggertimes = whentrigs(1:2:end); %start trigger times: remove end triggers
 whenspikes = round(spike2times.*1e3);
 whatcodes = clustercodes;
 %% recast in terms of REX times
@@ -42,8 +43,8 @@ end
 % align
 int1 = endtrigs-starttrigs;
 int3 = int1(a);
-triglengths = round(diff(triggertimes).*1e3);
-b = find(triglengths>(int3-1) & triglengths<(int3+1),1);
+triglengths = round(diff(triggertimes(1:2:end)).*1e3);
+b = find(triglengths>=(int3-1) & triglengths<=(int3+1),1);
 if isempty(b)
         errmess= sprintf('WARNING: Unable to find a pair of triggers that matches the length of the first trial.\n');
         disp(errmess);
@@ -59,15 +60,38 @@ offset =firststart-firsttrig;
 if isempty(offset)
     offset = firststart-whentrigs(1);
 end
+% check if alignement is good 
+    % there's a gradual offset! different clock times between computers?
+    % See striggertimes-(etimes(ecodes == 1001)-offset)
+    if max(diff(striggertimes)-diff(etimes(ecodes == 1001)-offset))>1
+        %try different alignement
+        striggertimes = whentrigs(2:2:end);
+        if max(diff(striggertimes)-diff(etimes(ecodes == 1001)-offset))<=1
+            %keep alternative alignement
+            fprintf('missing trigger, adjusting alignement. CODE TO BE COMPLETED');
+            triglengths = round(diff(triggertimes(2:2:end)).*1e3);
+            b = find(triglengths>=(int3-1) & triglengths<=(int3+1),1);
+            if isempty(b)
+                    errmess= sprintf('WARNING: Unable to find a pair of triggers that matches the length of the first trial.\n');
+                    disp(errmess);
+            end
+            firsttrig = whentrigs(b);
+            firststart = starttrigs(a);
+            offset =firststart-firsttrig;
+            if isempty(offset)
+                offset = firststart-whentrigs(1);
+            end
+        end
+    end
 if 1
     fprintf('There are %d triggers\n',length(whentrigs));
     fprintf('There are %d start times\n',sum(ecodes == 1001));
     figure(99);clf;
-    offwhen = whentrigs+offset;
-    plot(offwhen,offwhen.^0,'rd','MarkerSize',20);
+    %offwhen = striggertimes+offset;
+    plot(striggertimes,striggertimes.^0,'rd','MarkerSize',20); % red diamonds: spike2 triggers
     hold on;
-    plot(etimes(ecodes == 1001),etimes(ecodes==1001).^0,'ko','MarkerSize',20);
-    ticks = unique([etimes(ecodes == 1001); offwhen]);
+    plot(etimes(ecodes == 1001)-offset,(etimes(ecodes==1001)-offset).^0,'ko','MarkerSize',20); % black circles rex start codes
+    ticks = unique([etimes(ecodes == 1001)-offset; striggertimes]);
     set(gca,'XTick',ticks)
     set(gca,'XTickLabel',sprintf('%3.0f|',ticks))
     legend('Spk2 trigs','REX start codes');
