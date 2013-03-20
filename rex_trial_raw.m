@@ -1,5 +1,5 @@
 function [ecodeout, etimeout, spkchan, spk, arate, h, v, start_time, badtrial, analog_time] =...
-    rex_trial_raw(name, trial, includeaborted)
+    rex_trial_raw(name, trial, includeaborted, reprocess)
 
 % function [ecodeout, etimeout, spkchan, spk, arate, h, v, start_time] =
 %       rex_trial_raw(name, trial, atrace)
@@ -74,7 +74,7 @@ end;
 ecname = [name,'_ecodes'];
 etname = [name,'_etimes'];
 
-if ~strcmp(currecodename, ecname)
+if ~strcmp(currecodename, ecname) || reprocess
 	currecodename = ecname;
     
 	arecs = rex_arecs(name);
