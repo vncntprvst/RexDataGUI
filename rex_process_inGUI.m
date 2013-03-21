@@ -116,7 +116,10 @@ nt = rex_numtrials_raw( rexname, includeaborted ); %rawdir
 %% trialnumber is the trial # from the recorded file. Some may be discarded in this loop. next is the resulting trial number
 for trialnumber = 1:nt
     try
-        [ecodeout, etimeout, spkchan, spk, arate, h, v, start_time, badtrial, analog_time] = rex_trial_raw(rexname, trialnumber, includeaborted); %rawdir
+        [ecodeout, etimeout, spkchan, spk, arate, h, v, start_time, badtrial, analog_time] = rex_trial_raw(rexname, trialnumber, includeaborted, reprocess); %rawdir
+    if reprocess
+    reprocess=0; %unnecessary after 1st call to rex_trial_raw
+    end
     catch
         errmess= sprintf('file %s could not be processed at trial %d. Terminate processing',rexname, trialnumber);
         disp(errmess);
