@@ -10,13 +10,15 @@ whatcodes = clustercodes;
 starttrigs =  etimes(ecodes == 1001);
 
 if length(whentrigs)/sum(ecodes == 1001)==2 %expected ratio of triggers to trials (2 triggers per trial
-whentrigs=whentrigs(1:2:end); %keep only start trigger times and remove end triggers. Makes for better correlation
-offset = starttrigs(1) - whentrigs(1);
+
+    whentrigs=whentrigs(1:2:end); %keep only start trigger times and remove end triggers. Makes for better correlation
 
 else %either spurious codes in token task, or wrong recording sequence (e.g. Spike2 recording started after REX recording)
 
-disp('Warning! Inconsistent number of triggers. Will attempt to align via cross correlation.');
-pause;
+    disp('Warning! Inconsistent number of triggers. Will attempt to align via cross correlation.');
+    pause;
+    
+end
 
 keep_min_rex = min(starttrigs); 
 keep_min_spk2 = min(whentrigs);
@@ -29,14 +31,16 @@ rast_starttrigs = hist(starttrigs,rexbins);
 rast_whentrigs = hist(whentrigs,spk2bins);
 
 if max(rast_starttrigs) > 1 || max(rast_whentrigs) > 1
+    
     disp('Error: Two triggers less than a milisecond apart!');
     pause;
+    
 end
 
 [corr_vec,lag_range] = xcorr(rast_starttrigs,rast_whentrigs); % cross correlate rasters to find time displacement between the two that has maximum overlap between triggers
 which_lag = lag_range(corr_vec == max(corr_vec));
 offset = floor(keep_min_rex - keep_min_spk2 + which_lag(1));
-end
+
 
 if 1
     fprintf('There are %d triggers\n',length(whentrigs));
@@ -56,9 +60,9 @@ end
 
 if 0
     
-figure(101);
-plot(lag_range,corr_vec,'ko');
-title('Cross correlation of trigger times and trial start times');
+    figure(101);
+    plot(lag_range,corr_vec,'ko');
+    title('Cross correlation of trigger times and trial start times');
 
 end
 
