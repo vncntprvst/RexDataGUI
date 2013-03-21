@@ -4,6 +4,7 @@ whichclus = 1;
 end
 global triggertimes spike2times clustercodes
 whentrigs = round(triggertimes.*1e3);
+striggertimes = whentrigs(1:2:end); %start trigger times: remove end triggers
 whenspikes = round(spike2times.*1e3);
 whatcodes = clustercodes;
 %% recast in terms of REX times
@@ -40,13 +41,6 @@ whatcodes = clustercodes;
 %     end
 % end
 
-if length(whentrigs)/sum(ecodes == 1001)==2 %expected ratio of triggers to trials (2 triggers per trial
-    whentrigs=whentrigs(1:2:end); %keep only start trigger times and remove end triggers. Makes for better correlation
-else %either spurious codes in token task, or wrong recording sequence (e.g. Spike2 recording started after REX recording)
-    disp('Realign ! See replaceecodes l. 46');
-    pause;
-end
-    
 keep_min_rex = min(starttrigs);
 keep_min_spk2 = min(whentrigs);
 starttrigs = starttrigs - keep_min_rex + 1;
