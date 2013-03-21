@@ -1,6 +1,6 @@
-function [newecodes, newetimes] = replaceecodes(ecodes,etimes,whenspikes,whentrigs,whatcodes,whichclus)
+function [newecodes, newetimes] = replaceecodes(ecodes,etimes,whenspikes,whentrigs,whatcodes,clust)
 if nargin == 5
-whichclus = 1;
+clust = 1;
 end
 global triggertimes spike2times clustercodes
 whentrigs = triggertimes.*1e3;
@@ -32,7 +32,7 @@ end
 
 [corr_vec,lag_range] = xcorr(rast_starttrigs,rast_whentrigs);
 which_lag = lag_range(corr_vec == max(corr_vec));
-offset = keep_min_rex - keep_min_spk2 + which_lag(1);
+offset = floor(keep_min_rex - keep_min_spk2 + which_lag(1));
 
 if 1
     fprintf('There are %d triggers\n',length(whentrigs));
@@ -61,7 +61,7 @@ end
 whenspikes = whenspikes+offset;
 
 %% Isolate cluster
-whenspikes = whenspikes(whatcodes == whichclus);
+whenspikes = whenspikes(whatcodes == clust);
 
 %% Remove old spikes and references to analog
 newecodes = ecodes;
