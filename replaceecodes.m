@@ -10,11 +10,13 @@ whatcodes = clustercodes;
 starttrigs =  etimes(ecodes == 1001);
 
 if length(whentrigs)/sum(ecodes == 1001)==2 %expected ratio of triggers to trials (2 triggers per trial
-    whentrigs=whentrigs(1:2:end); %keep only start trigger times and remove end triggers. Makes for better correlation
+whentrigs=whentrigs(1:2:end); %keep only start trigger times and remove end triggers. Makes for better correlation
+offset = starttrigs(1) - whentrigs(1);
+
 else %either spurious codes in token task, or wrong recording sequence (e.g. Spike2 recording started after REX recording)
-    disp('Realign ! See replaceecodes l. 46');
-    pause;
-end
+
+disp('Warning! Inconsistent number of triggers. Will attempt to align via cross correlation.');
+pause;
 
 keep_min_rex = min(starttrigs); 
 keep_min_spk2 = min(whentrigs);
@@ -34,6 +36,7 @@ end
 [corr_vec,lag_range] = xcorr(rast_starttrigs,rast_whentrigs); % cross correlate rasters to find time displacement between the two that has maximum overlap between triggers
 which_lag = lag_range(corr_vec == max(corr_vec));
 offset = floor(keep_min_rex - keep_min_spk2 + which_lag(1));
+end
 
 if 1
     fprintf('There are %d triggers\n',length(whentrigs));
