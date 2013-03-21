@@ -16,21 +16,22 @@ else %either spurious codes in token task, or wrong recording sequence (e.g. Spi
     pause;
 end
 
-keep_min_rex = min(starttrigs);
+keep_min_rex = min(starttrigs); 
 keep_min_spk2 = min(whentrigs);
-starttrigs = starttrigs - keep_min_rex;
+starttrigs = starttrigs - keep_min_rex; % align to first trigger in either dataset, to avoid wasting raster space
 whentrigs = whentrigs - keep_min_spk2;
 
 rexbins = 0:max(starttrigs);
-spk2bins = 0:floor(max(whentrigs));
+spk2bins = 0:floor(max(whentrigs)); % convert from vector of trigger times to rasters
 rast_starttrigs = hist(starttrigs,rexbins);
 rast_whentrigs = hist(whentrigs,spk2bins);
 
 if max(rast_starttrigs) > 1 || max(rast_whentrigs) > 1
-    disp('This doesnt make sense');
+    disp('Error: Two triggers less than a milisecond apart!');
+    pause;
 end
 
-[corr_vec,lag_range] = xcorr(rast_starttrigs,rast_whentrigs);
+[corr_vec,lag_range] = xcorr(rast_starttrigs,rast_whentrigs); % cross correlate rasters to find time displacement between the two that has maximum overlap between triggers
 which_lag = lag_range(corr_vec == max(corr_vec));
 offset = floor(keep_min_rex - keep_min_spk2 + which_lag(1));
 
@@ -50,7 +51,7 @@ if 1
     legend('Spk2 trigs','REX start codes');
 end
 
-if 1
+if 0
     
 figure(101);
 plot(lag_range,corr_vec,'ko');
