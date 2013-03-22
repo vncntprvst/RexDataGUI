@@ -123,6 +123,17 @@ if 1
     set(gca,'XTick',ticks)
     set(gca,'XTickLabel',sprintf('%3.0f|',ticks))
     legend('Spk2 trigs','REX start codes');
+
+    starttrigs = etimes(ecodes == 1001);
+    align_error = zeros(length(starttrigs),1);
+    for a = 1:length(starttrigs)
+        curr_trig = starttrigs(a);
+        errors = abs(whentrigs-curr_trig);
+        align_error(a) = min(errors);
+    end
+    error_bar = mean(align_error);
+    fprintf('The alignment is %5.2f miliseconds off on average',error_bar);
+
 end
 % % while ~(length(whentrigs)==sum(ecodes == 1001))
 % %     whentrigs(1) = [];
