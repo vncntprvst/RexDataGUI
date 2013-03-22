@@ -9,7 +9,7 @@ whatcodes = clustercodes;
 %% recast in terms of REX times
 starttrigs =  etimes(ecodes == 1001);
 
-if length(whentrigs)/sum(ecodes == 1001)==2 %expected ratio of triggers to trials (2 triggers per trial
+if length(whentrigs)/sum(ecodes == 1001) == 2 %expected ratio of triggers to trials (2 triggers per trial
 
     whentrigs=whentrigs(1:2:end); %keep only start trigger times and remove end triggers. Makes for better correlation
 
@@ -25,8 +25,9 @@ keep_min_spk2 = min(whentrigs);
 starttrigs = starttrigs - keep_min_rex; % align to first trigger in either dataset, to avoid wasting raster space
 whentrigs = whentrigs - keep_min_spk2;
 
-rexbins = 0:max(starttrigs);
-spk2bins = 0:floor(max(whentrigs)); % convert from vector of trigger times to rasters
+binwidth = 1;
+rexbins = 0:binwidth:max(starttrigs);
+spk2bins = 0:binwidth:floor(max(whentrigs)); % convert from vector of trigger times to rasters
 rast_starttrigs = hist(starttrigs,rexbins);
 rast_whentrigs = hist(whentrigs,spk2bins);
 
@@ -38,7 +39,7 @@ if max(rast_starttrigs) > 1 || max(rast_whentrigs) > 1
 end
 
 [corr_vec,lag_range] = xcorr(rast_starttrigs,rast_whentrigs); % cross correlate rasters to find time displacement between the two that has maximum overlap between triggers
-which_lag = lag_range(corr_vec == max(corr_vec));
+which_lag = binwidth.*lag_range(corr_vec == max(corr_vec));
 offset = floor(keep_min_rex - keep_min_spk2 + which_lag(1));
 
 
@@ -56,9 +57,19 @@ if 1
     set(gca,'XTick',ticks)
     set(gca,'XTickLabel',sprintf('%3.0f|',ticks))
     legend('Spk2 trigs','REX start codes');
+    
+    starttrigs = etimes(ecodes == 1001);
+    align_error = zeros(length(starttrigs),1);
+    for a = 1:length(starttrigs)
+        curr_trig = starttrigs(a);
+        errors = abs(whentrigs-curr_trig);
+        align_error(a) = min(errors);
+    end
+    error_bar = mean(align_error);
+    fprintf('The alignment is %5.2f miliseconds off on average',error_bar);
 end
 
-if 0
+if 1
     
     figure(101);
     plot(lag_range,corr_vec,'ko');
