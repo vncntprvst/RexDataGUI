@@ -40,7 +40,7 @@ end
 
 [corr_vec,lag_range] = xcorr(rast_starttrigs,rast_whentrigs); % cross correlate rasters to find time displacement between the two that has maximum overlap between triggers
 which_lag = binwidth.*lag_range(corr_vec == max(corr_vec));
-offset = floor(keep_min_rex - keep_min_spk2 + which_lag(1));
+offset = round(keep_min_rex - keep_min_spk2 + which_lag(1));
 
 
 if 1
