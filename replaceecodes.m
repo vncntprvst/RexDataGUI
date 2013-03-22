@@ -4,7 +4,7 @@ clust = 1;
 end
 global triggertimes spike2times clustercodes
 whentrigs = triggertimes.*1e3;
-whenspikes = floor(spike2times.*1e3);
+whenspikes = round(spike2times.*1e3);
 whatcodes = clustercodes;
 %% recast in terms of REX times
 starttrigs =  etimes(ecodes == 1001);
