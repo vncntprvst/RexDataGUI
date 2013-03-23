@@ -45,14 +45,14 @@ end
 namelength = length( name );
 rexmatname = name;
 if ~strcmpi(  name( namelength-3:namelength ) , '.mat' )
-    rexmatname = cat( 2, name, '.mat' );
+    rexmatname = cat( 2, name, '.mat' );  
 end;
 if ~exist( rexmatname, 'file' ) && ~skip
     disp( 'File to be processed...');
 %     if findstr(name,'gap')
 %         success = rex_process_gaptask( name ); %specifically to analyse gap tasks
 %     else
-        success = rex_process( name );
+        success = rex_process_inGUI( name );
 %     end
     if ~success
         disp( 'Failed to process file...');

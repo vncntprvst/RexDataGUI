@@ -100,7 +100,7 @@ if ~strcmp(currecodename, ecname) || reprocess
 	
 	numtrials = length(trialstart);
 
-    %  Ok, now remove bad trials if we're supposed to.
+    %  Now remove bad trials if we're supposed to.
    
     if ~includeaborted
         nobadtrialnum = 1;
@@ -122,26 +122,8 @@ if ~strcmp(currecodename, ecname) || reprocess
     end;               
         
    	trialtimes = etimes(trialstart);
- 
-    
-%RCA - DON'T remove bad trials here.    
-% 	
-% 	% remove bad trials
-% 	badtrial = find(ecodes == 17385);  % or so I think...
-% 	if ~isempty(badtrial)
-% 		badtrialtime = etimes(badtrial);
-% 		bad = [];
-% 		for b = 1:length(badtrial)
-% 			bd = max(find(badtrialtime(b) > trialtimes));
-% 			bad = [bad;bd];
-% 		end;
-% 		ok = setxor(bad, (1:numtrials));
-% 		trialstart = trialstart(ok);
-% 		trialend = trialend(ok);
-% 	end;
-% 	
-	% find last e-record time
-	% not sure this is the right way to do it...
+
+	% times for each trial
 	trialstarttimes = etimes(trialstart);
 	trialendtimes = etimes(trialend);
     
@@ -152,9 +134,10 @@ end;
 idx1 = find((ecodes == 1001) & (etimes == trialstarttimes(trial)));
 idx2 = find((ecodes == 1001) & (etimes == trialendtimes(trial)));
 
-% RCA - the above line fails for the last trial.
-if isempty( idx2 )
+% Above line fails for the last trial.
+if trial==length(find(ecodes == 1001))
     idx2 = length(ecodes);
+    currecodename=''; %not needed anymore
 end;
 
 idx1 = idx1(end);
