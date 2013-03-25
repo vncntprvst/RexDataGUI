@@ -1,8 +1,8 @@
-function [newecodes, newetimes] = replaceecodes(ecodes,etimes,whenspikes,whentrigs,whatcodes,whichclus,figs)
-if nargin < 6
+function [newecodes, newetimes] = replaceecodes(ecodes,etimes,whichclus,figs)
+if nargin < 3
     whichclus = 1;
     figs=0;
-elseif nargin <7
+elseif nargin <4
     figs=0;
 end
 
