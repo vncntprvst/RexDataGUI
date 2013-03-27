@@ -297,10 +297,10 @@ elseif strcmp(get(get(findobj('Tag','showdirpanel'),'SelectedObject'),'Tag'),'se
     % rdd_rasters would know it had to collapse all
     % directions together
     alignseccodes= alignseccodes'; %secondcode;
-elseif size(alignseccodes,1)>0
-    collapsecode=1; % we want two plots, one for each type of code
-    aligncodes=aligncodes';
-    alignseccodes= alignseccodes';
+% elseif size(alignseccodes,1)>0
+%     collapsecode=1; % we want two plots, one for each type of code
+%     aligncodes=aligncodes';
+%     alignseccodes= alignseccodes';
 elseif strcmp(tasktype,'base2rem50')
     collapsecode=0; % we want to plots, one for each type of code
     aligncodes=aligncodes';
@@ -466,7 +466,8 @@ for cnc=1:numcodes
     adjconditions=conditions;
     if strcmp(aligntype,'stop')
         includebad=1; %we want to compare cancelled with non-cancelled
-        numplots=numcodes+1;
+        d_increment=size([aligncodes alignseccodes],1);%make room for additional "non-cancel" data
+        numplots=numcodes+d_increment;
     elseif strcmp(tasktype,'base2rem50')
         adjconditions=[conditions(cnc,:);conditions(cnc+numcodes,:);conditions(cnc+2*numcodes,:)];
         numplots=numcodes;
@@ -505,24 +506,24 @@ for cnc=1:numcodes
         datalign(cnc).ssd=ssd(canceledtrials,:);
         
         canceledtrials=~canceledtrials;
-        datalign(cnc+1).alignlabel='stop_non_cancel';
-        datalign(cnc+1).rasters=rasters(canceledtrials,:);
-        datalign(cnc+1).alignidx=aidx;
-        datalign(cnc+1).trials=trialidx(canceledtrials);
-        datalign(cnc+1).trigtosac=trigtosacs(canceledtrials);
-        datalign(cnc+1).sactotrig=sactotrigs(canceledtrials);
-        datalign(cnc+1).trigtovis=trigtovis(canceledtrials);
-        datalign(cnc+1).vistotrig=vistotrigs(canceledtrials);
-        datalign(cnc+1).eyeh=eyeh(canceledtrials,:);
-        datalign(cnc+1).eyev=eyev(canceledtrials,:);
-        datalign(cnc+1).eyevel=eyevel(canceledtrials,:);
-        datalign(cnc+1).allgreyareas=allgreyareas(:,canceledtrials);
-        datalign(cnc+1).amplitudes=amplitudes(canceledtrials);
-        datalign(cnc+1).peakvels=peakvels(canceledtrials);
-        datalign(cnc+1).peakaccs=peakaccs(canceledtrials);
-        datalign(cnc+1).bad=badidx(canceledtrials);
-        datalign(cnc+1).ssd=ssd(canceledtrials,:);
-        %             datalign(cnc+1).condtimes=condtimes(canceledtrials);
+        datalign(cnc+d_increment).alignlabel='stop_non_cancel';
+        datalign(cnc+d_increment).rasters=rasters(canceledtrials,:);
+        datalign(cnc+d_increment).alignidx=aidx;
+        datalign(cnc+d_increment).trials=trialidx(canceledtrials);
+        datalign(cnc+d_increment).trigtosac=trigtosacs(canceledtrials);
+        datalign(cnc+d_increment).sactotrig=sactotrigs(canceledtrials);
+        datalign(cnc+d_increment).trigtovis=trigtovis(canceledtrials);
+        datalign(cnc+d_increment).vistotrig=vistotrigs(canceledtrials);
+        datalign(cnc+d_increment).eyeh=eyeh(canceledtrials,:);
+        datalign(cnc+d_increment).eyev=eyev(canceledtrials,:);
+        datalign(cnc+d_increment).eyevel=eyevel(canceledtrials,:);
+        datalign(cnc+d_increment).allgreyareas=allgreyareas(:,canceledtrials);
+        datalign(cnc+d_increment).amplitudes=amplitudes(canceledtrials);
+        datalign(cnc+d_increment).peakvels=peakvels(canceledtrials);
+        datalign(cnc+d_increment).peakaccs=peakaccs(canceledtrials);
+        datalign(cnc+d_increment).bad=badidx(canceledtrials);
+        datalign(cnc+d_increment).ssd=ssd(canceledtrials,:);
+        %             datalign(cnc+d_increment).condtimes=condtimes(canceledtrials);
         elseif strcmp(tasktype,'optiloc') && logical(sum(strfind(ol_instruct,'amplitudes')))
         % compare amp distrib with expected distrib, typically [4,12,20]
         if ~sum(hist(abs(amplitudes),[4,12,20])==hist(abs(amplitudes),3))==3 %case when amps are not dixtributed as expected
@@ -615,6 +616,9 @@ end
 %%%%%%%%%%%%%%%%%%%%%%
 if plotrasts
     figure(gcf);
+    %some housekeeping: removing previous uigridcontainers
+    childlist=get(findobj('Tag','rasterspanel'),'children');    
+    delete(childlist(strcmp(get(childlist,'type'),'uigridcontainer')));
     
     if  singlerastplot || aligncodes(1)==1030 || aligncodes(1)== 17385
         % || aligncodes(1)==16386 || aligncodes(1)==16387 || aligncodes(1)==16388;
