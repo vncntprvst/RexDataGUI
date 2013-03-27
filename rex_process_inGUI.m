@@ -616,12 +616,12 @@ end
 newname = cat( 2, procdir, rexname, '.mat' );
 s = sprintf('Writing converted Rex data to %s.', cat(2,rexname,'.mat'));
 waitbar( 0.9, wb, s );
-rexloadedname = rexname;
+%rexloadedname = rexname;
 rexnumtrials = next -1; %nt;
 
-allrexnotes = sprintf( '%s, converted on %s\n%d trials\n', rexloadedname, datestr( now ), rexnumtrials );
+allrexnotes = sprintf( '%s, converted on %s\n%d trials\n', rexname, datestr( now ), rexnumtrials );
 disp(allrexnotes);
-save( newname, 'rexloadedname', 'rexnumtrials', 'alloriginaltrialnums', 'allnewtrialnums',...
+save( newname, 'rexname', 'rexnumtrials', 'alloriginaltrialnums', 'allnewtrialnums',...
     'allcodes', 'alltimes', 'allspkchan', 'allspk', 'allrates', 'allh', 'allv', 'allstart',...
     'allbad', 'alltrigin', 'alltrigout', 'allrew', 'alldeleted', 'allsacstart', 'allsacend',...
     'allspklen', 'allsaclen', 'allrexnotes', 'saccadeInfo','outlandmismtch','-v7.3'); %using '-v7.3' input arguments so that matfile loading runs well when retrieving data from file
