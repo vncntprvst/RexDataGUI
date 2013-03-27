@@ -446,7 +446,7 @@ function displaymfiles_Callback(hObject, eventdata, handles)
 % hObject    handle to displaymfiles (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-global directory slash unprocfiles ;
+global directory slash  ; %unprocfiles rexloadedname
 
 monkeydirselected=get(get(findobj('Tag','monkeyselect'),'SelectedObject'),'Tag');
 if strcmp(monkeydirselected,'rigelselect')
@@ -1522,26 +1522,19 @@ function usespike2_Callback(hObject, eventdata, handles)
 % hObject    handle to usespike2 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-global replacespikes directory slash
+global replacespikes %directory slash
 if get(hObject,'Value')
     replacespikes = 1;
-    set(handles.whichclus,'Enable','on')
+    set(findobj('tag','whichclus'),'Enable','on')
 else
     replacespikes = 0;
-    set(handles.whichclus,'Enable','off')
+    set(findobj('tag','whichclus'),'Enable','off')
 end
-% Hint: get(hObject,'Value') returns toggle state of usespike2
-
-
 
 function whichclus_Callback(hObject, eventdata, handles)
 % hObject    handle to whichclus (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-
-% Hints: get(hObject,'String') returns contents of whichclus as text
-%        str2double(get(hObject,'String')) returns contents of whichclus as a double
-
 
 % --- Executes during object creation, after setting all properties.
 function whichclus_CreateFcn(hObject, eventdata, handles)

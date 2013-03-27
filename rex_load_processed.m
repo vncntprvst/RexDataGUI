@@ -65,5 +65,10 @@ end;
 
 success = 1;
 load( rexmatname );
+if ~strcmp(regexp(rexmatname,'\w+$', 'match'),'mat') 
+    rexloadedname=rexmatname;
+else % should always be that way
+    rexloadedname=rexmatname(1:end-4);
+end
 disp( ['Loading ' rexmatname]);
 
