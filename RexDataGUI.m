@@ -446,7 +446,7 @@ function displaymfiles_Callback(hObject, eventdata, handles)
 % hObject    handle to displaymfiles (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-global directory slash  ; %unprocfiles rexloadedname
+global directory slash replacespikes ; %unprocfiles rexloadedname
 
 monkeydirselected=get(get(findobj('Tag','monkeyselect'),'SelectedObject'),'Tag');
 if strcmp(monkeydirselected,'rigelselect')
@@ -542,7 +542,7 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
         end
         
         
-        overwriteAll = 0;
+        overwriteAll = 0; % This switch should stay hardcoded, no need for user option 
         if  overwriteAll %(exist(strcat({procdir},rfname,{'.mat'}), 'file')==2)
             % Construct question dialog
             choice = questdlg('Do you want to overwrite processed files?','Reprocess files?','Overwrite all','Skip','Skip'); %'Overwrite this file'
@@ -587,56 +587,66 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
             end
             % load file
             clear global tasktype;
+            if replacespikes
+                procname=[procname '_Sp2'];
+            else
+                procname=[procname '_REX'];
+            end
+            
             try
                 [~, trialdirs] = data_info(procname, 1, 1); %reload file: yes (shouldn't happen, though), skip unprocessed files: yes
             catch
                 continue
             end
-            % process file
-            getaligndata = rdd_rasters_sdf(procname, trialdirs, 0); % align data, don't plot rasters
+            % process file, aligning to sac, cue, reward
+            alignmtname={'mainsacalign','tgtshownalign','rewardalign'};
+            alignbh=get( findobj('Tag','aligntimepanel'),'children');
+            for alignmt=1:3
+            set(findobj('Tag','aligntimepanel'),'SelectedObject',alignbh(strcmp(get(alignbh,'tag'),alignmtname{alignmt})))            
+            getaligndata{alignmt} = rdd_rasters_sdf(procname, trialdirs, 0); % align data, don't plot rasters
             
-            if ~isempty([getaligndata.trials]) % if anything to make stats on and export, that is
-                getaligndata=getaligndata(~cellfun('isempty',{getaligndata.alignidx}));
+            if ~isempty([getaligndata{alignmt}.trials]) % if anything to make stats on and export, that is
+                getaligndata{alignmt}=getaligndata{alignmt}(~cellfun('isempty',{getaligndata{alignmt}.alignidx}));
                 %% first pass at stats
-                [p_sac,h_sac,p_rmanov,mcstats]=raststats(getaligndata);
-                for psda=1:length(getaligndata)
-                    getaligndata(psda).stats.p=p_sac(psda,:);
-                    getaligndata(psda).stats.h=h_sac(psda,:);
+                [p_sac,h_sac,p_rmanov,mcstats]=raststats(getaligndata{alignmt});
+                for psda=1:length(getaligndata{alignmt})
+                    getaligndata{alignmt}(psda).stats.p=p_sac(psda,:);
+                    getaligndata{alignmt}(psda).stats.h=h_sac(psda,:);
                 end
                 %additional measures: cc and auc
                 % cross-correlation values: pretty reliable indicator to sort out presac, perisac and postsac activities
                 % possible limits are:
                 % pressac <-10ms before sac , >-10ms perisac <+10ms, <10ms postsac
-                [peakcct, peaksdf]=crosscorel(procname,getaligndata,'all',0); %Get peakcc for all directions. Don't plot
+                [peakcct, peaksdf]=crosscorel(procname,getaligndata{alignmt},'all',0); %Get peakcc for all directions. Don't plot
                 % area under curve: separate cells with low baseline FR and sharp burst from higher baseline neurons, especially ramping ones
                 % possible limit at 2000
-                [dirauc, dirslopes, peaksdft]=findauc(procname,getaligndata,'all'); %Get auc, slopes, peaksdft for all directions
+                [dirauc, dirslopes, peaksdft]=findauc(procname,getaligndata{alignmt},'all'); %Get auc, slopes, peaksdft for all directions
                 
-                getaligndata(psda).peakramp.peakcct=peakcct; % peak cross-correlation time
-                getaligndata(psda).peakramp.peaksdf=peaksdf; % main sdf peak, within -200/+199 of aligntime
-                getaligndata(psda).peakramp.peaksdf=peaksdft; %
-                getaligndata(psda).peakramp.auc=dirauc; % area under curve
-                getaligndata(psda).peakramp.slopes=dirslopes; % slope of activity to peak (or drought, if negative)
+                getaligndata{alignmt}(psda).peakramp.peakcct=peakcct; % peak cross-correlation time
+                getaligndata{alignmt}(psda).peakramp.peaksdf=peaksdf; % main sdf peak, within -200/+199 of aligntime
+                getaligndata{alignmt}(psda).peakramp.peaksdf=peaksdft; %
+                getaligndata{alignmt}(psda).peakramp.auc=dirauc; % area under curve
+                getaligndata{alignmt}(psda).peakramp.slopes=dirslopes; % slope of activity to peak (or drought, if negative)
                 
-                for psda=1:length(getaligndata)
-                    getaligndata(psda).stats.p=p_sac(psda,:);
-                    getaligndata(psda).stats.h=h_sac(psda,:);
-                    getaligndata(psda).stats.p_rmanov=p_rmanov(psda,:);
-                    getaligndata(psda).stats.mcstats=mcstats(psda,:);
+                for psda=1:length(getaligndata{alignmt})
+                    getaligndata{alignmt}(psda).stats.p=p_sac(psda,:);
+                    getaligndata{alignmt}(psda).stats.h=h_sac(psda,:);
+                    getaligndata{alignmt}(psda).stats.p_rmanov=p_rmanov(psda,:);
+                    getaligndata{alignmt}(psda).stats.mcstats=mcstats(psda,:);
                 end
                 
                 % export data
-                if isempty(getaligndata(1).savealignname)
-                    getaligndata(1).savealignname = cat( 2, directory, 'processed',slash, 'aligned',slash, procname, '_', getaligndata(1).alignlabel);
+                if isempty(getaligndata{alignmt}(1).savealignname)
+                    getaligndata{alignmt}(1).savealignname = cat( 2, directory, 'processed',slash, 'aligned',slash, procname, '_', getaligndata{alignmt}(1).alignlabel);
                 end
-                guidata(findobj('Tag','exportdata'),getaligndata);
+                guidata(findobj('Tag','exportdata'),getaligndata{alignmt});
                 exportdata_Callback(findobj('tag','exportdata'), eventdata, handles);
                 % check if statistically significant saccade activity in any alignment
-                sumstatsacs=sum(arrayfun(@(x) nansum(x{:}.h), {getaligndata(~cellfun(@isempty, {getaligndata.stats})).stats}));
+                sumstatsacs=sum(arrayfun(@(x) nansum(x{:}.h), {getaligndata{alignmt}(~cellfun(@isempty, {getaligndata{alignmt}.stats})).stats}));
             else
                 sumstatsacs=0;
             end
-            
+            end
             % write result to excel file
             
             % get number of row in "database"
