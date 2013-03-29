@@ -605,16 +605,17 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
             set(findobj('Tag','aligntimepanel'),'SelectedObject',alignbh(strcmp(get(alignbh,'tag'),alignmtname{alignmt})))            
             getaligndata{alignmt} = rdd_rasters_sdf(procname, trialdirs, 0); % align data, don't plot rasters
             
-            if ~isempty([getaligndata{alignmt}.trials]) % if anything to make stats on and export, that is
-                getaligndata{alignmt}=getaligndata{alignmt}(~cellfun('isempty',{getaligndata{alignmt}.alignidx}));
-                %% first pass at stats
-                [p_sac,h_sac,p_rmanov,mcstats]=raststats(getaligndata{alignmt});
-                for psda=1:length(getaligndata{alignmt})
+            %% statistics on rasters: do stats on collapsed data and individual direction, if > 7 trials 
+            if length([getaligndata{alignmt}.trials])>=7
+                getaligndata{alignmt}=getaligndata{alignmt}(~cellfun('isempty',{getaligndata{alignmt}.alignidx})); % remove empty conditions
+                % main stats
+                [p_sac,h_sac,p_rmanov,mcstats]=eventraststats(getaligndata{alignmt},alignmtname{alignmt});
+                for psda=1:length(getaligndata{alignmt})+1
                     getaligndata{alignmt}(psda).stats.p=p_sac(psda,:);
                     getaligndata{alignmt}(psda).stats.h=h_sac(psda,:);
                 end
                 %additional measures: cc and auc
-                % cross-correlation values: pretty reliable indicator to sort out presac, perisac and postsac activities
+                % cross-correlation values: pretty reliable indicator to sort out pre-event, peri-event and post-event activities
                 % possible limits are:
                 % pressac <-10ms before sac , >-10ms perisac <+10ms, <10ms postsac
                 [peakcct, peaksdf]=crosscorel(procname,getaligndata{alignmt},'all',0); %Get peakcc for all directions. Don't plot
@@ -635,18 +636,27 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
                     getaligndata{alignmt}(psda).stats.mcstats=mcstats(psda,:);
                 end
                 
+            end
+            end
                 % export data
-                if isempty(getaligndata{alignmt}(1).savealignname)
-                    getaligndata{alignmt}(1).savealignname = cat( 2, directory, 'processed',slash, 'aligned',slash, procname, '_', getaligndata{alignmt}(1).alignlabel);
+                if isempty(cellfun(@(x) x.savealignname, arrayfun(@(x) x, getaligndata),'UniformOutput', false))
+                    getaligndata{1}(1).savealignname = cat( 2, directory, 'processed',slash, 'aligned',slash, procname, '_', getaligndata{1}(1).alignlabel);
                 end
-                guidata(findobj('Tag','exportdata'),getaligndata{alignmt});
+                guidata(findobj('Tag','exportdata'),getaligndata);
                 exportdata_Callback(findobj('tag','exportdata'), eventdata, handles);
-                % check if statistically significant saccade activity in any alignment
-                sumstatsacs=sum(arrayfun(@(x) nansum(x{:}.h), {getaligndata{alignmt}(~cellfun(@isempty, {getaligndata{alignmt}.stats})).stats}));
+                
+                % check if statistically significant event related activity in any alignment
+            if sum(~cellfun('isempty',(cellfun(@(x) x.trials, arrayfun(@(x) x, getaligndata),'UniformOutput', false))))
+                alignt_q=find(~cellfun('isempty',(cellfun(@(x) x.trials, arrayfun(@(x) x, getaligndata),'UniformOutput', false))));
+                for lustat=1:length(alignt_q)
+                sumstatsacs{lustat}=sum(arrayfun(@(x) nansum(x{:}.h), {getaligndata{alignt_q(lustat)}(~cellfun(@isempty, {getaligndata{alignt_q(lustat)}.stats})).stats}));
+                end
             else
                 sumstatsacs=0;
             end
-            end
+            
+            % print vignette figure of statistically significant result
+            
             % write result to excel file
             
             % get number of row in "database"
@@ -827,10 +837,15 @@ function exportdata_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 dataaligned=guidata(hObject);
+if iscell(dataaligned) %multiple alignements
+    snames=cellfun(@(x) x.savealignname, arrayfun(@(x) x, dataaligned),'UniformOutput', false);
+    savealignname=[dataaligned{1}(1).savealignname(1:end-3) cell2mat(cellfun(@(x) regexp(x,'\w\w\w$','match'),snames))];
+else
 savealignname=dataaligned.savealignname;
+end
 save(savealignname,'dataaligned','-v7.3');
 
-%save some data to match with SH data analysis
+%save some data to match with SH / Spike2 data analysis
 % about dataaligned:
 % datalign.timefromtrig and datalign.timetotrig represent time from start
 % or to the end of the trial with respect to the alignment time
@@ -842,6 +857,11 @@ save(savealignname,'dataaligned','-v7.3');
 % and time to onset of second trigger (end of trial).
 % for Rigel: no trigger ecode until R146 included
 % for Sixx: no trigger ecode until S102 included
+
+if iscell(dataaligned) %multiple alignements: keep only sac alignement
+    dataaligned=dataaligned(strcmp(cellfun(@(x) x.alignlabel, arrayfun(@(x) x, dataaligned),'UniformOutput',false),'sac'));
+    dataaligned=dataaligned{:};
+end
 
 rdd_filename=get(findobj('Tag','filenamedisplay'),'String');
 recdata=matfile(rdd_filename);
@@ -857,6 +877,7 @@ trigtovis=nan(size(rex2sh.goodtrials));
 vistotrig=nan(size(rex2sh.goodtrials));
 trialdir=cell(size(rex2sh.goodtrials));
 alignlabel=cell(size(rex2sh.goodtrials));
+
 if logical(sum(rex2sh.goodtrials))
     for i=1:length(dataaligned)
         if ~isempty(dataaligned(i).trials)
