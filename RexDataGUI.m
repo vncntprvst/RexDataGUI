@@ -647,15 +647,39 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
                 
                 % check if statistically significant event related activity in any alignment
             if sum(~cellfun('isempty',(cellfun(@(x) x.trials, arrayfun(@(x) x, getaligndata),'UniformOutput', false))))
-                alignt_q=find(~cellfun('isempty',(cellfun(@(x) x.trials, arrayfun(@(x) x, getaligndata),'UniformOutput', false))));
-                for lustat=1:length(alignt_q)
-                sumstatsacs{lustat}=sum(arrayfun(@(x) nansum(x{:}.h), {getaligndata{alignt_q(lustat)}(~cellfun(@isempty, {getaligndata{alignt_q(lustat)}.stats})).stats}));
-                end
+                
+                [activlevel,activtype,maxmean,profile,dirselective,bestlt]=catstatres(getaligndata);
+
             else
-                sumstatsacs=0;
+                [activtype,profile,dirselective]=deal('');
+                [maxmean,activlevel]=deal(0);
+            end
+
+            % print vignette figure of statistically significant result
+            if activlevel
+            SummaryPlot(activtype,procname,tasktype);
             end
             
-            % print vignette figure of statistically significant result
+            % crude segmentation: set depth limits for top cortex / dentate / bottom cortex
+            if monknum==1
+                cdn_depth=19000;
+                bcx_depth=22000;
+            elseif monknum==2
+                cdn_depth=11000;
+                bcx_depth=17000;
+            elseif monknum==3
+                cdn_depth=19000;
+                bcx_depth=26000;
+            end
+            recdepth=regexp(procname,'_\d+_','match');
+            recdepth=str2num([recdepth{:}(2:end-2) '0']);
+            if (recdepth<cdn_depth)
+            compart={'top_cortex'};
+            elseif (recdepth>=cdn_depth && recdepth<=bcx_depth)
+            compart={'dentate'};
+            elseif (recdepth>bcx_depth)
+            compart={'bottom_cortex'};
+            end
             
             % write result to excel file
             
@@ -670,86 +694,7 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
                 numrows=1;
             end
             Quit(exl);
-            
-            activreport='';
-            peaktime='';
-            profile='';
-            dirselective='';
-            if logical(sumstatsacs)
-                if logical(nansum(arrayfun(@(x) x{:}.h(1), {getaligndata(~cellfun(@isempty, {getaligndata.stats})).stats})))
-                    activreport = [activreport, 'presac_baseline '];
-                end
-                if logical(nansum(arrayfun(@(x) x{:}.h(2), {getaligndata(~cellfun(@isempty, {getaligndata.stats})).stats})))
-                    activreport = [activreport, 'presac_postsac '];
-                end
-                if logical(nansum(arrayfun(@(x) x{:}.h(3), {getaligndata(~cellfun(@isempty, {getaligndata.stats})).stats})))
-                    activreport = [activreport, 'perisac_baseline'];
-                end
-                if logical(nansum(p_rmanov<0.05))
-                    statinfo={'2',activreport};
-                else
-                    statinfo={'1',activreport};
-                end
-                %% attributes
-                % peak cross-correlation time
-                
-                [~,pkdistrib]=hist(peakcct,4);
-                if (pkdistrib(1)<0 && pkdistrib(2)<0) && (pkdistrib(3)>0 && pkdistrib(4)>0)
-                    if median(abs(peakcct))>10
-                        peaktime='pre_post';
-                    else
-                        peaktime='perisac';
-                    end
-                elseif sum(pkdistrib>0)==4
-                    if median(peakcct)>10
-                        peaktime='postsac';
-                    else
-                        peaktime='perisac';
-                    end
-                elseif sum(pkdistrib<0)==4
-                    if median(peakcct)<-10
-                        peaktime='presac';
-                    else
-                        peaktime='perisac';
-                    end
-                else
-                    if min(pkdistrib)>-10 && max(pkdistrib)<10
-                        peaktime='perisac';
-                    else
-                        peaktime='mixed';
-                    end
-                end
-                
-                % main sdf peak, within -200/+199 of aligntime
-                if sum(logical(hist(peaksdf,length(peaksdf))))>floor(length(peaksdf)/2) && max(peaksdf)>2*min(peaksdf)
-                    dirselective='dirselect';
-                else
-                    dirselective='nonselect';
-                end
-                
-                % area under curve and slope
-                
-                if logical(sum(dirslopes>400 & dirauc>2000))
-                    profile=[profile,'ramp_burst '];
-                end
-                if logical(sum(dirslopes>400 & dirauc<1500))
-                    profile=[profile,'burst '];
-                end
-                if logical(sum((dirslopes<0 & dirslopes>-400) & dirauc<-2000))
-                    profile=[profile,'suppression '];
-                end
-                
-            else
-                if logical(sum(p_rmanov<0.05))
-                    activreport = 'rmanov positive';
-                    statinfo={'0.5',activreport};
-                else
-                    activreport = 'no sac activity';
-                    statinfo={'0',activreport};
-                end
-                
-            end
-            
+                        
             cd(directory);
             [~,pfilelist] = xlsread('procdata.xlsx',monknum,['A2:A' num2str(numrows)]);
             if logical(sum(ismember(pfilelist,procname))) %file has to have been processed already, but if for some reason not, then do not go further
@@ -757,10 +702,13 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
             else
                 continue
             end
-            xlswrite('procdata.xlsx', statinfo, monknum, sprintf('K%d',wline));
-            xlswrite('procdata.xlsx', {peaktime}, monknum, sprintf('N%d',wline));
-            xlswrite('procdata.xlsx', {profile}, monknum, sprintf('O%d',wline));
-            xlswrite('procdata.xlsx', {dirselective}, monknum, sprintf('P%d',wline));
+            xlswrite('procdata.xlsx', compart, monknum, sprintf('H%d',wline));
+            xlswrite('procdata.xlsx', activlevel, monknum, sprintf('K%d',wline));
+            xlswrite('procdata.xlsx', activtype, monknum, sprintf('L%d',wline));
+            xlswrite('procdata.xlsx', maxmean, monknum, sprintf('M%d',wline));
+            xlswrite('procdata.xlsx', profile, monknum, sprintf('N%d',wline));
+            xlswrite('procdata.xlsx', dirselective, monknum, sprintf('O%d',wline));
+            xlswrite('procdata.xlsx', bestlt, monknum, sprintf('P%d',wline));
         end
     else
         %% normal method
