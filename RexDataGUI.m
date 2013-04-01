@@ -542,7 +542,7 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
         end
         
         
-        overwriteAll = 0; % This switch should stay hardcoded, no need for user option 
+        overwriteAll = 0; % This switch should stay hardcoded, no need for user option
         if  overwriteAll %(exist(strcat({procdir},rfname,{'.mat'}), 'file')==2)
             % Construct question dialog
             choice = questdlg('Do you want to overwrite processed files?','Reprocess files?','Overwrite all','Skip','Skip'); %'Overwrite this file'
@@ -602,62 +602,63 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
             alignmtname={'mainsacalign','tgtshownalign','rewardalign'};
             alignbh=get( findobj('Tag','aligntimepanel'),'children');
             for alignmt=1:3
-            set(findobj('Tag','aligntimepanel'),'SelectedObject',alignbh(strcmp(get(alignbh,'tag'),alignmtname{alignmt})))            
-            getaligndata{alignmt} = rdd_rasters_sdf(procname, trialdirs, 0); % align data, don't plot rasters
+                set(findobj('Tag','aligntimepanel'),'SelectedObject',alignbh(strcmp(get(alignbh,'tag'),alignmtname{alignmt})))
+                getaligndata{alignmt} = rdd_rasters_sdf(procname, trialdirs, 0); % align data, don't plot rasters
+                
+                %% statistics on rasters: do stats on collapsed data and individual direction, if > 7 trials
+                if length([getaligndata{alignmt}.trials])>=7
+                    getaligndata{alignmt}=getaligndata{alignmt}(~cellfun('isempty',{getaligndata{alignmt}.alignidx})); % remove empty conditions
+                    
+                    %additional measures: cc and auc
+                    % cross-correlation values: pretty reliable indicator to sort out pre-event, peri-event and post-event activities
+                    % possible limits are: pressac <-10ms before sac , >-10ms perisac <+10ms, <10ms postsac
+                    [peakcct, peaksdf]=crosscorel(procname,getaligndata{alignmt},'all',0); %Get peakcc for all directions. Don't plot
+                    % area under curve: separate cells with low baseline FR and sharp burst from higher baseline neurons, especially ramping ones
+                    % possible limit at 2000
+                    [dirauc, dirslopes, peaksdft,nadirsdft]=findauc(procname,getaligndata{alignmt},'all'); %Get auc, slopes, peaksdft for all directions
+                    % record values in respective array
+                    for psda=1:length(getaligndata{alignmt})
+                        getaligndata{alignmt}(psda).peakramp.peakcct=peakcct(psda); % peak cross-correlation time
+                        getaligndata{alignmt}(psda).peakramp.peaksdf=peaksdf(psda); % main sdf peak, within -200/+199 of aligntime
+                        getaligndata{alignmt}(psda).peakramp.peaksdft=peaksdft(psda); % time of peak sdf
+                        getaligndata{alignmt}(psda).peakramp.nadirsdft=nadirsdft(psda); % time of  sdf low point
+                        getaligndata{alignmt}(psda).peakramp.auc=dirauc(psda); % area under curve
+                        getaligndata{alignmt}(psda).peakramp.slopes=dirslopes(psda); % slope of activity to peak (or drought, if negative)
+                    end
+                        
+                    % main stats (adding an extra array for collapsed
+                    % values)
+                    [p_sac,h_sac,p_rmanov,mcstats]=eventraststats(getaligndata{alignmt},alignmtname{alignmt});
+                    for psda=1:length(getaligndata{alignmt})+1
+                        getaligndata{alignmt}(psda).stats.p=p_sac(psda,:);
+                        getaligndata{alignmt}(psda).stats.h=h_sac(psda,:);
+                        getaligndata{alignmt}(psda).stats.p_rmanov=p_rmanov(psda,:);
+                        getaligndata{alignmt}(psda).stats.mcstats=mcstats(psda,:);
+                    end
+             
+                end
+            end
+            % export data
+            if isempty(cellfun(@(x) x.savealignname, arrayfun(@(x) x, getaligndata),'UniformOutput', false))
+                getaligndata{1}(1).savealignname = cat( 2, directory, 'processed',slash, 'aligned',slash, procname, '_', getaligndata{1}(1).alignlabel);
+            end
+            guidata(findobj('Tag','exportdata'),getaligndata);
+            exportdata_Callback(findobj('tag','exportdata'), eventdata, handles);
             
-            %% statistics on rasters: do stats on collapsed data and individual direction, if > 7 trials 
-            if length([getaligndata{alignmt}.trials])>=7
-                getaligndata{alignmt}=getaligndata{alignmt}(~cellfun('isempty',{getaligndata{alignmt}.alignidx})); % remove empty conditions
-                % main stats
-                [p_sac,h_sac,p_rmanov,mcstats]=eventraststats(getaligndata{alignmt},alignmtname{alignmt});
-                for psda=1:length(getaligndata{alignmt})+1
-                    getaligndata{alignmt}(psda).stats.p=p_sac(psda,:);
-                    getaligndata{alignmt}(psda).stats.h=h_sac(psda,:);
-                end
-                %additional measures: cc and auc
-                % cross-correlation values: pretty reliable indicator to sort out pre-event, peri-event and post-event activities
-                % possible limits are:
-                % pressac <-10ms before sac , >-10ms perisac <+10ms, <10ms postsac
-                [peakcct, peaksdf]=crosscorel(procname,getaligndata{alignmt},'all',0); %Get peakcc for all directions. Don't plot
-                % area under curve: separate cells with low baseline FR and sharp burst from higher baseline neurons, especially ramping ones
-                % possible limit at 2000
-                [dirauc, dirslopes, peaksdft]=findauc(procname,getaligndata{alignmt},'all'); %Get auc, slopes, peaksdft for all directions
-                
-                getaligndata{alignmt}(psda).peakramp.peakcct=peakcct; % peak cross-correlation time
-                getaligndata{alignmt}(psda).peakramp.peaksdf=peaksdf; % main sdf peak, within -200/+199 of aligntime
-                getaligndata{alignmt}(psda).peakramp.peaksdf=peaksdft; %
-                getaligndata{alignmt}(psda).peakramp.auc=dirauc; % area under curve
-                getaligndata{alignmt}(psda).peakramp.slopes=dirslopes; % slope of activity to peak (or drought, if negative)
-                
-                for psda=1:length(getaligndata{alignmt})
-                    getaligndata{alignmt}(psda).stats.p=p_sac(psda,:);
-                    getaligndata{alignmt}(psda).stats.h=h_sac(psda,:);
-                    getaligndata{alignmt}(psda).stats.p_rmanov=p_rmanov(psda,:);
-                    getaligndata{alignmt}(psda).stats.mcstats=mcstats(psda,:);
-                end
-                
-            end
-            end
-                % export data
-                if isempty(cellfun(@(x) x.savealignname, arrayfun(@(x) x, getaligndata),'UniformOutput', false))
-                    getaligndata{1}(1).savealignname = cat( 2, directory, 'processed',slash, 'aligned',slash, procname, '_', getaligndata{1}(1).alignlabel);
-                end
-                guidata(findobj('Tag','exportdata'),getaligndata);
-                exportdata_Callback(findobj('tag','exportdata'), eventdata, handles);
-                
-                % check if statistically significant event related activity in any alignment
-            if sum(~cellfun('isempty',(cellfun(@(x) x.trials, arrayfun(@(x) x, getaligndata),'UniformOutput', false))))
+            % if statistically significant event related activity in
+            % any alignment, categorize activity
+            if nansum(cell2mat(arrayfun(@(x) x.stats.h, cell2mat(arrayfun(@(x) x, getaligndata)),'UniformOutput',false)))
                 
                 [activlevel,activtype,maxmean,profile,dirselective,bestlt]=catstatres(getaligndata);
-
+                
             else
-                [activtype,profile,dirselective]=deal('');
-                [maxmean,activlevel]=deal(0);
+                [activtype,profile,dirselective]=deal(' ');
+                [maxmean,activlevel,bestlt]=deal(0);
             end
-
+            
             % print vignette figure of statistically significant result
             if activlevel
-            SummaryPlot(activtype,procname,tasktype);
+                SummaryPlot(activtype,procname,tasktype);
             end
             
             % crude segmentation: set depth limits for top cortex / dentate / bottom cortex
@@ -674,11 +675,11 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
             recdepth=regexp(procname,'_\d+_','match');
             recdepth=str2num([recdepth{:}(2:end-2) '0']);
             if (recdepth<cdn_depth)
-            compart={'top_cortex'};
+                compart={'top_cortex'};
             elseif (recdepth>=cdn_depth && recdepth<=bcx_depth)
-            compart={'dentate'};
+                compart={'dentate'};
             elseif (recdepth>bcx_depth)
-            compart={'bottom_cortex'};
+                compart={'bottom_cortex'};
             end
             
             % write result to excel file
@@ -694,8 +695,11 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
                 numrows=1;
             end
             Quit(exl);
-                        
+            
             cd(directory);
+            % remove appendix
+            procname=procname(1:end-4);
+            % get current processed file list from excel file
             [~,pfilelist] = xlsread('procdata.xlsx',monknum,['A2:A' num2str(numrows)]);
             if logical(sum(ismember(pfilelist,procname))) %file has to have been processed already, but if for some reason not, then do not go further
                 wline=find(ismember(pfilelist,procname))+1;
@@ -789,7 +793,7 @@ if iscell(dataaligned) %multiple alignements
     snames=cellfun(@(x) x.savealignname, arrayfun(@(x) x, dataaligned),'UniformOutput', false);
     savealignname=[dataaligned{1}(1).savealignname(1:end-3) cell2mat(cellfun(@(x) regexp(x,'\w\w\w$','match'),snames))];
 else
-savealignname=dataaligned.savealignname;
+    savealignname=dataaligned.savealignname;
 end
 save(savealignname,'dataaligned','-v7.3');
 
