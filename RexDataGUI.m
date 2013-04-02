@@ -623,7 +623,7 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
                         getaligndata{alignmt}(psda).peakramp.peaksdft=peaksdft(psda); % time of peak sdf
                         getaligndata{alignmt}(psda).peakramp.nadirsdft=nadirsdft(psda); % time of  sdf low point
                         getaligndata{alignmt}(psda).peakramp.auc=dirauc(psda); % area under curve
-                        getaligndata{alignmt}(psda).peakramp.slopes=dirslopes(psda); % slope of activity to peak (or drought, if negative)
+                        getaligndata{alignmt}(psda).peakramp.slopes=dirslopes(:,psda); % slope of activity to peak (or drought, if negative)
                     end
                         
                     % main stats (adding an extra array for collapsed
