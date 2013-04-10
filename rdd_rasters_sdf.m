@@ -343,7 +343,7 @@ nonecodes=[17385 16386];
 
 % variable to save aligned data
 datalign=struct('dir',{},'rasters',{},'trials',{},'trigtosac',{},'sactotrig',{},'trigtovis',{},'vistotrig',{},'alignidx',{},'eyeh',{},'eyev',{},'eyevel',{},'amplitudes',{},...
-    'peakvels',{},'peakaccs',{},'allgreyareas',{},'stats',{},'alignlabel',{},'savealignname',{},'spiketimes',{},'aligntimes',{});
+    'peakvels',{},'peakaccs',{},'allgreyareas',{},'stats',{},'alignlabel',{},'savealignname',{});
 if strcmp(get(get(findobj('Tag','showdirpanel'),'SelectedObject'),'Tag'),'seleccompall') && sum(secondcode)==0
     singlerastplot=1;
 else
@@ -478,7 +478,7 @@ for cnc=1:numcodes
         numplots=numcodes;
     end
     [rasters,aidx, trialidx, trigtosacs, sactotrigs, trigtovis, vistotrigs, eyeh,eyev,eyevel,...
-        amplitudes,peakvels,peakaccs,allgreyareas,badidx,ssd,spike_times,align_times] = rdd_rasters( rdd_filename, spikechannel,...
+        amplitudes,peakvels,peakaccs,allgreyareas,badidx,ssd] = rdd_rasters( rdd_filename, spikechannel,...
         allaligncodes(cnc,:), nonecodes, includebad, alignsacnum, aligntype, collapsecode, adjconditions);
     
 
@@ -504,8 +504,6 @@ for cnc=1:numcodes
         datalign(cnc).peakaccs=peakaccs(canceledtrials);
         datalign(cnc).bad=badidx(canceledtrials);
         datalign(cnc).ssd=ssd(canceledtrials,:);
-        datalign(cnc).spiketimes=spike_times(canceledtrials,:); % RD: save actual times in addition to rasters
-        datalign(cnc).aligntimes=align_times(canceledtrials,:);
         
         canceledtrials=~canceledtrials;
         datalign(cnc+d_increment).alignlabel='stop_non_cancel';
@@ -525,8 +523,6 @@ for cnc=1:numcodes
         datalign(cnc+d_increment).peakaccs=peakaccs(canceledtrials);
         datalign(cnc+d_increment).bad=badidx(canceledtrials);
         datalign(cnc+d_increment).ssd=ssd(canceledtrials,:);
-        datalign(cnc+d_increment).spiketimes=spike_times(canceledtrials,:); % RD: save actual times in addition to rasters
-        datalign(cnc+d_increment).aligntimes=align_times(canceledtrials,:);
         %             datalign(cnc+d_increment).condtimes=condtimes(canceledtrials);
         elseif strcmp(tasktype,'optiloc') && logical(sum(strfind(ol_instruct,'amplitudes')))
         % compare amp distrib with expected distrib, typically [4,12,20]
@@ -558,8 +554,6 @@ for cnc=1:numcodes
         datalign(cnc).peakvels=peakvels(shortamps);
         datalign(cnc).peakaccs=peakaccs(shortamps);
         datalign(cnc).bad=badidx(shortamps);
-        datalign(cnc).spiketimes=spike_times(shortamps,:);
-        datalign(cnc).aligntimes=align_times(shortamps,:);
         
         medamps=abs(amplitudes)<medampslim;
         datalign(cnc+numcodes).alignlabel=[alignlabel,'12dg'];
@@ -578,8 +572,6 @@ for cnc=1:numcodes
         datalign(cnc+numcodes).peakvels=peakvels(medamps);
         datalign(cnc+numcodes).peakaccs=peakaccs(medamps);
         datalign(cnc+numcodes).bad=badidx(medamps);
-        datalign(cnc+numcodes).spiketimes=spike_times(medamps,:);
-        datalign(cnc+numcodes).aligntimes=align_times(medamps,:);
 
         longamps=abs(amplitudes)<longampslim;
         datalign(cnc+2*numcodes).alignlabel=[alignlabel,'20dg'];
@@ -598,8 +590,6 @@ for cnc=1:numcodes
         datalign(cnc+2*numcodes).peakvels=peakvels(longamps);
         datalign(cnc+2*numcodes).peakaccs=peakaccs(longamps);
         datalign(cnc+2*numcodes).bad=badidx(longamps);
-        datalign(cnc+2*numcodes).spiketimes=spike_times(longamps,:);
-        datalign(cnc+2*numcodes).aligntimes=align_times(longamps,:);
         
     else
         datalign(cnc).rasters=rasters;
@@ -617,8 +607,6 @@ for cnc=1:numcodes
         datalign(cnc).peakvels=peakvels;
         datalign(cnc).peakaccs=peakaccs;
         datalign(cnc).bad=badidx;
-        datalign(cnc).spiketimes=spike_times;
-        datalign(cnc).aligntimes=align_times;
         %             datalign(cnc).condtimes=condtimes;
     end
     
@@ -763,10 +751,9 @@ if plotrasts
             spiketimes=find(rasters(j,start:stop)); %converting from a matrix representation to a time collection, within selected time range
             if isnan(sum(rasters(j,start:stop)))
                 isnantrial{cnp}(j)=1;
-            else
+            end
             rastploth=plot([spiketimes;spiketimes],[ones(size(spiketimes))*j;ones(size(spiketimes))*j-1],'k-');
             uistack(rastploth,'down');
-            end
         end
         
         if exist('greylim1')

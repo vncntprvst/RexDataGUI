@@ -1,7 +1,7 @@
 function [alignedrasters, alignindex, trialindex, alltrigtosac, ...
     allsactotrig, alltrigtovis, allvistotrig,eyehoriz, eyevert, ....
     eyevelocity, amplitudes, peakvels,...
-    peakaccs, allonoffcodetime,badidx,allssd, spike_times, align_times] = ...
+    peakaccs, allonoffcodetime,badidx,allssd] = ...
     rdd_rasters( name, spikechannel, aligntocode, noneofcodes,...
     allowbadtrials, alignsacnum, aligntype, collapse, conditions)
 
@@ -91,8 +91,7 @@ alignto = aligntocode;
 sacamp = NaN;
 sacpeakpeakvel = NaN;
 sacpeakacc = NaN;
-spike_times = [];
-align_times = [];
+
 sbad = '';
 if ~allowbadtrials
     sbad = 'Bad trials skipped: ';
@@ -482,8 +481,6 @@ while ~islast
                         end
                     end;
                     rasters = cat_variable_size_row( rasters, train );
-                    spike_times = cat_variable_size_row(spike_times, spk);
-                    align_times = [align_times; aligntime];
                     %collect conditions (aka greycodes) times
                     %                     trialonofftime=zeros(1,length(h));
                     %                     for i=size(conditions,1):-1:1
