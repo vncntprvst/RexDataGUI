@@ -850,7 +850,7 @@ end
 
 %% last item: save name
 if strcmp(tasktype,'optiloc')
-    parsename=unique(cellfun(@(x) x(1:(regexp(x,'\d+')-1)), unique({datalign.alignlabel}), 'UniformOutput', false)); %e.g., {sac}, instead of {'sac12dg','sac20dg','sac4dg'}
+    parsename=unique(cellfun(@(x) x(1:(regexp(x,'\d+')-1)), unique({datalign(~cellfun('isempty',{datalign.alignlabel})).alignlabel}), 'UniformOutput', false)); %e.g., {sac}, instead of {'sac12dg','sac20dg','sac4dg'}
 else
     parsename=unique({datalign.alignlabel});
 end

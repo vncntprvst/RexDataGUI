@@ -612,14 +612,14 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
                     %additional measures: cc and auc
                     % cross-correlation values: pretty reliable indicator to sort out pre-event, peri-event and post-event activities
                     % possible limits are: pressac <-10ms before sac , >-10ms perisac <+10ms, <10ms postsac
-                    [peakcct, peaksdf]=crosscorel(procname,getaligndata{alignmt},'all',0); %Get peakcc for all directions. Don't plot
+%                     [peakcct, peaksdf]=crosscorel(procname,getaligndata{alignmt},'all',0); %Get peakcc for all directions. Don't plot
                     % area under curve: separate cells with low baseline FR and sharp burst from higher baseline neurons, especially ramping ones
                     % possible limit at 2000
                     [dirauc, dirslopes, peaksdft,nadirsdft]=findauc(procname,getaligndata{alignmt},'all'); %Get auc, slopes, peaksdft for all directions
                     % record values in respective array
                     for psda=1:length(getaligndata{alignmt})
-                        getaligndata{alignmt}(psda).peakramp.peakcct=peakcct(psda); % peak cross-correlation time
-                        getaligndata{alignmt}(psda).peakramp.peaksdf=peaksdf(psda); % main sdf peak, within -200/+199 of aligntime
+%                         getaligndata{alignmt}(psda).peakramp.peakcct=peakcct(psda); % peak cross-correlation time
+%                         getaligndata{alignmt}(psda).peakramp.peaksdf=peaksdf(psda); % main sdf peak, within -200/+199 of aligntime
                         getaligndata{alignmt}(psda).peakramp.peaksdft=peaksdft(psda); % time of peak sdf
                         getaligndata{alignmt}(psda).peakramp.nadirsdft=nadirsdft(psda); % time of  sdf low point
                         getaligndata{alignmt}(psda).peakramp.auc=dirauc(psda); % area under curve
@@ -635,7 +635,11 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
                         getaligndata{alignmt}(psda).stats.p_rmanov=p_rmanov(psda,:);
                         getaligndata{alignmt}(psda).stats.mcstats=mcstats(psda,:);
                     end
-             
+                else
+                    getaligndata{alignmt}(1).peakramp=[];
+                    for psda=1:length(getaligndata{alignmt})+1
+                        getaligndata{alignmt}(psda).stats.h=[];
+                    end
                 end
             end
             % export data
@@ -647,18 +651,27 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
             
             % if statistically significant event related activity in
             % any alignment, categorize activity
-            if nansum(cell2mat(arrayfun(@(x) x.stats.h, cell2mat(arrayfun(@(x) x, getaligndata)),'UniformOutput',false)))
+
+            if sum(~cellfun('isempty',arrayfun(@(x) x.stats, cell2mat(arrayfun(@(x) x, getaligndata)),'UniformOutput',false))) &&...
+                nansum(cell2mat(arrayfun(@(x) x.stats.h, cell2mat(arrayfun(@(x) x,getaligndata)),...
+                'UniformOutput',false))) %checking if any useful stats to categorize
                 
                 [activlevel,activtype,maxmean,profile,dirselective,bestlt]=catstatres(getaligndata);
                 
             else
-                [activtype,profile,dirselective]=deal(' ');
-                [maxmean,activlevel,bestlt]=deal(0);
+                [activtype,profile,dirselective,maxmean,activlevel,bestlt]=deal(cell(1,1));
             end
             
             % print vignette figure of statistically significant result
-            if activlevel
-                SummaryPlot(activtype,procname,tasktype);
+            if sum([activlevel{:}])
+                foundeff=find(~cellfun('isempty',activtype));
+                for effnum=1:length(foundeff) 
+                effectcat=activtype{foundeff(effnum)};
+                SummaryPlot(effectcat,procname,get(findobj('Tag','taskdisplay'),'String'),getaligndata{foundeff(effnum)});
+                close(gcf);
+                end
+            else
+                foundeff=[];
             end
             
             % crude segmentation: set depth limits for top cortex / dentate / bottom cortex
@@ -707,12 +720,12 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
                 continue
             end
             xlswrite('procdata.xlsx', compart, monknum, sprintf('H%d',wline));
-            xlswrite('procdata.xlsx', activlevel, monknum, sprintf('K%d',wline));
-            xlswrite('procdata.xlsx', activtype, monknum, sprintf('L%d',wline));
-            xlswrite('procdata.xlsx', maxmean, monknum, sprintf('M%d',wline));
-            xlswrite('procdata.xlsx', profile, monknum, sprintf('N%d',wline));
-            xlswrite('procdata.xlsx', dirselective, monknum, sprintf('O%d',wline));
-            xlswrite('procdata.xlsx', bestlt, monknum, sprintf('P%d',wline));
+            xlswrite('procdata.xlsx', {max([activlevel{foundeff}])}, monknum, sprintf('K%d',wline));
+            xlswrite('procdata.xlsx', {[activtype{foundeff}]}, monknum, sprintf('L%d',wline));
+            xlswrite('procdata.xlsx', {max([maxmean{foundeff}])}, monknum, sprintf('M%d',wline));
+            xlswrite('procdata.xlsx', {[profile{foundeff}]}, monknum, sprintf('N%d',wline));
+            xlswrite('procdata.xlsx', {[dirselective{foundeff}]}, monknum, sprintf('O%d',wline));
+            xlswrite('procdata.xlsx', {[bestlt{foundeff}]}, monknum, sprintf('P%d',wline));
         end
     else
         %% normal method
@@ -811,8 +824,12 @@ save(savealignname,'dataaligned','-v7.3');
 % for Sixx: no trigger ecode until S102 included
 
 if iscell(dataaligned) %multiple alignements: keep only sac alignement
-    dataaligned=dataaligned(strcmp(cellfun(@(x) x.alignlabel, arrayfun(@(x) x, dataaligned),'UniformOutput',false),'sac'));
-    dataaligned=dataaligned{:};
+    dataaligned=dataaligned(find(cell2mat(strfind(cellfun(@(x) x.alignlabel, arrayfun(@(x) x, dataaligned),'UniformOutput',false),'sac')),1));
+    if ~isempty(dataaligned)
+        dataaligned=dataaligned{:};
+    else
+        dataaligned(1);
+    end
 end
 
 rdd_filename=get(findobj('Tag','filenamedisplay'),'String');

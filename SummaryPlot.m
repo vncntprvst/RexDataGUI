@@ -794,7 +794,11 @@ global directory slash;
 if ~isdir([directory,'figures',slash,arguments{1}])
     mkdir([directory,'figures',slash,arguments{1}])
 end
-filelist=arguments{2};
+if size(arguments(2),1)==1
+    filelist=arguments(2);
+else
+    filelist=arguments{2};
+end
 tasklist=arguments{3};
 algdir=[directory,'processed',slash,'aligned',slash];
 for algfile=1:length(filelist)
@@ -802,9 +806,14 @@ for algfile=1:length(filelist)
     tasktype=tasklist{algfile};
     set(findobj('tag','dispfilename'),'string',filename);
     set(findobj('tag','disptaskname'),'string',tasktype);
+    if length(arguments)<4
+        load([algdir,filename,'_sac.mat']);
+        alignment=dataaligned(1,1).savealignname(max(strfind(dataaligned(1,1).savealignname,'_'))+1:end);
+    else
+        dataaligned=arguments{4};
+        alignment=arguments{1};
+    end
     
-    load([algdir,filename,'_sac.mat']);
-    alignment=dataaligned(1,1).savealignname(max(strfind(dataaligned(1,1).savealignname,'_'))+1:end);
     set(findobj('tag','dispalignment'),'string',alignment);
     
     %alignment=get(findobj('tag','dispalignment'),'string');
@@ -1039,7 +1048,7 @@ for algfile=1:length(filelist)
         end
     end
     %moving up all rasters now
-    if numrast==1
+    if numrast==1 || ~iscell(get(hrastplot(~failed),'position'))
         allrastpos=(get(hrastplot,'position'));
     else
         allrastpos=cell2mat(get(hrastplot(~failed),'position'));
@@ -1068,7 +1077,11 @@ for algfile=1:length(filelist)
     set(hlegdir,'Interpreter','none', 'Box', 'off','LineWidth',1.5,'FontName','calibri','FontSize',9);
     
     % setting sdf plot y axis
-    newylim=[0, ceil(max(max(cell2mat(get(findobj(sdfplot,'Type','line'),'YDATA'))))/10)*10]; %rounding up to the decimal
+    try
+        newylim=[0, ceil(max(max(cell2mat(get(findobj(sdfplot,'Type','line'),'YDATA'))))/10)*10]; %rounding up to the decimal
+    catch
+        newylim=[0, ceil(max(max(get(findobj(sdfplot,'Type','line'),'YDATA')))/10)*10]; %rounding up to the decimal
+    end
     set(sdfplot,'YLim',newylim);
     %eventdata={algfile,aligntype};
     %exportfig_Callback(findobj('tag','exportfig'), eventdata, handles);
@@ -1106,6 +1119,8 @@ for algfile=1:length(filelist)
     set(allaxes(2),'XTickLabel','');
     %% saving figure
     %basic png fig:
+    newpos =  get(gcf,'Position')/60;
+    set(gcf,'PaperUnits','inches','PaperPosition',newpos);
     print(gcf, '-dpng', '-noui', '-opengl','-r600', exportfigname);
     delete(exportfig);
     %% end copied section
