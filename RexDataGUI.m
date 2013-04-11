@@ -901,6 +901,8 @@ elseif strcmp(archst, 'win32') || strcmp(archst, 'win64')
         directory = 'E:\data\Recordings\';
     elseif strcmp(getenv('username'),'Radu')
         directory = 'E:\Spike_Sorting\';
+    elseif strcmp(getenv('username'),'Purkinje')
+        directory = 'C:\Data\Recordings\';
     else
         directory = 'B:\data\Recordings\';
     end
