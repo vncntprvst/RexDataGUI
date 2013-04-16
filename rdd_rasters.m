@@ -67,7 +67,7 @@ else
 end
 
 if strcmp(aligntype,'stop') % get ssrt
-    mssrt=findssrt(name);
+    [~,~,mssrt]=findssrt(name);
 end
 
 [~, ~, tgtcode, tgtoffcode] = taskfindecode(tasktype);
