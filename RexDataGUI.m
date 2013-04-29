@@ -306,6 +306,9 @@ elseif strcmp(monkeydirselected,'sixxselect')
 elseif strcmp(monkeydirselected,'hildaselect')
     monkeydir = [directory,'Hilda',slash]; %'B:\data\Recordings\Sixx';
     procdir = [directory,'processed',slash,'Hilda',slash];
+elseif strcmp(monkeydirselected,'shufflesselect')
+    monkeydir = [directory,'Shuffles',slash]; %'B:\data\Recordings\Sixx';
+    procdir = [directory,'processed',slash,'Shuffles',slash];
 end
 
 % determines computer type
@@ -345,6 +348,14 @@ elseif strcmp(monkeydirselected,'hildaselect')
         procname=rfname;
         set(findobj('Tag','filenamedisplay'),'String',rfname);
     end
+elseif strcmp(monkeydirselected,'shufflesselect')
+    if ~strcmp(rfname(1),'S')
+        procname=cat(2,'S', rfname);
+        set(findobj('Tag','filenamedisplay'),'String',procname);
+    else
+        procname=rfname;
+        set(findobj('Tag','filenamedisplay'),'String',rfname);
+    end    
 end
 if exist(cat(2,procdir, procname,'.mat'), 'file')==2 %'B:\data\Recordings\processed\',
     % Construct question dialog
@@ -374,6 +385,9 @@ if overwrite
         elseif strcmp(monkeydirselected,'hildaselect')
             dirlisting = dir([directory,'processed',slash,'Hilda',slash]); %('B:\data\Recordings\processed');
             monknum=3;
+        elseif strcmp(monkeydirselected,'shufflesselect')
+            dirlisting = dir([directory,'processed',slash,'Shuffles',slash]); %('B:\data\Recordings\processed');
+            monknum=4;
         end
         % Order by date
         filedates=cell2mat({dirlisting(:).datenum});
@@ -458,6 +472,9 @@ elseif strcmp(monkeydirselected,'sixxselect')
 elseif strcmp(monkeydirselected,'hildaselect')
     monkeydir = [directory,'Hilda',slash]; %'B:\data\Recordings\Hilda';
     procdir = [directory,'processed',slash,'Hilda',slash];
+elseif strcmp(monkeydirselected,'shufflesselect')
+    monkeydir = [directory,'Shuffles',slash]; %'B:\data\Recordings\Hilda';
+    procdir = [directory,'processed',slash,'Shuffles',slash];
 end
 
 if strcmp(get(gcf,'SelectionType'),'normal') && ~strcmp(eventdata,'rightclkevt') % if simple click, just higlight it, don't open
@@ -539,6 +556,8 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
             monknum=2;
         elseif strcmp(monkeydirselected,'hildaselect')
             monknum=3;
+        elseif strcmp(monkeydirselected,'shufflesselect')
+            monknum=4;
         end
         
         
@@ -892,6 +911,8 @@ if strcmp(archst, 'maci64')
         directory = '/Users/nick/Dropbox/filesforNick/';
     elseif strcmp(name, 'Frank')
         directory = '/Users/Frank/Desktop/monkeylab/data/';
+    elseif strcmp(name, 'zacharyabzug')
+        directory = '/Users/zacharyabzug/Desktop/zackdata/';
     end
     slash = '/';
 elseif strcmp(archst, 'win32') || strcmp(archst, 'win64')
@@ -917,17 +938,20 @@ elseif strcmp(monkeydir,'sixxselect')
     monknum=2;
 elseif strcmp(monkeydir,'hildaselect')
     monknum=3;
+elseif strcmp(monkeydir, 'shufflesselect')
+    monknum=4;
 end
 dirlisting{1} = dir([directory,'processed',slash,'Rigel',slash]);%('B:\data\Recordings\processed\Rigel');
 dirlisting{2} = dir([directory,'processed',slash,'Sixx',slash]);
 dirlisting{3} = dir([directory,'processed',slash,'Hilda',slash]);
+dirlisting{4} = dir([directory,'processed',slash,'Shuffles',slash]);
 
 %%  add subject ID letter in front of file names for sessions >= 100
 %   change hyphens into underscores
 %   output unprocessed file list
 
-rawdirs=[{[directory,'Rigel',slash]};{[directory,'Sixx',slash]};{[directory,'Hilda',slash]}];
-idletters=['R';'S';'H'];
+rawdirs=[{[directory,'Rigel',slash]};{[directory,'Sixx',slash]};{[directory,'Hilda',slash]};{[directory,'Shuffles',slash]}];
+idletters=['R';'S';'H';'S'];
 olddir=pwd; %keep current dir in memory
 
 %preallocate
@@ -1430,6 +1454,8 @@ elseif get(findobj('Tag','sixxselect'),'Value')
     dirlisting = dir([directory,'processed',slash,'Sixx',slash]); %('B:\data\Recordings\processed\Sixx');\
 elseif get(findobj('Tag','hildaselect'),'Value')
     dirlisting = dir([directory,'processed',slash,'Hilda',slash]); %('B:\data\Recordings\processed\Sixx');
+elseif get(findobj('Tag','shufflesselect'),'Value')
+    dirlisting = dir([directory,'processed',slash,'Shuffles',slash]); %('B:\data\Recordings\processed\Sixx');
 end
 fileNames = {dirlisting.name};  % Put the file names in a cell array
 
@@ -1462,6 +1488,11 @@ elseif hObject==findobj('Tag','displayfbt_session')
             '^H\d+', 'match');           % with the letter 'S' followed by a set of digits 1 or larger
         inFiles = index(~cellfun(@isempty,index));  % Get the names of the matching files in a cell array
         sessionNumbers = cellfun(@(x) strrep(x, 'H', ' '), inFiles, 'UniformOutput', false);
+    elseif get(findobj('Tag','shufflesselect'),'Value')
+        index = regexpi(fileNames,...              % Match a file name if it begins
+            '^S\d+', 'match');           % with the letter 'S' followed by a set of digits 1 or larger
+        inFiles = index(~cellfun(@isempty,index));  % Get the names of the matching files in a cell array
+        sessionNumbers = cellfun(@(x) strrep(x, 'S', ' '), inFiles, 'UniformOutput', false);
     end
     
     if ~isempty(sessionNumbers)

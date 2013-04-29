@@ -94,7 +94,10 @@ load([directory 'Rigel' slash 'Spike2Exports' slash rexname 's.mat']);
 load([directory 'Rigel' slash 'Spike2Exports' slash rexname 't.mat']);
 elseif strcmp(monkeydirselected,'hildaselect')
 load([directory 'Hilda' slash 'Spike2Exports' slash rexname 's.mat']);
-load([directory 'Hilda' slash 'Spike2Exports' slash rexname 't.mat']);    
+load([directory 'Hilda' slash 'Spike2Exports' slash rexname 't.mat']); 
+elseif strcmp(monkeydirselected,'shufflesselect')
+load([directory 'Shuffles' slash 'Spike2Exports' slash rexname 's.mat']);
+load([directory 'Shuffles' slash 'Spike2Exports' slash rexname 't.mat']); 
 end
 % find which channel contains the data ( H53L5A5_20901_Ch7.title = nw-801)
 varlist=who; %list variables
@@ -562,6 +565,8 @@ if logical(regexpi(rawdir(1:end-1),'Rigel$'))
         procdir = 'E:\Spike_Sorting\processed\Rigel\';
     elseif strcmp(getenv('username'),'Purkinje')
         procdir = 'C:\Data\Recordings\processed\Rigel\';
+    elseif strcmp(getenv('USER'),'zacharyabzug')
+        procdir = '/Users/zacharyabzug/Desktop/zackdata/processed/Shuffles/';
     else
         procdir='B:\data\Recordings\processed\Rigel\';
     end
@@ -584,6 +589,8 @@ elseif logical(regexpi(rawdir(1:end-1),'Sixx$'))
         procdir = 'E:\Spike_Sorting\processed\Sixx\';
     elseif strcmp(getenv('username'),'Purkinje')
         procdir = 'C:\Data\Recordings\processed\Sixx\';
+    elseif strcmp(getenv('USER'),'zacharyabzug')
+        procdir = '/Users/zacharyabzug/Desktop/zackdata/processed/Sixx/';        
     else
         procdir='B:\data\Recordings\processed\Sixx\';
     end
@@ -606,6 +613,8 @@ elseif logical(regexpi(rawdir(1:end-1),'Hilda$'))
         procdir = 'E:\Spike_Sorting\processed\Hilda\';
     elseif strcmp(getenv('username'),'Purkinje')
         procdir = 'C:\Data\Recordings\processed\Hilda\';
+    elseif strcmp(getenv('USER'),'zacharyabzug')
+        procdir = '/Users/zacharyabzug/Desktop/zackdata/processed/Hilda/';        
     else
         procdir='B:\data\Recordings\processed\Hilda\';
     end
@@ -616,7 +625,31 @@ elseif logical(regexpi(rawdir(1:end-1),'Hilda$'))
         rexname=cat(2,rexname,'_Sp2');
     else
         rexname=cat(2,rexname,'_REX');
-    end  
+    end
+elseif logical(regexpi(rawdir(1:end-1),'Shuffles$'))
+    if strcmp(getenv('username'),'nick')
+        procdir='/Users/nick/Dropbox/filesforNick/processed/Shuffles/';
+    elseif strcmp(getenv('username'),'SommerVD') || strcmp(getenv('username'),'LabV')
+        procdir='C:\Data\Recordings\processed\Shuffles\';
+    elseif strcmp(getenv('username'),'DangerZone')
+        procdir='E:\Data\Recordings\processed\Shuffles\';
+    elseif strcmp(getenv('username'),'Radu')
+        procdir = 'E:\Spike_Sorting\processed\Shuffles\';
+    elseif strcmp(getenv('username'),'Purkinje')
+        procdir = 'C:\Data\Recordings\processed\Shuffles\';
+    elseif strcmp(getenv('USER'),'zacharyabzug')
+        procdir = '/Users/zacharyabzug/Desktop/zackdata/processed/Shuffles/';        
+    else
+        procdir='B:\data\Recordings\processed\Shuffles\';
+    end
+    if ~strcmp(rexname(1),'S')
+        rexname=cat(2,'S',rexname);
+    end
+    if replacespikes
+        rexname=cat(2,rexname,'_Sp2');
+    else
+        rexname=cat(2,rexname,'_REX');
+    end      
 end
 
 newname = cat( 2, procdir, rexname, '.mat' );
