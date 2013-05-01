@@ -180,7 +180,7 @@ exlSheet = exlFile.Sheets.Item(monknum);% e.g.: 2 = Sixx
 robj = exlSheet.Columns.End(4);
 numrows = robj.row;
 if numrows==1048576 %empty document
-    numrows=1;
+    numrows=2;
 end
 %exl.registerevent({'WorkbookBeforeClose',@close_event1})
 Quit(exl);
@@ -342,4 +342,3 @@ elseif strcmp(selectedfd,'procunprocdf_sess')
 else %default: files
     set(findobj('tag','unproclist'),'string',unprocfilelist);
 end
-

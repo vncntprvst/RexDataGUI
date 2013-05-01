@@ -167,6 +167,9 @@ elseif SATPbuttonnb==8
         %not good!
     else
         secondcode=stopcode;
+        if ATPbuttonnb==7 % tgtshownalign button
+            ecodealign=ecodealign(1); % no need to align stop trials to target, it will be done later
+        end
     end
 elseif SATPbuttonnb==9
     secondcode=saccode;
@@ -612,6 +615,17 @@ for cnc=1:numcodes
     
 end
 
+if strcmp(aligntype,'stop') % make additional analysis
+    if ATPbuttonnb==6 
+    [p_cancellation,h_cancellation] = cmd_wilco_cancellation(rdd_filename,datalign);
+    disp_cmd(rdd_filename,datalign,0);
+%     disp_cmd(rdd_filename,datalign,1);
+    elseif ATPbuttonnb==7
+    disp_cmd(rdd_filename,datalign,1);
+    end
+    plotrasts=0;
+end
+
 %% Now plotting rasters
 %%%%%%%%%%%%%%%%%%%%%%
 if plotrasts
@@ -851,7 +865,7 @@ end
 
 %% last item: save name
 if strcmp(tasktype,'optiloc')
-    parsename=unique(cellfun(@(x) x(1:(regexp(x,'\d+')-1)), unique({datalign.alignlabel}), 'UniformOutput', false)); %e.g., {sac}, instead of {'sac12dg','sac20dg','sac4dg'}
+    parsename=unique(cellfun(@(x) x(1:(regexp(x,'\d+')-1)), unique({datalign(~cellfun('isempty',{datalign.alignlabel})).alignlabel}), 'UniformOutput', false)); %e.g., {sac}, instead of {'sac12dg','sac20dg','sac4dg'}
 else
     parsename=unique({datalign.alignlabel});
 end

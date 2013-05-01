@@ -181,8 +181,7 @@ for trialnumber = 1:nt
                 %
                 %                 answer = inputdlg( prompt, name, numlines, defaultanswer );
                 %                 channel = answer{:};
-                
-                
+
                 channel=1;
                 rex_process_channelpicked = channel;
             end;
