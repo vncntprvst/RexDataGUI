@@ -830,7 +830,7 @@ if plotrasts
         sumall=sum(rasters(~isnantrial{cnp},start:stop));
         sdf=spike_density(sumall,fsigma)./length(find(~isnantrial{cnp})); %instead of number of trials
         %pdf = probability_density( sumall, fsigma ) ./ trials;
-        
+        maxes(cnp) = max(sdf);
         axes(sdfploth(cnp));
         %         sdfaxh = axes('Position',get(rasterh(cnp),'Position'),...
         %            'XAxisLocation','top',...
@@ -846,6 +846,10 @@ if plotrasts
             [get(gca,'YLim') fliplr(get(gca,'YLim'))], ...
             [0 0 0 0],[1 0 0],'EdgeColor','none','FaceAlpha',0.5);
         
+    end
+    for yind = 1:numplots;
+        axes(sdfploth(yind));
+        ylim([0 1.5*max(maxes)])
     end
 end
 
