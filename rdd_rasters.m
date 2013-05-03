@@ -68,6 +68,9 @@ end
 
 if strcmp(aligntype,'stop') % get ssrt
     [~,~,mssrt]=findssrt(name);
+    if isnan(mssrt) %lookup historical table. See SSRT_TachoMP
+        subj_session=regexp(rdd_filename,'^\w\d+','match');
+    end
 end
 
 [~, ~, tgtcode, tgtoffcode] = taskfindecode(tasktype);
@@ -137,7 +140,6 @@ while ~islast
     % rex_first_trial and rex_next_trial).
     
     %[ecodeout, etimeout, spkchan, spk, arate, h, v, start_time, badtrial ] = rex_trial(name, d );
-    
     [ecodeout, etimeout, spkchan, spk, arate, h, v, start_time, isbadtrial, curtrialsacInfo] = rdd_rex_trial(name, d);%, rdt_includeaborted);
     
     %if ~isbadtrial
@@ -277,7 +279,7 @@ while ~islast
                         if ecodeout(ncecode)==17385 || ecodeout(ncecode)==16386
                             ampsacofint=[];
                             nwsacstart=cat(1,curtrialsacInfo.starttime);
-                            sacofint=nwsacstart>etimeout(falign(1)-1);
+                            sacofint=nwsacstart>etimeout(7);
                             ampsacofint=zeros(1,length(sacofint));
                             for k=find(sacofint,1):length(sacofint)
                                 ampsacofint(1,k)=abs(getfield(curtrialsacInfo, {k}, 'amplitude'));
