@@ -947,8 +947,10 @@ for algfile=1:length(filelist)
             hold on;
             if size(rasters,1)==1 %if only one good trial
                 sumall=rasters(~isnantrial,start-fsigma:stop+fsigma);
+                sumall(isnan(sumall))=0;
             else
                 sumall=sum(rasters(~isnantrial,start-fsigma:stop+fsigma));
+                sumall(isnan(sumall))=0;
             end
             sdf=spike_density(sumall,fsigma)./length(find(~isnantrial)); %instead of number of trials
             sdf=sdf(fsigma+1:end-fsigma);

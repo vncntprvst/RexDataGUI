@@ -635,7 +635,11 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
                     %                     [peakcct, peaksdf]=crosscorel(procname,getaligndata{alignmt},'all',0); %Get peakcc for all directions. Don't plot
                     % area under curve: separate cells with low baseline FR and sharp burst from higher baseline neurons, especially ramping ones
                     % possible limit at 2000
-                    [dirauc, dirslopes, peaksdft,nadirsdft]=findauc(procname,getaligndata{alignmt},'all'); %Get auc, slopes, peaksdft for all directions
+                    try
+                        [dirauc, dirslopes, peaksdft,nadirsdft]=findauc(procname,getaligndata{alignmt},'all'); %Get auc, slopes, peaksdft for all directions
+                    catch
+                        [dirauc, dirslopes, peaksdft,nadirsdft]=deal(NaN);
+                    end
                     % record values in respective array
                     for psda=1:length(getaligndata{alignmt})
                         %                         getaligndata{alignmt}(psda).peakramp.peakcct=peakcct(psda); % peak cross-correlation time
@@ -677,21 +681,27 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
                     'UniformOutput',false))) %checking if any useful stats to categorize
                 
                 [activlevel,activtype,maxmean,profile,dirselective,bestlt]=catstatres(getaligndata);
-                
-            else
-                [activtype,profile,dirselective,maxmean,activlevel,bestlt]=deal(cell(1,1));
-            end
-            
-            % print vignette figure of statistically significant result
-            if sum([activlevel{:}])
-                foundeff=find(~cellfun('isempty',activtype));
-                for effnum=1:length(foundeff)
-                    effectcat=activtype{foundeff(effnum)};
-                    SummaryPlot(effectcat,procname,get(findobj('Tag','taskdisplay'),'String'),getaligndata{foundeff(effnum)});
-                    close(gcf);
+                if ~sum([activlevel{:}])
+                    [activtype,profile,dirselective,maxmean,activlevel,bestlt]=deal({0});
                 end
             else
-                foundeff=[];
+                [activtype,profile,dirselective,maxmean,activlevel,bestlt]=deal({0});
+            end
+            
+            % print vignette figure of every alignement (not just
+            % statistically significant result)
+            effectcat={'sac','vis','rew'};
+            for effnum=1:3
+                try
+                    SummaryPlot(effectcat{effnum},procname,get(findobj('Tag','taskdisplay'),'String'),getaligndata{effnum});
+                    close(gcf);
+                catch
+                end
+            end
+            if sum([activlevel{:}]>1)
+                foundeff=find(~cellfun('isempty',activtype));
+            else
+                foundeff=max(1,find([activlevel{:}]==max([activlevel{:}])));
             end
             
             % crude segmentation: set depth limits for top cortex / dentate / bottom cortex
@@ -826,7 +836,7 @@ function exportdata_Callback(hObject, eventdata, handles)
 dataaligned=guidata(hObject);
 if iscell(dataaligned) %multiple alignements
     snames=cellfun(@(x) x.savealignname, arrayfun(@(x) x, dataaligned),'UniformOutput', false);
-    savealignname=[dataaligned{1}(1).savealignname(1:end-3) cell2mat(cellfun(@(x) regexp(x,'\w\w\w$','match'),snames))];
+    savealignname=[dataaligned{1}(1).savealignname(1:end-3) cell2mat(cellfun(@(x) regexp(x,'\w\w\w$','match'),snames(~cellfun('isempty',snames))))];
 else
     savealignname=dataaligned.savealignname;
 end
