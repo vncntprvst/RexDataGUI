@@ -929,14 +929,15 @@ if strcmp(archst, 'maci64')
     end
     slash = '/';
 elseif strcmp(archst, 'win32') || strcmp(archst, 'win64')
-    if strcmp(getenv('username'),'SommerVD') || strcmp(getenv('username'),'LabV')
+    if strcmp(getenv('username'),'SommerVD') || ...
+            strcmp(getenv('username'),'LabV') || ...
+            strcmp(getenv('username'),'Purkinje') || ...
+            strcmp(getenv('username'),'vp35')
         directory = 'C:\Data\Recordings\';
     elseif strcmp(getenv('username'),'DangerZone')
         directory = 'E:\data\Recordings\';
     elseif strcmp(getenv('username'),'Radu')
         directory = 'E:\Spike_Sorting\';
-    elseif strcmp(getenv('username'),'Purkinje')
-        directory = 'C:\Data\Recordings\';
     else
         directory = 'B:\data\Recordings\';
     end

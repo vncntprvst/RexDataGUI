@@ -559,14 +559,15 @@ outlandmismtch(2)={outliers};
 if logical(regexpi(rawdir(1:end-1),'Rigel$'))
     if strcmp(getenv('username'),'nick')
         procdir='/Users/nick/Dropbox/filesforNick/processed/Rigel/';
-    elseif strcmp(getenv('username'),'SommerVD') || strcmp(getenv('username'),'LabV')
+    elseif strcmp(getenv('username'),'SommerVD') ||...
+            strcmp(getenv('username'),'LabV')||...
+            strcmp(getenv('username'),'Purkinje')||...
+            strcmp(getenv('username'),'vp35')
         procdir='C:\Data\Recordings\processed\Rigel\';
     elseif strcmp(getenv('username'),'DangerZone')
         procdir='E:\Data\Recordings\processed\Rigel\';
     elseif strcmp(getenv('username'),'Radu')
         procdir = 'E:\Spike_Sorting\processed\Rigel\';
-    elseif strcmp(getenv('username'),'Purkinje')
-        procdir = 'C:\Data\Recordings\processed\Rigel\';
     elseif strcmp(getenv('USER'),'zacharyabzug')
         procdir = '/Users/zacharyabzug/Desktop/zackdata/processed/Shuffles/';
     else
@@ -583,14 +584,15 @@ if logical(regexpi(rawdir(1:end-1),'Rigel$'))
 elseif logical(regexpi(rawdir(1:end-1),'Sixx$'))
     if strcmp(getenv('username'),'nick')
         procdir='/Users/nick/Dropbox/filesforNick/processed/Sixx/';
-    elseif strcmp(getenv('username'),'SommerVD') || strcmp(getenv('username'),'LabV')
+    elseif strcmp(getenv('username'),'SommerVD') ||....
+            strcmp(getenv('username'),'LabV')||...
+            strcmp(getenv('username'),'Purkinje')||...
+            strcmp(getenv('username'),'vp35')
         procdir='C:\Data\Recordings\processed\Sixx\';
     elseif strcmp(getenv('username'),'DangerZone')
         procdir='E:\Data\Recordings\processed\Sixx\';
     elseif strcmp(getenv('username'),'Radu')
         procdir = 'E:\Spike_Sorting\processed\Sixx\';
-    elseif strcmp(getenv('username'),'Purkinje')
-        procdir = 'C:\Data\Recordings\processed\Sixx\';
     elseif strcmp(getenv('USER'),'zacharyabzug')
         procdir = '/Users/zacharyabzug/Desktop/zackdata/processed/Sixx/';        
     else
@@ -607,14 +609,15 @@ elseif logical(regexpi(rawdir(1:end-1),'Sixx$'))
 elseif logical(regexpi(rawdir(1:end-1),'Hilda$'))
     if strcmp(getenv('username'),'nick')
         procdir='/Users/nick/Dropbox/filesforNick/processed/Hilda/';
-    elseif strcmp(getenv('username'),'SommerVD') || strcmp(getenv('username'),'LabV')
+    elseif strcmp(getenv('username'),'SommerVD') ||...
+            strcmp(getenv('username'),'LabV')||...
+            strcmp(getenv('username'),'Purkinje')||...
+            strcmp(getenv('username'),'vp35')
         procdir='C:\Data\Recordings\processed\Hilda\';
     elseif strcmp(getenv('username'),'DangerZone')
         procdir='E:\Data\Recordings\processed\Hilda\';
     elseif strcmp(getenv('username'),'Radu')
         procdir = 'E:\Spike_Sorting\processed\Hilda\';
-    elseif strcmp(getenv('username'),'Purkinje')
-        procdir = 'C:\Data\Recordings\processed\Hilda\';
     elseif strcmp(getenv('USER'),'zacharyabzug')
         procdir = '/Users/zacharyabzug/Desktop/zackdata/processed/Hilda/';        
     else
@@ -631,14 +634,15 @@ elseif logical(regexpi(rawdir(1:end-1),'Hilda$'))
 elseif logical(regexpi(rawdir(1:end-1),'Shuffles$'))
     if strcmp(getenv('username'),'nick')
         procdir='/Users/nick/Dropbox/filesforNick/processed/Shuffles/';
-    elseif strcmp(getenv('username'),'SommerVD') || strcmp(getenv('username'),'LabV')
+    elseif strcmp(getenv('username'),'SommerVD') ||...
+            strcmp(getenv('username'),'LabV')||...
+            strcmp(getenv('username'),'Purkinje')||...
+            strcmp(getenv('username'),'vp35')
         procdir='C:\Data\Recordings\processed\Shuffles\';
     elseif strcmp(getenv('username'),'DangerZone')
         procdir='E:\Data\Recordings\processed\Shuffles\';
     elseif strcmp(getenv('username'),'Radu')
         procdir = 'E:\Spike_Sorting\processed\Shuffles\';
-    elseif strcmp(getenv('username'),'Purkinje')
-        procdir = 'C:\Data\Recordings\processed\Shuffles\';
     elseif strcmp(getenv('USER'),'zacharyabzug')
         procdir = '/Users/zacharyabzug/Desktop/zackdata/processed/Shuffles/';        
     else
