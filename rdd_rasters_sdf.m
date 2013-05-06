@@ -486,7 +486,6 @@ for cnc=1:numcodes
         amplitudes,peakvels,peakaccs,allgreyareas,badidx,ssd] = rdd_rasters( rdd_filename, spikechannel,...
         allaligncodes(cnc,:), nonecodes, includebad, alignsacnum, aligntype, collapsecode, adjconditions);
     
-
     if isempty( rasters )
         disp( 'No raster could be generated (rex_rasters_trialtype returned empty raster)' );
         continue;

@@ -464,15 +464,19 @@ global directory slash replacespikes ; %unprocfiles rexloadedname
 
 monkeydirselected=get(get(findobj('Tag','monkeyselect'),'SelectedObject'),'Tag');
 if strcmp(monkeydirselected,'rigelselect')
+    monknum=1;
     monkeydir = [directory,'Rigel',slash]; %'B:\data\Recordings\Rigel';
     procdir = [directory,'processed',slash,'Rigel',slash];
 elseif strcmp(monkeydirselected,'sixxselect')
+    monknum=2;
     monkeydir = [directory,'Sixx',slash]; %'B:\data\Recordings\Sixx';
     procdir = [directory,'processed',slash,'Sixx',slash];
 elseif strcmp(monkeydirselected,'hildaselect')
+    monknum=3;
     monkeydir = [directory,'Hilda',slash]; %'B:\data\Recordings\Hilda';
     procdir = [directory,'processed',slash,'Hilda',slash];
 elseif strcmp(monkeydirselected,'shufflesselect')
+    monknum=4;
     monkeydir = [directory,'Shuffles',slash]; %'B:\data\Recordings\Hilda';
     procdir = [directory,'processed',slash,'Shuffles',slash];
 end
@@ -522,7 +526,7 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
     % display them, since for the moment GUI is designed to display only one
     % file at a time
     if ~get(findobj('Tag','displayfbt_files'),'Value') % if session or grid is selected
-        selectedrawdir=dir(monkeydir);
+        selectedrawdir=dir(procdir);
         fileNames = {selectedrawdir.name};  % Put the file names in a cell array
         
         if get(findobj('Tag','displayfbt_session'),'Value')
@@ -531,7 +535,8 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
             for sessnumnum=1:length(sessionNumber)
                 ftoanlz = regexp(fileNames, strcat('^\w',sessionNumber{sessnumnum}{:}),'match');
                 ftoanlz = fileNames(~cellfun(@isempty,ftoanlz));  % Get the names of the matching files in a cell array
-                ftoanlz = regexprep(ftoanlz, '(A$)|(E$)',''); %remove A and E from end of names
+                ftoanlz = regexprep(ftoanlz, '(A$)|(E$)',''); %remove A and E from end of names (if raw files)
+                ftoanlz = regexprep(ftoanlz, '(_REX.mat$)|(_Sp2.mat$)',''); %remove _REX and Sp2 from end of names (if processed files)
                 ftoanlz = unique(ftoanlz);
                 allftoanlz{sessnumnum}=ftoanlz;
             end
@@ -549,17 +554,9 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
             allftoanlz=horzcat(allftoanlz{:});
         end
         
-        
-        if strcmp(monkeydirselected,'rigelselect')
-            monknum=1;
-        elseif strcmp(monkeydirselected,'sixxselect')
-            monknum=2;
-        elseif strcmp(monkeydirselected,'hildaselect')
-            monknum=3;
-        elseif strcmp(monkeydirselected,'shufflesselect')
-            monknum=4;
-        end
-        
+        %overwrite option: legacy from the time when one could want to
+        %process and analyze at the same time. Not enabled at the moment.
+        %Only processed files will be analyzed. 
         overwriteAll = 0; % This switch should stay hardcoded, no need for user option
         if  overwriteAll %(exist(strcat({procdir},rfname,{'.mat'}), 'file')==2)
             % Construct question dialog
@@ -613,7 +610,7 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
             end
             
             try
-                [~, trialdirs] = data_info(procname, 1, 1); %reload file: yes (shouldn't happen, though), skip unprocessed files: yes
+                [~, trialdirs] = data_info(procname, 1, 1); %1, 1 = reload file: yes (shouldn't happen, though), skip unprocessed files: yes
             catch
                 continue
             end
@@ -638,7 +635,7 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
                     try
                         [dirauc, dirslopes, peaksdft,nadirsdft]=findauc(procname,getaligndata{alignmt},'all'); %Get auc, slopes, peaksdft for all directions
                     catch
-                        [dirauc, dirslopes, peaksdft,nadirsdft]=deal(NaN);
+                        [dirauc, dirslopes, peaksdft,nadirsdft]=deal(nan(1,length(getaligndata{alignmt})));
                     end
                     % record values in respective array
                     for psda=1:length(getaligndata{alignmt})
@@ -696,6 +693,7 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
                     SummaryPlot(effectcat{effnum},procname,get(findobj('Tag','taskdisplay'),'String'),getaligndata{effnum});
                     close(gcf);
                 catch
+                    close(gcf);
                 end
             end
             if sum([activlevel{:}]>1)

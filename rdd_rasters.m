@@ -493,6 +493,9 @@ while ~islast
                     %                     oldallonoffcodetime=cat_variable_size_row(oldallonoffcodetime, trialonofftime);
                     if  ~(size(onoffcodetime,2)==2 && codepairnb==1)
                         onoffkeepcode=[find(~isnan(onoffcodetime(1,:)),1) find(~isnan(onoffcodetime(1,:)),1)+codepairnb];
+                        if onoffkeepcode(end)>size(onoffcodetime,2)
+                            onoffkeepcode=[size(onoffcodetime,2)-(codepairnb+1) size(onoffcodetime,2)-1];
+                        end
                         onoffcodetime=onoffcodetime(:,onoffkeepcode);
                     end
                     allonoffcodetime=[allonoffcodetime {onoffcodetime}];
