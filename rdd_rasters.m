@@ -67,9 +67,25 @@ else
 end
 
 if strcmp(aligntype,'stop') % get ssrt
-    [~,~,mssrt]=findssrt(name);
-    if isnan(mssrt) %lookup historical table. See SSRT_TachoMP
-        subj_session=regexp(rdd_filename,'^\w\d+','match');
+    [overallMeanSSRT,meanIntSSRT,meanSSRT,~,~,tachomc]=findssrt(name);
+    mssrt=[overallMeanSSRT,meanIntSSRT,meanSSRT];
+    mssrt=round(nanmean(mssrt(mssrt>40 & mssrt<150)));
+    if isnan(mssrt) || ~(mssrt>50 & mssrt<150) %get tachomc and lookup SSRT/tachomc fit. If fit missing, run SSRT_TachoMP
+        try
+            load([name(1),'_tachoSSRTfit']);
+        catch
+            %SSRT_TachoMP
+        end
+        %get tacho curve midpoint
+            tachomc=mean(tachomc);
+        if tachomc<20
+            tachomc=20;
+        end
+        % find reciprocal SSRT value
+        mssrt=round(tachomc*fit.coeff(1)+fit.coeff(2));
+    end
+    if ~(mssrt>40 & mssrt<150)
+        mssrt=NaN;
     end
 end
 

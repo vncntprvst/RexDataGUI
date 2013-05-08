@@ -469,7 +469,7 @@ end
 for cnc=1:numcodes
     aligntype=datalign(cnc).alignlabel;
     adjconditions=conditions;
-    if strcmp(aligntype,'stop')
+    if strcmp(aligntype,'stop') || (strcmp(tasktype,'gapstop') & cnc==1)
         includebad=1; %we want to compare cancelled with non-cancelled
         d_increment=size([aligncodes alignseccodes],1);%make room for additional "non-cancel" data
         numplots=numcodes+d_increment;
@@ -507,7 +507,7 @@ for cnc=1:numcodes
         datalign(cnc).peakvels=peakvels(canceledtrials);
         datalign(cnc).peakaccs=peakaccs(canceledtrials);
         datalign(cnc).bad=badidx(canceledtrials);
-        datalign(cnc).ssd=ssd(canceledtrials,:);
+        datalign(cnc).ssd=ssd(canceledtrials);
         
         canceledtrials=~canceledtrials;
         datalign(cnc+d_increment).alignlabel='stop_non_cancel';
@@ -526,7 +526,7 @@ for cnc=1:numcodes
         datalign(cnc+d_increment).peakvels=peakvels(canceledtrials);
         datalign(cnc+d_increment).peakaccs=peakaccs(canceledtrials);
         datalign(cnc+d_increment).bad=badidx(canceledtrials);
-        datalign(cnc+d_increment).ssd=ssd(canceledtrials,:);
+        datalign(cnc+d_increment).ssd=ssd(canceledtrials);
         %             datalign(cnc+d_increment).condtimes=condtimes(canceledtrials);
         elseif strcmp(tasktype,'optiloc') && logical(sum(strfind(ol_instruct,'amplitudes')))
         % compare amp distrib with expected distrib, typically [4,12,20]
@@ -617,14 +617,14 @@ for cnc=1:numcodes
 end
 
 if strcmp(aligntype,'stop') % make additional analysis
-    if ATPbuttonnb==6 % saccade
-    [p_cancellation,h_cancellation] = cmd_wilco_cancellation(rdd_filename,datalign);
-    disp_cmd(rdd_filename,datalign,0);
+%     if ATPbuttonnb==6 % saccade
+%     [p_cancellation,h_cancellation] = cmd_wilco_cancellation(rdd_filename,datalign);
+%     disp_cmd(rdd_filename,datalign,0);
+% %     disp_cmd(rdd_filename,datalign,1);
+%     elseif ATPbuttonnb==7 % target
 %     disp_cmd(rdd_filename,datalign,1);
-    elseif ATPbuttonnb==7 % target
-    disp_cmd(rdd_filename,datalign,1);
-    end
-    plotrasts=0;
+%     end
+%     plotrasts=0;
 end
 
 %% Now plotting rasters
