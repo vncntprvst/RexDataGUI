@@ -74,10 +74,10 @@ global directory;
     end
     
     %% find and keep most prevalent ssds
-    [ssdtots,ssdtotsidx]=sort((arrayfun(@(x) sum(ccssd==x | ccssd==x-1 | ccssd==x+1),ssdvalues))+...
-    (arrayfun(@(x) sum(nccssd==x | nccssd==x-1 | nccssd==x+1),ssdvalues)));
+    [ssdtots,ssdtotsidx]=sort((arrayfun(@(x) sum(ccssd==x | ccssd==x-1 | ccssd==x+1),ssdvalues))) %+...
+%     (arrayfun(@(x) sum(nccssd==x | nccssd==x-1 | nccssd==x+1),ssdvalues)));
     prevssds=sort(ssdvalues(ssdtotsidx(ssdtots>ceil(median(ssdtots))+1)));
-    % starting with the most prevalent
+    % starting with the one that remove the less (N)CSS trials
     matchlatidx=sacdelay>ssdvalues(ssdtotsidx(end))+round(mssrt);
 % end  
     
@@ -96,7 +96,7 @@ end
 %% preallocs and definitions
 allsdf=cell(2,1);
 allrast=cell(2,1);
-% alltimetorew=cell(2,1);
+allviscuetimes=cell(2,1);
 allalignidx=cell(2,1);
     
 cmdplots=figure('color','white','position',[826    49   524   636]);
@@ -296,7 +296,9 @@ for i=1:numrast
     allrast{i}=rasters;
 %     alltimetorew{i}=timetorew;
     allalignidx{i}=alignidx;
-    
+    % get pre-cue 200ms activity
+    allviscuetimes{i}=viscuetimes(:,1);
+
 end
 
 %% moving up all rasters now
@@ -345,7 +347,7 @@ end
 if strcmp(aligntype{2},'stop_cancel')
     aligntype{2}='cancelled stop-signal';
 end
-if strcmp(aligntype{2},'stop_noncancel')
+if strcmp(aligntype{2},'stop_non_cancel')
     aligntype{2}='non cancelled stop-signal';
 end
 hlegdir = legend(heyevelline, strcat(aligntype',spacer,curdir'),'Location',legloc);
@@ -375,10 +377,16 @@ fullsdf=cell(2,1);
 
 for rasts=1:2
     rasters=allrast{rasts};
-%     timetorew=alltimetorew{rasts};
+    viscuetimes=allviscuetimes{rasts};
+
+    allbaseline=zeros(size(rasters,1),200+2*fsigma);
     for rastunit=1:size(rasters,1) %plotting rasters trial by trial
         rasters(rastunit,isnan(rasters(rastunit,:)))=0;
+        allbaseline(rastunit,:)=rasters(rastunit, viscuetimes(rastunit)-200-fsigma:viscuetimes(rastunit)-1+fsigma);
     end
+    precuesdf{rasts}=spike_density(nansum(allbaseline),fsigma)./size(rasters,1);
+    precuesdf{rasts}=precuesdf{rasts}(fsigma+1:end-fsigma);
+    
    if size(allrast{rasts},1)>1 %if more than one good trial
        if plotstart==200 %aligned to target
            if strcmp('tgt',datalign(rasts).alignlabel) %the NSS trials
@@ -387,7 +395,11 @@ for rasts=1:2
                sumall=sum(rasters(:,allalignidx{rasts}-(600+fsigma):size(fullsdf{rasts-1},2)+fsigma+(allalignidx{rasts}-601)));
            end
        else
-        sumall=sum(rasters(:,allalignidx{rasts}-(1000+fsigma):max(rewtimes)+fsigma));
+           if strcmp('sac',datalign(rasts).alignlabel) %the NSS trials
+               sumall=sum(rasters(:,allalignidx{rasts}-(1000+fsigma):max(rewtimes)+fsigma));
+           else
+               sumall=sum(rasters(:,allalignidx{rasts}-(1000+fsigma):size(fullsdf{rasts-1},2)+fsigma+(allalignidx{rasts}-1001)));
+           end
        end
    end
     fullsdf{rasts}=spike_density(sumall,fsigma)./size(rasters,1);
@@ -395,10 +407,15 @@ for rasts=1:2
 end
     
 if plotstart==200 %aligned to target
-    precuelevel=floor(mean(floor(fullsdf{1}(1:600))-floor(fullsdf{2}(1:600))));
-    sigthreshold=floor(2*(floor(std(floor(fullsdf{1}(1:600))-floor(fullsdf{2}(1:600)))))+precuelevel);
+    precuelevel=floor(mean(abs(floor(fullsdf{1}(401:600))-floor(fullsdf{2}(401:600)))));
+    sigthreshold=floor(2*(floor(std(floor(fullsdf{1}(401:600))-floor(fullsdf{2}(401:600)))))+precuelevel);
+    diffsdf=ceil(abs([fullsdf{1}]-[fullsdf{2}]));
+else
+    precuelevel=floor(mean(abs(floor(precuesdf{2})-floor(precuesdf{1}))));
+    sigthreshold=floor(2*(floor(std(floor(precuesdf{2})-floor(precuesdf{1}))))+precuelevel);
+    diffsdf=ceil(abs([fullsdf{2}]-[fullsdf{1}]));
 end
-diffsdf=ceil([fullsdf{1}]-[fullsdf{2}]);
+
 sigdiff=diffsdf>=sigthreshold;
 sigdiffepochs=bwlabel(sigdiff);
 confsigdiffepochs=zeros(size(sigdiffepochs));
@@ -409,24 +426,38 @@ hold on
 plot(fullsdf{2},'r')
 plot(diffsdf,'g')
 plot(ones(size(diffsdf))*sigthreshold,'m')  
-foo=6*(std(diffsdf(1:600)))+precuelevel;
+foo=6*(std(diffsdf(401:600)))+precuelevel;
 plot(ones(size(diffsdf))*foo,'m');
 
 if max(sigdiffepochs)
     for sdenum=1:max(sigdiffepochs)
         maxdiff=max(diffsdf(sigdiffepochs==sdenum));
         sigdiffdur=sum(sigdiffepochs==sdenum);
-        if maxdiff>=floor(6*(std(floor(fullsdf{1}(1:600))-floor(fullsdf{2}(1:600)))))+precuelevel && sigdiffdur>=30
-            confsigdiffepochs(find(sigdiffepochs==sdenum,1))=1;
+        if plotstart==200 %aligned to target
+            if maxdiff>=floor(6*(std(floor(fullsdf{1}(401:600))-floor(fullsdf{2}(401:600)))))+precuelevel && sigdiffdur>=30
+                confsigdiffepochs(find(sigdiffepochs==sdenum,1))=1;
+            end
+        else
+            if maxdiff>=floor(6*(floor(std(floor(precuesdf{2})-floor(precuesdf{1}))))+precuelevel) && sigdiffdur>=30
+                confsigdiffepochs(find(sigdiffepochs==sdenum,1))=1;
+            end
         end
     end
     if max(confsigdiffepochs)
         figure(1)
-        plot(sdfplot,find(confsigdiffepochs)-400,ones(1,sum(confsigdiffepochs))*10,'xr','markersize',12);
-        if sum(find(confsigdiffepochs)-400>alignidx+ssdvalues(ssdtotsidx(end))-start &...
-            find(confsigdiffepochs)-400<alignidx+ssdvalues(ssdtotsidx(end))+round(mssrt)-start)
-                cancellation_time=alignidx+ssdvalues(ssdtotsidx(end))+round(mssrt)-start-(find(confsigdiffepochs)-400)
-                cancellation_strengh=max(diffsdf(sigdiffepochs==sigdiffepochs(find(confsigdiffepochs)))) 
+        if plotstart==200 %aligned to target
+            plot(sdfplot,find(confsigdiffepochs)-400,ones(1,sum(confsigdiffepochs))*10,'xr','markersize',12);
+            if sum(find(confsigdiffepochs)-400>alignidx+ssdvalues(ssdtotsidx(end))-start &...
+                find(confsigdiffepochs)-400<alignidx+ssdvalues(ssdtotsidx(end))+round(mssrt)-start)
+                    cancellation_time=alignidx+ssdvalues(ssdtotsidx(end))+round(mssrt)-start-(find(confsigdiffepochs,1)-400)
+                    cancellation_strengh=max(diffsdf(sigdiffepochs==sigdiffepochs(find(confsigdiffepochs,1)))) 
+            end
+        else
+            plot(sdfplot,find(confsigdiffepochs),ones(1,sum(confsigdiffepochs))*10,'xr','markersize',12);
+            if sum(find(confsigdiffepochs)>alignidx-start)
+                    error_time=find(confsigdiffepochs(alignidx-start:end),1)-1
+%                     cancellation_strengh
+            end
         end
     end
 end
