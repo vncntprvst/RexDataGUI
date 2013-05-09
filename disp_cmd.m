@@ -1,6 +1,6 @@
 function disp_cmd(recname,datalign,latmach)
 global directory;
-if latmach
+% if latmach
     %% first get SSDs and SSRT, to later parse latency-matched trials and CSS according to SSDs
 
     load(recname,'allbad','allcodes','alltimes','saccadeInfo'); % 
@@ -20,10 +20,19 @@ if latmach
         end
     end
     sacdelay=(cell2mat(alllats(allgoodsacs')));
+    %get reward time for NSS trials
+    goodsactimes=alltimes(logical(sum(allgoodsacs,2)),:);
+    rewtimes=goodsactimes(allcodes(logical(sum(allgoodsacs,2)),:)==1030);
     
     %% get CSS SSDs
     ccssd=datalign(2).ssd;
+    if size(ccssd,2)>size(ccssd,1)
+        ccssd=permute(ccssd,[2,1]);
+    end
     nccssd=datalign(3).ssd;
+    if size(nccssd,2)>size(nccssd,1)
+        nccssd=permute(nccssd,[2,1]);
+    end
         if size(ccssd,2)>1
         ccssd=ccssd(:,1);
         nccssd=nccssd(:,1);
@@ -35,50 +44,84 @@ if latmach
         ssdvalues(diff(ssdvalues)==1)=ssdvalues(diff(ssdvalues)==1)+1;
         ssdvalues=ssdvalues(diff(ssdvalues)>0);
     end
-    % find and keep most prevalent ssds
+
+    %% get SSRT used for alignement
+        [overallMeanSSRT,meanIntSSRT,meanSSRT,~,~,tachomc]=findssrt(recname);
+    mssrt=[overallMeanSSRT,meanIntSSRT,meanSSRT];
+    mssrt=round(nanmean(mssrt(mssrt>40 & mssrt<150)));
+    if isnan(mssrt) || ~(mssrt>50 & mssrt<150) %get tachomc and lookup SSRT/tachomc fit. If fit missing, run SSRT_TachoMP
+        try
+            load([recname(1),'_tachoSSRTfit'],'fit');
+        catch
+            %SSRT_TachoMP
+        end
+        %get tacho curve midpoint
+            tachomc=mean(tachomc);
+        if tachomc<20 || isnan(tachomc)
+            tachomc=20;
+        end
+        % find reciprocal SSRT value
+        mssrt=max([round(tachomc*fit.coeff(1)+fit.coeff(2)) 50]);
+    end
+    if ~(mssrt>50 & mssrt<150)
+        load([recname(1),'_evolSSRT'],'evolSSRT','foSSRT');
+        session=regexp(recname,'\d+','match');
+        if min(abs(evolSSRT(2,:)-str2num(session{1})))<=5
+            mssrt=round(mssrt/3+(evolSSRT(1,find(abs(evolSSRT(2,:)-str2num(session{1}))==min(abs(evolSSRT(2,:)-str2num(session{1}))),1)))*2/3);
+        else
+            mssrt=round(mssrt/3+foSSRT*2/3);
+        end
+    end
+    
+    %% find and keep most prevalent ssds
     [ssdtots,ssdtotsidx]=sort((arrayfun(@(x) sum(ccssd==x | ccssd==x-1 | ccssd==x+1),ssdvalues))+...
     (arrayfun(@(x) sum(nccssd==x | nccssd==x-1 | nccssd==x+1),ssdvalues)));
     prevssds=sort(ssdvalues(ssdtotsidx(ssdtots>ceil(median(ssdtots))+1)));
-    [~,~,mssrt]=findssrt(recname);
-    %matchtolat=prevssds+round(mssrt);
     % starting with the most prevalent
     matchlatidx=sacdelay>ssdvalues(ssdtotsidx(end))+round(mssrt);
-end  
+% end  
     
-if latmach
-    datalign=datalign(1:2);
+if latmach %ie, aligned to target
+    % NSS Vs CSS
+    datalign=datalign(1:2); 
     plotstart=200;
     plotstop=600;
-else
+else % aligned to sac
+    % NSS Vs NCSS
     datalign=datalign([1 3]);
     plotstart=1000;
     plotstop=400;
 end
 
-
+%% preallocs and definitions
 allsdf=cell(2,1);
 allrast=cell(2,1);
+% alltimetorew=cell(2,1);
+allalignidx=cell(2,1);
     
-cmdplots=figure('color','white','position',[737   216   500   762]);
+cmdplots=figure('color','white','position',[826    49   524   636]);
 numrast=2;
 fsigma=20;
 cc=lines(numrast);
 numsubplot=numrast*3; %dividing the panel in three compartments with wequal number of subplots  
     
+%% plotting figure
 for i=1:numrast
     if strcmp('tgt',datalign(i).alignlabel) && latmach
         rasters=datalign(i).rasters(matchlatidx,:);
         alignidx=datalign(i).alignidx;
         greyareas=datalign(i).allgreyareas(matchlatidx);
+        matchrewtimes=rewtimes(matchlatidx);
     elseif strcmp('stop_cancel',datalign(i).alignlabel) && latmach
         ssdidx=(datalign(i).ssd==ssdvalues(ssdtotsidx(end)) | datalign(i).ssd==ssdvalues(ssdtotsidx(end))-1 | datalign(i).ssd==ssdvalues(ssdtotsidx(end))+1);
        	rasters=datalign(i).rasters(ssdidx,:);
-        alignidx=datalign(i).alignidx-(ssdvalues(ssdtotsidx(end))+round(mssrt)); % shifting rasters to target presentation.
+        alignidx=datalign(i).alignidx-(ssdvalues(ssdtotsidx(end))+round(mssrt)); % shifting rasters to target presentation, using most prevalent SSD
         greyareas=datalign(i).allgreyareas(ssdidx);
     else
         rasters=datalign(i).rasters;
         alignidx=datalign(i).alignidx;
         greyareas=datalign(i).allgreyareas;
+        timetorew=datalign(i).sactotrig;
     end
     
     start=alignidx - plotstart;
@@ -160,9 +203,7 @@ for i=1:numrast
                 plot(alignidx+ssdvalues(ssdtotsidx(end))-start,j-0.5,'k^','MarkerSize', 2,'LineWidth', 1)
                 plot(alignidx+ssdvalues(ssdtotsidx(end))+round(mssrt)-start,j-0.5,'kv','MarkerSize', 2,'LineWidth', 1)
             end
-        end
-
-        
+        end  
     end
 %     if strcmp(datalign(i).alignlabel,'stop_cancel') && latmach
 %         % plot SSD
@@ -185,7 +226,9 @@ for i=1:numrast
     title('Spike Density Function','FontName','calibri','FontSize',11);
     hold on;
     if size(rasters,1)==1 %if only one good trial
-        sumall=rasters(~isnantrial,start-fsigma:stop+fsigma);
+        %sumall=rasters(~isnantrial,start-fsigma:stop+fsigma);
+        %useless plotting this
+        sumall=NaN;
     else
         sumall=sum(rasters(~isnantrial,start-fsigma:stop+fsigma));
     end
@@ -193,6 +236,13 @@ for i=1:numrast
     sdf=sdf(fsigma+1:end-fsigma);
     
     plot(sdf,'Color',cc(i,:),'LineWidth',1.8);
+    
+            if strcmp(datalign(i).alignlabel,'stop_cancel') && latmach
+                        patch([repmat((alignidx+ssdvalues(ssdtotsidx(end))-start)-1,1,2) repmat((alignidx+ssdvalues(ssdtotsidx(end))-start)+1,1,2)], ...
+            [[0 currylim(2)] fliplr([0 currylim(2)])],[0 0 0 0],'k^','EdgeColor','none','FaceAlpha',0.5);
+                         patch([repmat((alignidx+ssdvalues(ssdtotsidx(end))+round(mssrt)-start)-1,1,2) repmat((alignidx+ssdvalues(ssdtotsidx(end))+round(mssrt)-start)+1,1,2)], ...
+            [[0 currylim(2)] fliplr([0 currylim(2)])],[0 0 0 0],'k^','EdgeColor','none','FaceAlpha',0.5);
+            end
     % axis([0 stop-start 0 200])
     axis(gca,'tight');
     box off;
@@ -241,12 +291,15 @@ for i=1:numrast
         aligntype{i}='data';
     end
     
-    %% keep sdf and rasters
+    %% keep sdf, rasters etc
     allsdf{i}=sdf;
     allrast{i}=rasters;
+%     alltimetorew{i}=timetorew;
+    allalignidx{i}=alignidx;
     
 end
-%moving up all rasters now
+
+%% moving up all rasters now
 if numrast==1
     allrastpos=(get(hrastplot,'position'));
 else
@@ -264,7 +317,7 @@ else
     set(hrastplot,'position',allrastpos);
 end
 
-%moving down the eye velocity plot
+%% moving down the eye velocity plot
 eyevelplotpos=get(heyevelplot,'position');
 eyevelplotpos(1,2)=eyevelplotpos(1,2)-(eyevelplotpos(1,2))/1.5;
 set(heyevelplot,'position',eyevelplotpos);
@@ -280,16 +333,23 @@ if  logical(sum(cell2mat(strfind(aligntype,'error1'))) || sum(cell2mat(strfind(a
     aligntype{~cellfun(@(x) (strcmp(x,'error1') || strcmp(x,'error2')), aligntype)}=...
         ['good trial ' aligntype{~cellfun(@(x) (strcmp(x,'error1') || strcmp(x,'error2')), aligntype)}];
     aligntype(cellfun(@(x) (strcmp(x,'error1') || strcmp(x,'error2')), aligntype))={'wrong trial'};
-
 end
 if latmach
     legloc='NorthEast';
 else
     legloc='NorthWest';
 end
+if strcmp(aligntype{1},'tgt')
+    aligntype{1}='no-stop signal';
+end
+if strcmp(aligntype{2},'stop_cancel')
+    aligntype{2}='cancelled stop-signal';
+end
+if strcmp(aligntype{2},'stop_noncancel')
+    aligntype{2}='non cancelled stop-signal';
+end
 hlegdir = legend(heyevelline, strcat(aligntype',spacer,curdir'),'Location',legloc);
 set(hlegdir,'Interpreter','none', 'Box', 'off','LineWidth',1.5,'FontName','calibri','FontSize',9);
-
 
 % setting sdf plot y axis
 ylimdata=get(findobj(sdfplot,'Type','line'),'YDATA');
@@ -309,6 +369,67 @@ set(sdfplot,'YLim',newylim);
 set(sdfplot,'XTick',[0:100:(stop-start)]);
 set(sdfplot,'XTickLabel',[-plotstart:100:plotstop]);
 
+%% quantify differential activity
+
+fullsdf=cell(2,1);
+
+for rasts=1:2
+    rasters=allrast{rasts};
+%     timetorew=alltimetorew{rasts};
+    for rastunit=1:size(rasters,1) %plotting rasters trial by trial
+        rasters(rastunit,isnan(rasters(rastunit,:)))=0;
+    end
+   if size(allrast{rasts},1)>1 %if more than one good trial
+       if plotstart==200 %aligned to target
+           if strcmp('tgt',datalign(rasts).alignlabel) %the NSS trials
+               sumall=sum(rasters(:,allalignidx{rasts}-(600+fsigma):max(matchrewtimes)+fsigma));
+           else % base end limit on NSS trial limit
+               sumall=sum(rasters(:,allalignidx{rasts}-(600+fsigma):size(fullsdf{rasts-1},2)+fsigma+(allalignidx{rasts}-601)));
+           end
+       else
+        sumall=sum(rasters(:,allalignidx{rasts}-(1000+fsigma):max(rewtimes)+fsigma));
+       end
+   end
+    fullsdf{rasts}=spike_density(sumall,fsigma)./size(rasters,1);
+    fullsdf{rasts}=fullsdf{rasts}(fsigma+1:end-fsigma);
+end
+    
+if plotstart==200 %aligned to target
+    precuelevel=floor(mean(floor(fullsdf{1}(1:600))-floor(fullsdf{2}(1:600))));
+    sigthreshold=floor(2*(floor(std(floor(fullsdf{1}(1:600))-floor(fullsdf{2}(1:600)))))+precuelevel);
+end
+diffsdf=ceil([fullsdf{1}]-[fullsdf{2}]);
+sigdiff=diffsdf>=sigthreshold;
+sigdiffepochs=bwlabel(sigdiff);
+confsigdiffepochs=zeros(size(sigdiffepochs));
+% separate plot 
+figure
+plot(fullsdf{1})
+hold on
+plot(fullsdf{2},'r')
+plot(diffsdf,'g')
+plot(ones(size(diffsdf))*sigthreshold,'m')  
+foo=6*(std(diffsdf(1:600)))+precuelevel;
+plot(ones(size(diffsdf))*foo,'m');
+
+if max(sigdiffepochs)
+    for sdenum=1:max(sigdiffepochs)
+        maxdiff=max(diffsdf(sigdiffepochs==sdenum));
+        sigdiffdur=sum(sigdiffepochs==sdenum);
+        if maxdiff>=floor(6*(std(floor(fullsdf{1}(1:600))-floor(fullsdf{2}(1:600)))))+precuelevel && sigdiffdur>=30
+            confsigdiffepochs(find(sigdiffepochs==sdenum,1))=1;
+        end
+    end
+    if max(confsigdiffepochs)
+        figure(1)
+        plot(sdfplot,find(confsigdiffepochs)-400,ones(1,sum(confsigdiffepochs))*10,'xr','markersize',12);
+        if sum(find(confsigdiffepochs)-400>alignidx+ssdvalues(ssdtotsidx(end))-start &...
+            find(confsigdiffepochs)-400<alignidx+ssdvalues(ssdtotsidx(end))+round(mssrt)-start)
+                cancellation_time=alignidx+ssdvalues(ssdtotsidx(end))+round(mssrt)-start-(find(confsigdiffepochs)-400)
+                cancellation_strengh=max(diffsdf(sigdiffepochs==sigdiffepochs(find(confsigdiffepochs)))) 
+        end
+    end
+end
 
 %% condense plot
 % figuresize=getpixelposition(gcf);

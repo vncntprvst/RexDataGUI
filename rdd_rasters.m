@@ -69,23 +69,29 @@ end
 if strcmp(aligntype,'stop') % get ssrt
     [overallMeanSSRT,meanIntSSRT,meanSSRT,~,~,tachomc]=findssrt(name);
     mssrt=[overallMeanSSRT,meanIntSSRT,meanSSRT];
-    mssrt=round(nanmean(mssrt(mssrt>40 & mssrt<150)));
+    mssrt=round(nanmean(mssrt(mssrt>40 & mssrt<150)))
     if isnan(mssrt) || ~(mssrt>50 & mssrt<150) %get tachomc and lookup SSRT/tachomc fit. If fit missing, run SSRT_TachoMP
         try
-            load([name(1),'_tachoSSRTfit']);
+            load([name(1),'_tachoSSRTfit'],'fit');
         catch
             %SSRT_TachoMP
         end
         %get tacho curve midpoint
             tachomc=mean(tachomc);
-        if tachomc<20
+        if tachomc<20 || isnan(tachomc)
             tachomc=20;
         end
         % find reciprocal SSRT value
-        mssrt=round(tachomc*fit.coeff(1)+fit.coeff(2));
+        mssrt=max([round(tachomc*fit.coeff(1)+fit.coeff(2)) 50]);
     end
-    if ~(mssrt>40 & mssrt<150)
-        mssrt=NaN;
+    if ~(mssrt>50 & mssrt<150)
+        load([name(1),'_evolSSRT'],'evolSSRT','foSSRT');
+        session=regexp(name,'\d+','match');
+        if min(abs(evolSSRT(2,:)-str2num(session{1})))<=5
+            mssrt=round(mssrt/3+(evolSSRT(1,find(abs(evolSSRT(2,:)-str2num(session{1}))==min(abs(evolSSRT(2,:)-str2num(session{1}))),1)))*2/3)
+        else
+            mssrt=round(mssrt/3+foSSRT*2/3)
+        end
     end
 end
 

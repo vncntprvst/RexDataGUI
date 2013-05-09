@@ -469,7 +469,7 @@ end
 for cnc=1:numcodes
     aligntype=datalign(cnc).alignlabel;
     adjconditions=conditions;
-    if strcmp(aligntype,'stop') || (strcmp(tasktype,'gapstop') & cnc==1)
+    if strcmp(aligntype,'stop') %|| (strcmp(tasktype,'gapstop') & cnc==2)
         includebad=1; %we want to compare cancelled with non-cancelled
         d_increment=size([aligncodes alignseccodes],1);%make room for additional "non-cancel" data
         numplots=numcodes+d_increment;
@@ -617,14 +617,14 @@ for cnc=1:numcodes
 end
 
 if strcmp(aligntype,'stop') % make additional analysis
-%     if ATPbuttonnb==6 % saccade
+     if ATPbuttonnb==6 % saccade
 %     [p_cancellation,h_cancellation] = cmd_wilco_cancellation(rdd_filename,datalign);
-%     disp_cmd(rdd_filename,datalign,0);
-% %     disp_cmd(rdd_filename,datalign,1);
-%     elseif ATPbuttonnb==7 % target
+        disp_cmd(rdd_filename,datalign,0);
 %     disp_cmd(rdd_filename,datalign,1);
-%     end
-%     plotrasts=0;
+    elseif ATPbuttonnb==7 % target
+        disp_cmd(rdd_filename,datalign,1);
+     end
+        plotrasts=0;
 end
 
 %% Now plotting rasters
