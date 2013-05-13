@@ -306,6 +306,9 @@ elseif strcmp(monkeydirselected,'sixxselect')
 elseif strcmp(monkeydirselected,'hildaselect')
     monkeydir = [directory,'Hilda',slash]; %'B:\data\Recordings\Sixx';
     procdir = [directory,'processed',slash,'Hilda',slash];
+elseif strcmp(monkeydirselected,'shufflesselect')
+    monkeydir = [directory,'Shuffles',slash]; %'B:\data\Recordings\Sixx';
+    procdir = [directory,'processed',slash,'Shuffles',slash];
 end
 
 % determines computer type
@@ -345,6 +348,14 @@ elseif strcmp(monkeydirselected,'hildaselect')
         procname=rfname;
         set(findobj('Tag','filenamedisplay'),'String',rfname);
     end
+elseif strcmp(monkeydirselected,'shufflesselect')
+    if ~strcmp(rfname(1),'S')
+        procname=cat(2,'S', rfname);
+        set(findobj('Tag','filenamedisplay'),'String',procname);
+    else
+        procname=rfname;
+        set(findobj('Tag','filenamedisplay'),'String',rfname);
+    end
 end
 if exist(cat(2,procdir, procname,'.mat'), 'file')==2 %'B:\data\Recordings\processed\',
     % Construct question dialog
@@ -374,6 +385,9 @@ if overwrite
         elseif strcmp(monkeydirselected,'hildaselect')
             dirlisting = dir([directory,'processed',slash,'Hilda',slash]); %('B:\data\Recordings\processed');
             monknum=3;
+        elseif strcmp(monkeydirselected,'shufflesselect')
+            dirlisting = dir([directory,'processed',slash,'Shuffles',slash]); %('B:\data\Recordings\processed');
+            monknum=4;
         end
         % Order by date
         filedates=cell2mat({dirlisting(:).datenum});
@@ -446,18 +460,25 @@ function displaymfiles_Callback(hObject, eventdata, handles)
 % hObject    handle to displaymfiles (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-global directory slash unprocfiles ;
+global directory slash replacespikes ; %unprocfiles rexloadedname
 
 monkeydirselected=get(get(findobj('Tag','monkeyselect'),'SelectedObject'),'Tag');
 if strcmp(monkeydirselected,'rigelselect')
+    monknum=1;
     monkeydir = [directory,'Rigel',slash]; %'B:\data\Recordings\Rigel';
     procdir = [directory,'processed',slash,'Rigel',slash];
 elseif strcmp(monkeydirselected,'sixxselect')
+    monknum=2;
     monkeydir = [directory,'Sixx',slash]; %'B:\data\Recordings\Sixx';
     procdir = [directory,'processed',slash,'Sixx',slash];
 elseif strcmp(monkeydirselected,'hildaselect')
+    monknum=3;
     monkeydir = [directory,'Hilda',slash]; %'B:\data\Recordings\Hilda';
     procdir = [directory,'processed',slash,'Hilda',slash];
+elseif strcmp(monkeydirselected,'shufflesselect')
+    monknum=4;
+    monkeydir = [directory,'Shuffles',slash]; %'B:\data\Recordings\Hilda';
+    procdir = [directory,'processed',slash,'Shuffles',slash];
 end
 
 if strcmp(get(gcf,'SelectionType'),'normal') && ~strcmp(eventdata,'rightclkevt') % if simple click, just higlight it, don't open
@@ -505,7 +526,7 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
     % display them, since for the moment GUI is designed to display only one
     % file at a time
     if ~get(findobj('Tag','displayfbt_files'),'Value') % if session or grid is selected
-        selectedrawdir=dir(monkeydir);
+        selectedrawdir=dir(procdir);
         fileNames = {selectedrawdir.name};  % Put the file names in a cell array
         
         if get(findobj('Tag','displayfbt_session'),'Value')
@@ -514,7 +535,8 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
             for sessnumnum=1:length(sessionNumber)
                 ftoanlz = regexp(fileNames, strcat('^\w',sessionNumber{sessnumnum}{:}),'match');
                 ftoanlz = fileNames(~cellfun(@isempty,ftoanlz));  % Get the names of the matching files in a cell array
-                ftoanlz = regexprep(ftoanlz, '(A$)|(E$)',''); %remove A and E from end of names
+                ftoanlz = regexprep(ftoanlz, '(A$)|(E$)',''); %remove A and E from end of names (if raw files)
+                ftoanlz = regexprep(ftoanlz, '(_REX.mat$)|(_Sp2.mat$)',''); %remove _REX and Sp2 from end of names (if processed files)
                 ftoanlz = unique(ftoanlz);
                 allftoanlz{sessnumnum}=ftoanlz;
             end
@@ -532,17 +554,10 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
             allftoanlz=horzcat(allftoanlz{:});
         end
         
-        
-        if strcmp(monkeydirselected,'rigelselect')
-            monknum=1;
-        elseif strcmp(monkeydirselected,'sixxselect')
-            monknum=2;
-        elseif strcmp(monkeydirselected,'hildaselect')
-            monknum=3;
-        end
-        
-        
-        overwriteAll = 0;
+        %overwrite option: legacy from the time when one could want to
+        %process and analyze at the same time. Not enabled at the moment.
+        %Only processed files will be analyzed. 
+        overwriteAll = 0; % This switch should stay hardcoded, no need for user option
         if  overwriteAll %(exist(strcat({procdir},rfname,{'.mat'}), 'file')==2)
             % Construct question dialog
             choice = questdlg('Do you want to overwrite processed files?','Reprocess files?','Overwrite all','Skip','Skip'); %'Overwrite this file'
@@ -587,54 +602,125 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
             end
             % load file
             clear global tasktype;
+            
+            if replacespikes
+                procname=[procname '_Sp2'];
+            else
+                procname=[procname '_REX'];
+            end
+            
             try
-                [~, trialdirs] = data_info(procname, 1, 1); %reload file: yes (shouldn't happen, though), skip unprocessed files: yes
+                [~, trialdirs] = data_info(procname, 1, 1); %1, 1 = reload file: yes (shouldn't happen, though), skip unprocessed files: yes
             catch
                 continue
             end
-            % process file
-            getaligndata = rdd_rasters_sdf(procname, trialdirs, 0); % align data, don't plot rasters
             
-            if ~isempty([getaligndata.trials]) % if anything to make stats on and export, that is
-                getaligndata=getaligndata(~cellfun('isempty',{getaligndata.alignidx}));
-                %% first pass at stats
-                [p_sac,h_sac,p_rmanov,mcstats]=raststats(getaligndata);
-                for psda=1:length(getaligndata)
-                    getaligndata(psda).stats.p=p_sac(psda,:);
-                    getaligndata(psda).stats.h=h_sac(psda,:);
-                end
-                %additional measures: cc and auc
-                % cross-correlation values: pretty reliable indicator to sort out presac, perisac and postsac activities
-                % possible limits are:
-                % pressac <-10ms before sac , >-10ms perisac <+10ms, <10ms postsac
-                [peakcct, peaksdf]=crosscorel(procname,getaligndata,'all',0); %Get peakcc for all directions. Don't plot
-                % area under curve: separate cells with low baseline FR and sharp burst from higher baseline neurons, especially ramping ones
-                % possible limit at 2000
-                [dirauc, dirslopes, peaksdft]=findauc(procname,getaligndata,'all'); %Get auc, slopes, peaksdft for all directions
+            % process file, aligning to sac, cue, reward
+            alignmtname={'mainsacalign','tgtshownalign','rewardalign'};
+            alignbh=get( findobj('Tag','aligntimepanel'),'children');
+            for alignmt=1:3
+                set(findobj('Tag','aligntimepanel'),'SelectedObject',alignbh(strcmp(get(alignbh,'tag'),alignmtname{alignmt})))
+                getaligndata{alignmt} = rdd_rasters_sdf(procname, trialdirs, 0); % align data, don't plot rasters
                 
-                getaligndata(psda).peakramp.peakcct=peakcct; % peak cross-correlation time
-                getaligndata(psda).peakramp.peaksdf=peaksdf; % main sdf peak, within -200/+199 of aligntime
-                getaligndata(psda).peakramp.peaksdf=peaksdft; %
-                getaligndata(psda).peakramp.auc=dirauc; % area under curve
-                getaligndata(psda).peakramp.slopes=dirslopes; % slope of activity to peak (or drought, if negative)
-                
-                for psda=1:length(getaligndata)
-                    getaligndata(psda).stats.p=p_sac(psda,:);
-                    getaligndata(psda).stats.h=h_sac(psda,:);
-                    getaligndata(psda).stats.p_rmanov=p_rmanov(psda,:);
-                    getaligndata(psda).stats.mcstats=mcstats(psda,:);
+                %% statistics on rasters: do stats on collapsed data and individual direction, if > 7 trials
+                if length([getaligndata{alignmt}.trials])>=7
+                    getaligndata{alignmt}=getaligndata{alignmt}(~cellfun('isempty',{getaligndata{alignmt}.alignidx})); % remove empty conditions
+                    
+                    %additional measures: cc and auc
+                    % cross-correlation values: pretty reliable indicator to sort out pre-event, peri-event and post-event activities
+                    % possible limits are: pressac <-10ms before sac , >-10ms perisac <+10ms, <10ms postsac
+                    %                     [peakcct, peaksdf]=crosscorel(procname,getaligndata{alignmt},'all',0); %Get peakcc for all directions. Don't plot
+                    % area under curve: separate cells with low baseline FR and sharp burst from higher baseline neurons, especially ramping ones
+                    % possible limit at 2000
+                    try
+                        [dirauc, dirslopes, peaksdft,nadirsdft]=findauc(procname,getaligndata{alignmt},'all'); %Get auc, slopes, peaksdft for all directions
+                    catch
+                        [dirauc, dirslopes, peaksdft,nadirsdft]=deal(nan(1,length(getaligndata{alignmt})));
+                    end
+                    % record values in respective array
+                    for psda=1:length(getaligndata{alignmt})
+                        %                         getaligndata{alignmt}(psda).peakramp.peakcct=peakcct(psda); % peak cross-correlation time
+                        %                         getaligndata{alignmt}(psda).peakramp.peaksdf=peaksdf(psda); % main sdf peak, within -200/+199 of aligntime
+                        getaligndata{alignmt}(psda).peakramp.peaksdft=peaksdft(psda); % time of peak sdf
+                        getaligndata{alignmt}(psda).peakramp.nadirsdft=nadirsdft(psda); % time of  sdf low point
+                        getaligndata{alignmt}(psda).peakramp.auc=dirauc(psda); % area under curve
+                        getaligndata{alignmt}(psda).peakramp.slopes=dirslopes(:,psda); % slope of activity to peak (or drought, if negative)
+                    end
+                    
+                    % main stats (adding an extra array for collapsed
+                    % values)
+                    [p_sac,h_sac,p_rmanov,mcstats]=eventraststats(getaligndata{alignmt},alignmtname{alignmt});
+                    for psda=1:length(getaligndata{alignmt})+1
+                        getaligndata{alignmt}(psda).stats.p=p_sac(psda,:);
+                        getaligndata{alignmt}(psda).stats.h=h_sac(psda,:);
+                        getaligndata{alignmt}(psda).stats.p_rmanov=p_rmanov(psda,:);
+                        getaligndata{alignmt}(psda).stats.mcstats=mcstats(psda,:);
+                    end
+                else
+                    getaligndata{alignmt}(1).peakramp=[];
+                    for psda=1:length(getaligndata{alignmt})+1
+                        getaligndata{alignmt}(psda).stats.h=[];
+                    end
                 end
+            end
+            % export data
+            if isempty(cellfun(@(x) x.savealignname, arrayfun(@(x) x, getaligndata),'UniformOutput', false))
+                getaligndata{1}(1).savealignname = cat( 2, directory, 'processed',slash, 'aligned',slash, procname, '_', getaligndata{1}(1).alignlabel);
+            end
+            guidata(findobj('Tag','exportdata'),getaligndata);
+            exportdata_Callback(findobj('tag','exportdata'), eventdata, handles);
+            
+            % if statistically significant event related activity in
+            % any alignment, categorize activity
+            
+            if sum(~cellfun('isempty',arrayfun(@(x) x.stats, cell2mat(arrayfun(@(x) x, getaligndata)),'UniformOutput',false))) &&...
+                    nansum(cell2mat(arrayfun(@(x) x.stats.h, cell2mat(arrayfun(@(x) x,getaligndata)),...
+                    'UniformOutput',false))) %checking if any useful stats to categorize
                 
-                % export data
-                if isempty(getaligndata(1).savealignname)
-                    getaligndata(1).savealignname = cat( 2, directory, 'processed',slash, 'aligned',slash, procname, '_', getaligndata(1).alignlabel);
+                [activlevel,activtype,maxmean,profile,dirselective,bestlt]=catstatres(getaligndata);
+                if ~sum([activlevel{:}])
+                    [activtype,profile,dirselective,maxmean,activlevel,bestlt]=deal({0});
                 end
-                guidata(findobj('Tag','exportdata'),getaligndata);
-                exportdata_Callback(findobj('tag','exportdata'), eventdata, handles);
-                % check if statistically significant saccade activity in any alignment
-                sumstatsacs=sum(arrayfun(@(x) nansum(x{:}.h), {getaligndata(~cellfun(@isempty, {getaligndata.stats})).stats}));
             else
-                sumstatsacs=0;
+                [activtype,profile,dirselective,maxmean,activlevel,bestlt]=deal({0});
+            end
+            
+            % print vignette figure of every alignement (not just
+            % statistically significant result)
+            effectcat={'sac','vis','rew'};
+            for effnum=1:3
+                try
+                    SummaryPlot(effectcat{effnum},procname,get(findobj('Tag','taskdisplay'),'String'),getaligndata{effnum});
+                    close(gcf);
+                catch
+                    close(gcf);
+                end
+            end
+            if sum([activlevel{:}]>1)
+                foundeff=find(~cellfun('isempty',activtype));
+            else
+                foundeff=max(1,find([activlevel{:}]==max([activlevel{:}])));
+            end
+            
+            % crude segmentation: set depth limits for top cortex / dentate / bottom cortex
+            if monknum==1
+                cdn_depth=19000;
+                bcx_depth=22000;
+            elseif monknum==2
+                cdn_depth=11000;
+                bcx_depth=17000;
+            elseif monknum==3
+                cdn_depth=19000;
+                bcx_depth=26000;
+            end
+            recdepth=regexp(procname,'_\d+_','match');
+            recdepth=str2num([recdepth{:}(2:end-2) '0']);
+            if (recdepth<cdn_depth)
+                compart={'top_cortex'};
+            elseif (recdepth>=cdn_depth && recdepth<=bcx_depth)
+                compart={'dentate'};
+            elseif (recdepth>bcx_depth)
+                compart={'bottom_cortex'};
             end
             
             % write result to excel file
@@ -651,96 +737,25 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
             end
             Quit(exl);
             
-            activreport='';
-            peaktime='';
-            profile='';
-            dirselective='';
-            if logical(sumstatsacs)
-                if logical(nansum(arrayfun(@(x) x{:}.h(1), {getaligndata(~cellfun(@isempty, {getaligndata.stats})).stats})))
-                    activreport = [activreport, 'presac_baseline '];
-                end
-                if logical(nansum(arrayfun(@(x) x{:}.h(2), {getaligndata(~cellfun(@isempty, {getaligndata.stats})).stats})))
-                    activreport = [activreport, 'presac_postsac '];
-                end
-                if logical(nansum(arrayfun(@(x) x{:}.h(3), {getaligndata(~cellfun(@isempty, {getaligndata.stats})).stats})))
-                    activreport = [activreport, 'perisac_baseline'];
-                end
-                if logical(nansum(p_rmanov<0.05))
-                    statinfo={'2',activreport};
-                else
-                    statinfo={'1',activreport};
-                end
-                %% attributes
-                % peak cross-correlation time
-                
-                [~,pkdistrib]=hist(peakcct,4);
-                if (pkdistrib(1)<0 && pkdistrib(2)<0) && (pkdistrib(3)>0 && pkdistrib(4)>0)
-                    if median(abs(peakcct))>10
-                        peaktime='pre_post';
-                    else
-                        peaktime='perisac';
-                    end
-                elseif sum(pkdistrib>0)==4
-                    if median(peakcct)>10
-                        peaktime='postsac';
-                    else
-                        peaktime='perisac';
-                    end
-                elseif sum(pkdistrib<0)==4
-                    if median(peakcct)<-10
-                        peaktime='presac';
-                    else
-                        peaktime='perisac';
-                    end
-                else
-                    if min(pkdistrib)>-10 && max(pkdistrib)<10
-                        peaktime='perisac';
-                    else
-                        peaktime='mixed';
-                    end
-                end
-                
-                % main sdf peak, within -200/+199 of aligntime
-                if sum(logical(hist(peaksdf,length(peaksdf))))>floor(length(peaksdf)/2) && max(peaksdf)>2*min(peaksdf)
-                    dirselective='dirselect';
-                else
-                    dirselective='nonselect';
-                end
-                
-                % area under curve and slope
-                
-                if logical(sum(dirslopes>400 & dirauc>2000))
-                    profile=[profile,'ramp_burst '];
-                end
-                if logical(sum(dirslopes>400 & dirauc<1500))
-                    profile=[profile,'burst '];
-                end
-                if logical(sum((dirslopes<0 & dirslopes>-400) & dirauc<-2000))
-                    profile=[profile,'suppression '];
-                end
-                
-            else
-                if logical(sum(p_rmanov<0.05))
-                    activreport = 'rmanov positive';
-                    statinfo={'0.5',activreport};
-                else
-                    activreport = 'no sac activity';
-                    statinfo={'0',activreport};
-                end
-                
-            end
-            
             cd(directory);
+            % remove appendix
+            procname=procname(1:end-4);
+            % get current processed file list from excel file
             [~,pfilelist] = xlsread('procdata.xlsx',monknum,['A2:A' num2str(numrows)]);
             if logical(sum(ismember(pfilelist,procname))) %file has to have been processed already, but if for some reason not, then do not go further
                 wline=find(ismember(pfilelist,procname))+1;
             else
                 continue
             end
-            xlswrite('procdata.xlsx', statinfo, monknum, sprintf('K%d',wline));
-            xlswrite('procdata.xlsx', {peaktime}, monknum, sprintf('N%d',wline));
-            xlswrite('procdata.xlsx', {profile}, monknum, sprintf('O%d',wline));
-            xlswrite('procdata.xlsx', {dirselective}, monknum, sprintf('P%d',wline));
+            
+            xlswrite('procdata.xlsx', compart, monknum, sprintf('H%d',wline));
+            xlswrite('procdata.xlsx', {max([activlevel{foundeff}])}, monknum, sprintf('K%d',wline));
+            xlswrite('procdata.xlsx', {[activtype{foundeff}]}, monknum, sprintf('L%d',wline));
+            xlswrite('procdata.xlsx', {max([maxmean{foundeff}])}, monknum, sprintf('M%d',wline));
+            xlswrite('procdata.xlsx', {[profile{foundeff}]}, monknum, sprintf('N%d',wline));
+            xlswrite('procdata.xlsx', {[dirselective{foundeff}]}, monknum, sprintf('O%d',wline));
+            xlswrite('procdata.xlsx', {[bestlt{foundeff}]}, monknum, sprintf('P%d',wline));
+            
         end
     else
         %% normal method
@@ -817,10 +832,15 @@ function exportdata_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 dataaligned=guidata(hObject);
-savealignname=dataaligned.savealignname;
+if iscell(dataaligned) %multiple alignements
+    snames=cellfun(@(x) x.savealignname, arrayfun(@(x) x, dataaligned),'UniformOutput', false);
+    savealignname=[dataaligned{1}(1).savealignname(1:end-3) cell2mat(cellfun(@(x) regexp(x,'\w\w\w$','match'),snames(~cellfun('isempty',snames))))];
+else
+    savealignname=dataaligned.savealignname;
+end
 save(savealignname,'dataaligned','-v7.3');
 
-%save some data to match with SH data analysis
+%save some data to match with SH / Spike2 data analysis
 % about dataaligned:
 % datalign.timefromtrig and datalign.timetotrig represent time from start
 % or to the end of the trial with respect to the alignment time
@@ -832,6 +852,15 @@ save(savealignname,'dataaligned','-v7.3');
 % and time to onset of second trigger (end of trial).
 % for Rigel: no trigger ecode until R146 included
 % for Sixx: no trigger ecode until S102 included
+
+if iscell(dataaligned) %multiple alignements: keep only sac alignement
+    dataaligned=dataaligned(find(cell2mat(strfind(cellfun(@(x) x.alignlabel, arrayfun(@(x) x, dataaligned),'UniformOutput',false),'sac')),1));
+    if ~isempty(dataaligned)
+        dataaligned=dataaligned{:};
+    else
+        dataaligned(1);
+    end
+end
 
 rdd_filename=get(findobj('Tag','filenamedisplay'),'String');
 recdata=matfile(rdd_filename);
@@ -847,6 +876,7 @@ trigtovis=nan(size(rex2sh.goodtrials));
 vistotrig=nan(size(rex2sh.goodtrials));
 trialdir=cell(size(rex2sh.goodtrials));
 alignlabel=cell(size(rex2sh.goodtrials));
+
 if logical(sum(rex2sh.goodtrials))
     for i=1:length(dataaligned)
         if ~isempty(dataaligned(i).trials)
@@ -892,10 +922,15 @@ if strcmp(archst, 'maci64')
         directory = '/Users/nick/Dropbox/filesforNick/';
     elseif strcmp(name, 'Frank')
         directory = '/Users/Frank/Desktop/monkeylab/data/';
+    elseif strcmp(name, 'zacharyabzug')
+        directory = '/Users/zacharyabzug/Desktop/zackdata/';
     end
     slash = '/';
 elseif strcmp(archst, 'win32') || strcmp(archst, 'win64')
-    if strcmp(getenv('username'),'SommerVD') || strcmp(getenv('username'),'LabV')
+    if strcmp(getenv('username'),'SommerVD') || ...
+            strcmp(getenv('username'),'LabV') || ...
+            strcmp(getenv('username'),'Purkinje') || ...
+            strcmp(getenv('username'),'vp35')
         directory = 'C:\Data\Recordings\';
     elseif strcmp(getenv('username'),'DangerZone')
         directory = 'E:\data\Recordings\';
@@ -915,17 +950,20 @@ elseif strcmp(monkeydir,'sixxselect')
     monknum=2;
 elseif strcmp(monkeydir,'hildaselect')
     monknum=3;
+elseif strcmp(monkeydir, 'shufflesselect')
+    monknum=4;
 end
 dirlisting{1} = dir([directory,'processed',slash,'Rigel',slash]);%('B:\data\Recordings\processed\Rigel');
 dirlisting{2} = dir([directory,'processed',slash,'Sixx',slash]);
 dirlisting{3} = dir([directory,'processed',slash,'Hilda',slash]);
+dirlisting{4} = dir([directory,'processed',slash,'Shuffles',slash]);
 
 %%  add subject ID letter in front of file names for sessions >= 100
 %   change hyphens into underscores
 %   output unprocessed file list
 
-rawdirs=[{[directory,'Rigel',slash]};{[directory,'Sixx',slash]};{[directory,'Hilda',slash]}];
-idletters=['R';'S';'H'];
+rawdirs=[{[directory,'Rigel',slash]};{[directory,'Sixx',slash]};{[directory,'Hilda',slash]};{[directory,'Shuffles',slash]}];
+idletters=['R';'S';'H';'S'];
 olddir=pwd; %keep current dir in memory
 
 %preallocate
@@ -1428,6 +1466,8 @@ elseif get(findobj('Tag','sixxselect'),'Value')
     dirlisting = dir([directory,'processed',slash,'Sixx',slash]); %('B:\data\Recordings\processed\Sixx');\
 elseif get(findobj('Tag','hildaselect'),'Value')
     dirlisting = dir([directory,'processed',slash,'Hilda',slash]); %('B:\data\Recordings\processed\Sixx');
+elseif get(findobj('Tag','shufflesselect'),'Value')
+    dirlisting = dir([directory,'processed',slash,'Shuffles',slash]); %('B:\data\Recordings\processed\Sixx');
 end
 fileNames = {dirlisting.name};  % Put the file names in a cell array
 
@@ -1460,6 +1500,11 @@ elseif hObject==findobj('Tag','displayfbt_session')
             '^H\d+', 'match');           % with the letter 'S' followed by a set of digits 1 or larger
         inFiles = index(~cellfun(@isempty,index));  % Get the names of the matching files in a cell array
         sessionNumbers = cellfun(@(x) strrep(x, 'H', ' '), inFiles, 'UniformOutput', false);
+    elseif get(findobj('Tag','shufflesselect'),'Value')
+        index = regexpi(fileNames,...              % Match a file name if it begins
+            '^S\d+', 'match');           % with the letter 'S' followed by a set of digits 1 or larger
+        inFiles = index(~cellfun(@isempty,index));  % Get the names of the matching files in a cell array
+        sessionNumbers = cellfun(@(x) strrep(x, 'S', ' '), inFiles, 'UniformOutput', false);
     end
     
     if ~isempty(sessionNumbers)
@@ -1522,26 +1567,19 @@ function usespike2_Callback(hObject, eventdata, handles)
 % hObject    handle to usespike2 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-global replacespikes directory slash
+global replacespikes %directory slash
 if get(hObject,'Value')
     replacespikes = 1;
-    set(handles.whichclus,'Enable','on')
+    set(findobj('tag','whichclus'),'Enable','on')
 else
     replacespikes = 0;
-    set(handles.whichclus,'Enable','off')
+    set(findobj('tag','whichclus'),'Enable','off')
 end
-% Hint: get(hObject,'Value') returns toggle state of usespike2
-
-
 
 function whichclus_Callback(hObject, eventdata, handles)
 % hObject    handle to whichclus (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-
-% Hints: get(hObject,'String') returns contents of whichclus as text
-%        str2double(get(hObject,'String')) returns contents of whichclus as a double
-
 
 % --- Executes during object creation, after setting all properties.
 function whichclus_CreateFcn(hObject, eventdata, handles)

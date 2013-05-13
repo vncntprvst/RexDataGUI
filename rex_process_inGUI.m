@@ -94,7 +94,10 @@ load([directory 'Rigel' slash 'Spike2Exports' slash rexname 's.mat']);
 load([directory 'Rigel' slash 'Spike2Exports' slash rexname 't.mat']);
 elseif strcmp(monkeydirselected,'hildaselect')
 load([directory 'Hilda' slash 'Spike2Exports' slash rexname 's.mat']);
-load([directory 'Hilda' slash 'Spike2Exports' slash rexname 't.mat']);    
+load([directory 'Hilda' slash 'Spike2Exports' slash rexname 't.mat']); 
+elseif strcmp(monkeydirselected,'shufflesselect')
+load([directory 'Shuffles' slash 'Spike2Exports' slash rexname 's.mat']);
+load([directory 'Shuffles' slash 'Spike2Exports' slash rexname 't.mat']); 
 end
 % find which channel contains the data ( H53L5A5_20901_Ch7.title = nw-801)
 varlist=who; %list variables
@@ -178,8 +181,7 @@ for trialnumber = 1:nt
                 %
                 %                 answer = inputdlg( prompt, name, numlines, defaultanswer );
                 %                 channel = answer{:};
-                
-                
+
                 channel=1;
                 rex_process_channelpicked = channel;
             end;
@@ -393,6 +395,9 @@ for trialnumber = 1:nt
             else
                 sacofint=nwsacstart>etimeout(ecodesacstart-1); %considering all saccades occuring after the ecode
                 %preceding the saccade ecode, which is often erroneous
+                if strcmp(curtasktype,'gapstop') & find(ecodeout==1503)
+                    sacofint=nwsacstart>etimeout(ecodesacstart-2);
+                end
             end
         else
             sacofint=0;
@@ -554,12 +559,17 @@ outlandmismtch(2)={outliers};
 if logical(regexpi(rawdir(1:end-1),'Rigel$'))
     if strcmp(getenv('username'),'nick')
         procdir='/Users/nick/Dropbox/filesforNick/processed/Rigel/';
-    elseif strcmp(getenv('username'),'SommerVD') || strcmp(getenv('username'),'LabV')
+    elseif strcmp(getenv('username'),'SommerVD') ||...
+            strcmp(getenv('username'),'LabV')||...
+            strcmp(getenv('username'),'Purkinje')||...
+            strcmp(getenv('username'),'vp35')
         procdir='C:\Data\Recordings\processed\Rigel\';
     elseif strcmp(getenv('username'),'DangerZone')
         procdir='E:\Data\Recordings\processed\Rigel\';
     elseif strcmp(getenv('username'),'Radu')
         procdir = 'E:\Spike_Sorting\processed\Rigel\';
+    elseif strcmp(getenv('USER'),'zacharyabzug')
+        procdir = '/Users/zacharyabzug/Desktop/zackdata/processed/Shuffles/';
     else
         procdir='B:\data\Recordings\processed\Rigel\';
     end
@@ -574,12 +584,17 @@ if logical(regexpi(rawdir(1:end-1),'Rigel$'))
 elseif logical(regexpi(rawdir(1:end-1),'Sixx$'))
     if strcmp(getenv('username'),'nick')
         procdir='/Users/nick/Dropbox/filesforNick/processed/Sixx/';
-    elseif strcmp(getenv('username'),'SommerVD') || strcmp(getenv('username'),'LabV')
+    elseif strcmp(getenv('username'),'SommerVD') ||....
+            strcmp(getenv('username'),'LabV')||...
+            strcmp(getenv('username'),'Purkinje')||...
+            strcmp(getenv('username'),'vp35')
         procdir='C:\Data\Recordings\processed\Sixx\';
     elseif strcmp(getenv('username'),'DangerZone')
         procdir='E:\Data\Recordings\processed\Sixx\';
     elseif strcmp(getenv('username'),'Radu')
         procdir = 'E:\Spike_Sorting\processed\Sixx\';
+    elseif strcmp(getenv('USER'),'zacharyabzug')
+        procdir = '/Users/zacharyabzug/Desktop/zackdata/processed/Sixx/';        
     else
         procdir='B:\data\Recordings\processed\Sixx\';
     end
@@ -594,12 +609,17 @@ elseif logical(regexpi(rawdir(1:end-1),'Sixx$'))
 elseif logical(regexpi(rawdir(1:end-1),'Hilda$'))
     if strcmp(getenv('username'),'nick')
         procdir='/Users/nick/Dropbox/filesforNick/processed/Hilda/';
-    elseif strcmp(getenv('username'),'SommerVD') || strcmp(getenv('username'),'LabV')
+    elseif strcmp(getenv('username'),'SommerVD') ||...
+            strcmp(getenv('username'),'LabV')||...
+            strcmp(getenv('username'),'Purkinje')||...
+            strcmp(getenv('username'),'vp35')
         procdir='C:\Data\Recordings\processed\Hilda\';
     elseif strcmp(getenv('username'),'DangerZone')
         procdir='E:\Data\Recordings\processed\Hilda\';
     elseif strcmp(getenv('username'),'Radu')
         procdir = 'E:\Spike_Sorting\processed\Hilda\';
+    elseif strcmp(getenv('USER'),'zacharyabzug')
+        procdir = '/Users/zacharyabzug/Desktop/zackdata/processed/Hilda/';        
     else
         procdir='B:\data\Recordings\processed\Hilda\';
     end
@@ -610,18 +630,43 @@ elseif logical(regexpi(rawdir(1:end-1),'Hilda$'))
         rexname=cat(2,rexname,'_Sp2');
     else
         rexname=cat(2,rexname,'_REX');
-    end  
+    end
+elseif logical(regexpi(rawdir(1:end-1),'Shuffles$'))
+    if strcmp(getenv('username'),'nick')
+        procdir='/Users/nick/Dropbox/filesforNick/processed/Shuffles/';
+    elseif strcmp(getenv('username'),'SommerVD') ||...
+            strcmp(getenv('username'),'LabV')||...
+            strcmp(getenv('username'),'Purkinje')||...
+            strcmp(getenv('username'),'vp35')
+        procdir='C:\Data\Recordings\processed\Shuffles\';
+    elseif strcmp(getenv('username'),'DangerZone')
+        procdir='E:\Data\Recordings\processed\Shuffles\';
+    elseif strcmp(getenv('username'),'Radu')
+        procdir = 'E:\Spike_Sorting\processed\Shuffles\';
+    elseif strcmp(getenv('USER'),'zacharyabzug')
+        procdir = '/Users/zacharyabzug/Desktop/zackdata/processed/Shuffles/';        
+    else
+        procdir='B:\data\Recordings\processed\Shuffles\';
+    end
+    if ~strcmp(rexname(1),'S')
+        rexname=cat(2,'S',rexname);
+    end
+    if replacespikes
+        rexname=cat(2,rexname,'_Sp2');
+    else
+        rexname=cat(2,rexname,'_REX');
+    end      
 end
 
 newname = cat( 2, procdir, rexname, '.mat' );
 s = sprintf('Writing converted Rex data to %s.', cat(2,rexname,'.mat'));
 waitbar( 0.9, wb, s );
-rexloadedname = rexname;
+%rexloadedname = rexname;
 rexnumtrials = next -1; %nt;
 
-allrexnotes = sprintf( '%s, converted on %s\n%d trials\n', rexloadedname, datestr( now ), rexnumtrials );
+allrexnotes = sprintf( '%s, converted on %s\n%d trials\n', rexname, datestr( now ), rexnumtrials );
 disp(allrexnotes);
-save( newname, 'rexloadedname', 'rexnumtrials', 'alloriginaltrialnums', 'allnewtrialnums',...
+save( newname, 'rexname', 'rexnumtrials', 'alloriginaltrialnums', 'allnewtrialnums',...
     'allcodes', 'alltimes', 'allspkchan', 'allspk', 'allrates', 'allh', 'allv', 'allstart',...
     'allbad', 'alltrigin', 'alltrigout', 'allrew', 'alldeleted', 'allsacstart', 'allsacend',...
     'allspklen', 'allsaclen', 'allrexnotes', 'saccadeInfo','outlandmismtch','-v7.3'); %using '-v7.3' input arguments so that matfile loading runs well when retrieving data from file
