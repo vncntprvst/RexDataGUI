@@ -67,7 +67,37 @@ else
 end
 
 if strcmp(aligntype,'stop') % get ssrt
-    mssrt=findssrt(name);
+    try
+    [overallMeanSSRT,meanIntSSRT,meanSSRT,~,~,tachomc]=findssrt(name);
+    mssrt=[overallMeanSSRT,meanIntSSRT,meanSSRT];
+    mssrt=round(nanmean(mssrt(mssrt>40 & mssrt<150)))
+    catch
+        mssrt=NaN;
+        tachomc=NaN;
+    end
+    if isnan(mssrt) || ~(mssrt>50 & mssrt<150) %get tachomc and lookup SSRT/tachomc fit. If fit missing, run SSRT_TachoMP
+        try
+            load([name(1),'_tachoSSRTfit'],'fit');
+        catch
+            %SSRT_TachoMP
+        end
+        %get tacho curve midpoint
+            tachomc=mean(tachomc);
+        if tachomc<20 || isnan(tachomc)
+            tachomc=20;
+        end
+        % find reciprocal SSRT value
+        mssrt=max([round(tachomc*fit.coeff(1)+fit.coeff(2)) 50]);
+    end
+    if ~(mssrt>50 & mssrt<150)
+        load([name(1),'_evolSSRT'],'evolSSRT','foSSRT');
+        session=regexp(name,'\d+','match');
+        if min(abs(evolSSRT(2,:)-str2num(session{1})))<=5
+            mssrt=round(mssrt/3+(evolSSRT(1,find(abs(evolSSRT(2,:)-str2num(session{1}))==min(abs(evolSSRT(2,:)-str2num(session{1}))),1)))*2/3)
+        else
+            mssrt=round(mssrt/3+foSSRT*2/3)
+        end
+    end
 end
 
 [~, ~, tgtcode, tgtoffcode] = taskfindecode(tasktype);
@@ -137,7 +167,6 @@ while ~islast
     % rex_first_trial and rex_next_trial).
     
     %[ecodeout, etimeout, spkchan, spk, arate, h, v, start_time, badtrial ] = rex_trial(name, d );
-    
     [ecodeout, etimeout, spkchan, spk, arate, h, v, start_time, isbadtrial, curtrialsacInfo] = rdd_rex_trial(name, d);%, rdt_includeaborted);
     
     %if ~isbadtrial
@@ -277,7 +306,7 @@ while ~islast
                         if ecodeout(ncecode)==17385 || ecodeout(ncecode)==16386
                             ampsacofint=[];
                             nwsacstart=cat(1,curtrialsacInfo.starttime);
-                            sacofint=nwsacstart>etimeout(falign(1)-1);
+                            sacofint=nwsacstart>etimeout(7);
                             ampsacofint=zeros(1,length(sacofint));
                             for k=find(sacofint,1):length(sacofint)
                                 ampsacofint(1,k)=abs(getfield(curtrialsacInfo, {k}, 'amplitude'));
@@ -491,6 +520,9 @@ while ~islast
                     %                     oldallonoffcodetime=cat_variable_size_row(oldallonoffcodetime, trialonofftime);
                     if  ~(size(onoffcodetime,2)==2 && codepairnb==1)
                         onoffkeepcode=[find(~isnan(onoffcodetime(1,:)),1) find(~isnan(onoffcodetime(1,:)),1)+codepairnb];
+                        if onoffkeepcode(end)>size(onoffcodetime,2)
+                            onoffkeepcode=[size(onoffcodetime,2)-(codepairnb+1) size(onoffcodetime,2)-1];
+                        end
                         onoffcodetime=onoffcodetime(:,onoffkeepcode);
                     end
                     allonoffcodetime=[allonoffcodetime {onoffcodetime}];

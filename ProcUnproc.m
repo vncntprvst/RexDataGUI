@@ -342,4 +342,3 @@ elseif strcmp(selectedfd,'procunprocdf_sess')
 else %default: files
     set(findobj('tag','unproclist'),'string',unprocfilelist);
 end
-

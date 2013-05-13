@@ -159,8 +159,8 @@ AccThreshold = 0.1;          %if acc > 100000 degrees/s^2, that is 0.1 deg/ms^2,
 
     % possible correction already done in rex_process
      noiselabels = bwlabel(noiseIdx);
-     str = sprintf('%d remaining noise periods in trial #%d', max(noiselabels), rdt_trialnumber);
-     disp(str);
+%      str = sprintf('%d remaining noise periods in trial #%d', max(noiselabels), rdt_trialnumber);
+%      disp(str);
 
         if logical(sum(noiseIdx))
         snoisearea = find(diff(noiseIdx) > 0);
@@ -286,7 +286,7 @@ figure(rdt_fh);
         plot( h, hcolor );  
         hold on;
         if logical(sum(noiseIdx)) %if there are noise period remaining, display them here
-            disp('displaying noise period(s)');
+%             disp('displaying noise period(s)');
             for j = 1:length(snoisearea)
                 patch([repmat(timeline(snoisearea(j)),1,2) repmat(timeline(enoisearea(j)),1,2)], ...
                 [get(gca,'YLim') fliplr(get(gca,'YLim'))], ...

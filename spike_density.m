@@ -9,11 +9,10 @@ function [allsdf, gksigma] = spike_density( train, fixedsigma )
 %  [allsdf] is the smoothed output, i.e. the spike density function.
 %  I'm not sure what the output [gksigma] is.
 
-sz = size( train );
-allsdf = zeros( sz );
+allsdf = zeros(size(train));
 
-for row = 1:sz(1)
-    numdata = sz(2);
+for row = 1:size(train,1)
+    numdata = size(train,2);
     halflen = ceil( numdata / 2 );
     k = -halflen:halflen;
     gek2s2 = exp( -1 * (k .* k ) / (fixedsigma * fixedsigma ) );
@@ -23,8 +22,8 @@ for row = 1:sz(1)
     center = ceil( length( sdfconv ) / 2 );
     sdf = sdfconv( center - halflen:(center+halflen-1) );
 
-    if length( sdf ) > sz(2)
-        sdf = sdf( 1:sz(2) );
+    if length( sdf ) > size(train,2)
+        sdf = sdf( 1:size(train,2) );
     end;
     allsdf (row,:) = sdf;
 end;

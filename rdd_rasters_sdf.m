@@ -167,6 +167,9 @@ elseif SATPbuttonnb==8
         %not good!
     else
         secondcode=stopcode;
+        if ATPbuttonnb==7 % tgtshownalign button
+            ecodealign=ecodealign(1); % no need to align stop trials to target, it will be done later
+        end
     end
 elseif SATPbuttonnb==9
     secondcode=saccode;
@@ -297,10 +300,10 @@ elseif strcmp(get(get(findobj('Tag','showdirpanel'),'SelectedObject'),'Tag'),'se
     % rdd_rasters would know it had to collapse all
     % directions together
     alignseccodes= alignseccodes'; %secondcode;
-elseif size(alignseccodes,1)>0
-    collapsecode=1; % we want two plots, one for each type of code
-    aligncodes=aligncodes';
-    alignseccodes= alignseccodes';
+% elseif size(alignseccodes,1)>0
+%     collapsecode=1; % we want two plots, one for each type of code
+%     aligncodes=aligncodes';
+%     alignseccodes= alignseccodes';
 elseif strcmp(tasktype,'base2rem50')
     collapsecode=0; % we want to plots, one for each type of code
     aligncodes=aligncodes';
@@ -342,8 +345,10 @@ end
 nonecodes=[17385 16386];
 
 % variable to save aligned data
-datalign=struct('dir',{},'rasters',{},'trials',{},'trigtosac',{},'sactotrig',{},'trigtovis',{},'vistotrig',{},'alignidx',{},'eyeh',{},'eyev',{},'eyevel',{},'amplitudes',{},...
-    'peakvels',{},'peakaccs',{},'allgreyareas',{},'stats',{},'alignlabel',{},'savealignname',{});
+datalign=struct('dir',{},'rasters',{},'trials',{},'trigtosac',{},'sactotrig',{},...
+    'trigtovis',{},'vistotrig',{},'alignidx',{},'eyeh',{},'eyev',{},'eyevel',{},...
+    'amplitudes',{},'peakvels',{},'peakaccs',{},'allgreyareas',{},'stats',{},...
+    'alignlabel',{},'savealignname',{},'bad',{});
 if strcmp(get(get(findobj('Tag','showdirpanel'),'SelectedObject'),'Tag'),'seleccompall') && sum(secondcode)==0
     singlerastplot=1;
 else
@@ -464,9 +469,10 @@ end
 for cnc=1:numcodes
     aligntype=datalign(cnc).alignlabel;
     adjconditions=conditions;
-    if strcmp(aligntype,'stop')
+    if strcmp(aligntype,'stop') %|| (strcmp(tasktype,'gapstop') & cnc==2)
         includebad=1; %we want to compare cancelled with non-cancelled
-        numplots=numcodes+1;
+        d_increment=size([aligncodes alignseccodes],1);%make room for additional "non-cancel" data
+        numplots=numcodes+d_increment;
     elseif strcmp(tasktype,'base2rem50')
         adjconditions=[conditions(cnc,:);conditions(cnc+numcodes,:);conditions(cnc+2*numcodes,:)];
         numplots=numcodes;
@@ -480,7 +486,6 @@ for cnc=1:numcodes
         amplitudes,peakvels,peakaccs,allgreyareas,badidx,ssd] = rdd_rasters( rdd_filename, spikechannel,...
         allaligncodes(cnc,:), nonecodes, includebad, alignsacnum, aligntype, collapsecode, adjconditions);
     
-
     if isempty( rasters )
         disp( 'No raster could be generated (rex_rasters_trialtype returned empty raster)' );
         continue;
@@ -502,27 +507,27 @@ for cnc=1:numcodes
         datalign(cnc).peakvels=peakvels(canceledtrials);
         datalign(cnc).peakaccs=peakaccs(canceledtrials);
         datalign(cnc).bad=badidx(canceledtrials);
-        datalign(cnc).ssd=ssd(canceledtrials,:);
+        datalign(cnc).ssd=ssd(canceledtrials);
         
         canceledtrials=~canceledtrials;
-        datalign(cnc+1).alignlabel='stop_non_cancel';
-        datalign(cnc+1).rasters=rasters(canceledtrials,:);
-        datalign(cnc+1).alignidx=aidx;
-        datalign(cnc+1).trials=trialidx(canceledtrials);
-        datalign(cnc+1).trigtosac=trigtosacs(canceledtrials);
-        datalign(cnc+1).sactotrig=sactotrigs(canceledtrials);
-        datalign(cnc+1).trigtovis=trigtovis(canceledtrials);
-        datalign(cnc+1).vistotrig=vistotrigs(canceledtrials);
-        datalign(cnc+1).eyeh=eyeh(canceledtrials,:);
-        datalign(cnc+1).eyev=eyev(canceledtrials,:);
-        datalign(cnc+1).eyevel=eyevel(canceledtrials,:);
-        datalign(cnc+1).allgreyareas=allgreyareas(:,canceledtrials);
-        datalign(cnc+1).amplitudes=amplitudes(canceledtrials);
-        datalign(cnc+1).peakvels=peakvels(canceledtrials);
-        datalign(cnc+1).peakaccs=peakaccs(canceledtrials);
-        datalign(cnc+1).bad=badidx(canceledtrials);
-        datalign(cnc+1).ssd=ssd(canceledtrials,:);
-        %             datalign(cnc+1).condtimes=condtimes(canceledtrials);
+        datalign(cnc+d_increment).alignlabel='stop_non_cancel';
+        datalign(cnc+d_increment).rasters=rasters(canceledtrials,:);
+        datalign(cnc+d_increment).alignidx=aidx;
+        datalign(cnc+d_increment).trials=trialidx(canceledtrials);
+        datalign(cnc+d_increment).trigtosac=trigtosacs(canceledtrials);
+        datalign(cnc+d_increment).sactotrig=sactotrigs(canceledtrials);
+        datalign(cnc+d_increment).trigtovis=trigtovis(canceledtrials);
+        datalign(cnc+d_increment).vistotrig=vistotrigs(canceledtrials);
+        datalign(cnc+d_increment).eyeh=eyeh(canceledtrials,:);
+        datalign(cnc+d_increment).eyev=eyev(canceledtrials,:);
+        datalign(cnc+d_increment).eyevel=eyevel(canceledtrials,:);
+        datalign(cnc+d_increment).allgreyareas=allgreyareas(:,canceledtrials);
+        datalign(cnc+d_increment).amplitudes=amplitudes(canceledtrials);
+        datalign(cnc+d_increment).peakvels=peakvels(canceledtrials);
+        datalign(cnc+d_increment).peakaccs=peakaccs(canceledtrials);
+        datalign(cnc+d_increment).bad=badidx(canceledtrials);
+        datalign(cnc+d_increment).ssd=ssd(canceledtrials);
+        %             datalign(cnc+d_increment).condtimes=condtimes(canceledtrials);
         elseif strcmp(tasktype,'optiloc') && logical(sum(strfind(ol_instruct,'amplitudes')))
         % compare amp distrib with expected distrib, typically [4,12,20]
         if ~sum(hist(abs(amplitudes),[4,12,20])==hist(abs(amplitudes),3))==3 %case when amps are not dixtributed as expected
@@ -611,10 +616,24 @@ for cnc=1:numcodes
     
 end
 
+if strcmp(aligntype,'stop') % make additional analysis
+     if ATPbuttonnb==6 % saccade
+%     [p_cancellation,h_cancellation] = cmd_wilco_cancellation(rdd_filename,datalign);
+        disp_cmd(rdd_filename,datalign,0);
+%     disp_cmd(rdd_filename,datalign,1);
+    elseif ATPbuttonnb==7 % target
+        disp_cmd(rdd_filename,datalign,1);
+     end
+        plotrasts=0;
+end
+
 %% Now plotting rasters
 %%%%%%%%%%%%%%%%%%%%%%
 if plotrasts
     figure(gcf);
+    %some housekeeping: removing previous uigridcontainers
+    childlist=get(findobj('Tag','rasterspanel'),'children');    
+    delete(childlist(strcmp(get(childlist,'type'),'uigridcontainer')));
     
     if  singlerastplot || aligncodes(1)==1030 || aligncodes(1)== 17385
         % || aligncodes(1)==16386 || aligncodes(1)==16387 || aligncodes(1)==16388;
@@ -747,6 +766,7 @@ if plotrasts
             spiketimes=find(rasters(j,start:stop)); %converting from a matrix representation to a time collection, within selected time range
             if isnan(sum(rasters(j,start:stop)))
                 isnantrial{cnp}(j)=1;
+                 spiketimes(find(isnan(rasters(j,start:stop))))=0; %#ok<FNDSB>
             end
             rastploth=plot([spiketimes;spiketimes],[ones(size(spiketimes))*j;ones(size(spiketimes))*j-1],'k-');
             uistack(rastploth,'down');
@@ -846,7 +866,7 @@ end
 
 %% last item: save name
 if strcmp(tasktype,'optiloc')
-    parsename=unique(cellfun(@(x) x(1:(regexp(x,'\d+')-1)), unique({datalign.alignlabel}), 'UniformOutput', false)); %e.g., {sac}, instead of {'sac12dg','sac20dg','sac4dg'}
+    parsename=unique(cellfun(@(x) x(1:(regexp(x,'\d+')-1)), unique({datalign(~cellfun('isempty',{datalign.alignlabel})).alignlabel}), 'UniformOutput', false)); %e.g., {sac}, instead of {'sac12dg','sac20dg','sac4dg'}
 else
     parsename=unique({datalign.alignlabel});
 end

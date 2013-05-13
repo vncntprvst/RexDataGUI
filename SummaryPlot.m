@@ -51,7 +51,10 @@ function SummaryPlot_OpeningFcn(hObject, eventdata, handles, varargin)
 % handles    structure with handles and user data (see GUIDATA)
 % varargin   command line arguments to SummaryPlot (see VARARGIN)
 global directory slash;
-if strcmp(getenv('username'),'SommerVD') || strcmp(getenv('username'),'LabV')
+if strcmp(getenv('username'),'SommerVD') ||...
+        strcmp(getenv('username'),'LabV') || ...
+        strcmp(getenv('username'),'Purkinje')|| ...
+        strcmp(getenv('username'),'vp35')
     directory = 'C:\Data\Recordings\';
 elseif strcmp(getenv('username'),'DangerZone')
     directory = 'E:\data\Recordings\';
@@ -410,11 +413,12 @@ for algfile=1:length(filelist)
             %title('SDF: best direction','FontName','calibri','FontSize',11);
             hold on;
             if size(bdrasters,1)==1 %if only one good trial
-                sumall=bdrasters(~isnantrial,start:stop);
+                sumall=bdrasters(~isnantrial,start-fsigma:stop+fsigma);
             else
-                sumall=sum(bdrasters(~isnantrial,start:stop));
+                sumall=sum(bdrasters(~isnantrial,start-fsigma:stop+fsigma));
             end
             bdsdf=spike_density(sumall,fsigma)./length(find(~isnantrial)); %instead of number of trials
+            bdsdf=bdsdf(fsigma+1:end-fsigma);
             
             bdsdfline=plot(bdsdf,'Color',[0.4389    0.1111    0.2581],'LineWidth',1.8);
             % axis([0 stop-start 0 200])
@@ -794,7 +798,11 @@ global directory slash;
 if ~isdir([directory,'figures',slash,arguments{1}])
     mkdir([directory,'figures',slash,arguments{1}])
 end
-filelist=arguments{2};
+if size(arguments(2),1)==1
+    filelist=arguments(2);
+else
+    filelist=arguments{2};
+end
 tasklist=arguments{3};
 algdir=[directory,'processed',slash,'aligned',slash];
 for algfile=1:length(filelist)
@@ -802,9 +810,14 @@ for algfile=1:length(filelist)
     tasktype=tasklist{algfile};
     set(findobj('tag','dispfilename'),'string',filename);
     set(findobj('tag','disptaskname'),'string',tasktype);
-    
-    load([algdir,filename,'_sac.mat']);
-    alignment=dataaligned(1,1).savealignname(max(strfind(dataaligned(1,1).savealignname,'_'))+1:end);
+    if length(arguments)<4
+        load([algdir,filename,'_sac.mat']);
+        alignment=dataaligned(1,1).savealignname(max(strfind(dataaligned(1,1).savealignname,'_'))+1:end);
+    else
+        dataaligned=arguments{4};
+        alignment=arguments{1};
+    end
+
     set(findobj('tag','dispalignment'),'string',alignment);
     
     %alignment=get(findobj('tag','dispalignment'),'string');
@@ -934,11 +947,14 @@ for algfile=1:length(filelist)
             title('Spike Density Function','FontName','calibri','FontSize',11);
             hold on;
             if size(rasters,1)==1 %if only one good trial
-                sumall=rasters(~isnantrial,start:stop);
+                sumall=rasters(~isnantrial,start-fsigma:stop+fsigma);
+                sumall(isnan(sumall))=0;
             else
-                sumall=sum(rasters(~isnantrial,start:stop));
+                sumall=sum(rasters(~isnantrial,start-fsigma:stop+fsigma));
+                sumall(isnan(sumall))=0;
             end
             sdf=spike_density(sumall,fsigma)./length(find(~isnantrial)); %instead of number of trials
+            sdf=sdf(fsigma+1:end-fsigma);
             
             plot(sdf,'Color',cc(rstplt,:),'LineWidth',1.8);
             % axis([0 stop-start 0 200])
@@ -1039,7 +1055,7 @@ for algfile=1:length(filelist)
         end
     end
     %moving up all rasters now
-    if numrast==1
+    if numrast==1 || ~iscell(get(hrastplot(~failed),'position'))
         allrastpos=(get(hrastplot,'position'));
     else
         allrastpos=cell2mat(get(hrastplot(~failed),'position'));
@@ -1068,7 +1084,12 @@ for algfile=1:length(filelist)
     set(hlegdir,'Interpreter','none', 'Box', 'off','LineWidth',1.5,'FontName','calibri','FontSize',9);
     
     % setting sdf plot y axis
-    newylim=[0, ceil(max(max(cell2mat(get(findobj(sdfplot,'Type','line'),'YDATA'))))/10)*10]; %rounding up to the decimal
+    try
+        newylim=[0, ceil(max(max(cell2mat(get(findobj(sdfplot,'Type','line'),'YDATA'))))/10)*10]; %rounding up to the decimal
+    catch
+        newylim=[0, ceil(max(max(get(findobj(sdfplot,'Type','line'),'YDATA')))/10)*10]; %rounding up to the decimal
+    end
+
     set(sdfplot,'YLim',newylim);
     %eventdata={algfile,aligntype};
     %exportfig_Callback(findobj('tag','exportfig'), eventdata, handles);
@@ -1106,6 +1127,9 @@ for algfile=1:length(filelist)
     set(allaxes(2),'XTickLabel','');
     %% saving figure
     %basic png fig:
+
+    newpos =  get(gcf,'Position')/60;
+    set(gcf,'PaperUnits','inches','PaperPosition',newpos);
     print(gcf, '-dpng', '-noui', '-opengl','-r600', exportfigname);
     delete(exportfig);
     %% end copied section
@@ -1207,11 +1231,12 @@ for i=1:numrast
     
     %Plot sdf
     if size(rasters,1)==1 %if only one good trial
-        sumall=rasters(~isnantrial,start:stop);
+        sumall=rasters(~isnantrial,start-fsigma:stop+fsigma);
     else
-        sumall=sum(rasters(~isnantrial,start:stop));
+        sumall=sum(rasters(~isnantrial,start-fsigma:stop+fsigma));
     end
     sdf=spike_density(sumall,fsigma)./length(find(~isnantrial)); %instead of number of trials
+    sdf=sdf(1+fsigma:end-fsigma);
     
     plot(sdf,'Color',cc(i,:),'LineWidth',1.8);
     %title('Spike Density Function','FontName','calibri','FontSize',11);

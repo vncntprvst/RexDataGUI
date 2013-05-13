@@ -88,7 +88,7 @@ if ~strcmp(currecodename, ecname) || reprocess
                 set(findobj('Tag','whichclus'),'String','1');
                 selclus = 1;
             end
-        [ecodes, etimes] = replaceecodes(ecodes,etimes,spike2times,triggertimes,clustercodes,selclus);
+        [ecodes, etimes] = replaceecodes(ecodes,etimes,selclus);
         %[ecodes, etimes] = replaceecodes(ecodes,etimes);
         spike2aidx = find(ecodes == -112);
         end
