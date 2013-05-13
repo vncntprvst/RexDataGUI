@@ -74,7 +74,7 @@ global directory;
     end
     
     %% find and keep most prevalent ssds
-    [ssdtots,ssdtotsidx]=sort((arrayfun(@(x) sum(ccssd==x | ccssd==x-1 | ccssd==x+1),ssdvalues))) %+...
+    [ssdtots,ssdtotsidx]=sort((arrayfun(@(x) sum(ccssd==x | ccssd==x-1 | ccssd==x+1),ssdvalues))); %+...
 %     (arrayfun(@(x) sum(nccssd==x | nccssd==x-1 | nccssd==x+1),ssdvalues)));
     prevssds=sort(ssdvalues(ssdtotsidx(ssdtots>ceil(median(ssdtots))+1)));
     % starting with the one that remove the less (N)CSS trials
@@ -122,6 +122,11 @@ for i=1:numrast
         alignidx=datalign(i).alignidx;
         greyareas=datalign(i).allgreyareas;
         timetorew=datalign(i).sactotrig;
+        if strcmp(datalign(i).alignlabel,'stop_non_cancel')
+            if size(datalign(i).ssd,2)>size(datalign(i).ssd,1)
+                datalign(i).ssd=permute(datalign(i).ssd,[2,1]);
+            end
+        end
     end
     
     start=alignidx - plotstart;
@@ -341,7 +346,7 @@ if latmach
 else
     legloc='NorthWest';
 end
-if strcmp(aligntype{1},'tgt')
+if strcmp(aligntype{1},'tgt') || strcmp(aligntype{1},'sac')
     aligntype{1}='no-stop signal';
 end
 if strcmp(aligntype{2},'stop_cancel')
@@ -407,7 +412,7 @@ for rasts=1:2
 end
     
 if plotstart==200 %aligned to target
-    precuelevel=floor(mean(abs(floor(fullsdf{1}(401:600))-floor(fullsdf{2}(401:600)))));
+    precuelevel=floor(mean((floor(fullsdf{1}(401:600))-floor(fullsdf{2}(401:600)))));
     sigthreshold=floor(2*(floor(std(floor(fullsdf{1}(401:600))-floor(fullsdf{2}(401:600)))))+precuelevel);
     diffsdf=ceil(abs([fullsdf{1}]-[fullsdf{2}]));
 else
@@ -420,21 +425,21 @@ sigdiff=diffsdf>=sigthreshold;
 sigdiffepochs=bwlabel(sigdiff);
 confsigdiffepochs=zeros(size(sigdiffepochs));
 % separate plot 
-figure
-plot(fullsdf{1})
-hold on
-plot(fullsdf{2},'r')
-plot(diffsdf,'g')
-plot(ones(size(diffsdf))*sigthreshold,'m')  
-foo=6*(std(diffsdf(401:600)))+precuelevel;
-plot(ones(size(diffsdf))*foo,'m');
+% figure
+% plot(fullsdf{1})
+% hold on
+% plot(fullsdf{2},'r')
+% plot(diffsdf,'g')
+% plot(ones(size(diffsdf))*sigthreshold,'m')  
+% foo=6*(std(diffsdf(401:600)))+precuelevel;
+% plot(ones(size(diffsdf))*foo,'m');
 
 if max(sigdiffepochs)
     for sdenum=1:max(sigdiffepochs)
         maxdiff=max(diffsdf(sigdiffepochs==sdenum));
         sigdiffdur=sum(sigdiffepochs==sdenum);
         if plotstart==200 %aligned to target
-            if maxdiff>=floor(6*(std(floor(fullsdf{1}(401:600))-floor(fullsdf{2}(401:600)))))+precuelevel && sigdiffdur>=30
+            if maxdiff>=floor(6*(std(floor(fullsdf{1}(401:600))-floor(fullsdf{2}(401:600))))) && sigdiffdur>=30
                 confsigdiffepochs(find(sigdiffepochs==sdenum,1))=1;
             end
         else
@@ -465,6 +470,7 @@ end
 %% condense plot
 % figuresize=getpixelposition(gcf);
 % figuresize(1:2)=[80 167];
+figure(1)
  subplots=findobj(gcf,'Type','axes');
 %  set(subplots,'Units','pixels')
  axespos=cell2mat(get(subplots,'Position'));

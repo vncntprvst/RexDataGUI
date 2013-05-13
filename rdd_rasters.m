@@ -67,9 +67,14 @@ else
 end
 
 if strcmp(aligntype,'stop') % get ssrt
+    try
     [overallMeanSSRT,meanIntSSRT,meanSSRT,~,~,tachomc]=findssrt(name);
     mssrt=[overallMeanSSRT,meanIntSSRT,meanSSRT];
     mssrt=round(nanmean(mssrt(mssrt>40 & mssrt<150)))
+    catch
+        mssrt=NaN;
+        tachomc=NaN;
+    end
     if isnan(mssrt) || ~(mssrt>50 & mssrt<150) %get tachomc and lookup SSRT/tachomc fit. If fit missing, run SSRT_TachoMP
         try
             load([name(1),'_tachoSSRTfit'],'fit');
