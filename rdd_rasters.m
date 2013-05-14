@@ -2,7 +2,7 @@ function [alignedrasters, alignindex, trialindex, alltrigtosac, ...
     allsactotrig, alltrigtovis, allvistotrig,eyehoriz, eyevert, ....
     eyevelocity, amplitudes, peakvels,...
     peakaccs, allonoffcodetime,badidx,allssd] = ...
-    rdd_rasters( name, spikechannel, selclus, aligntocode, noneofcodes,...
+    rdd_rasters( name, spikechannel, aligntocode, noneofcodes,...
     allowbadtrials, alignsacnum, aligntype, collapse, conditions)
 
 % used to be: rdd_rasters( name, spikechannel, anyofcodes, allofcodes, noneofcodes, alignmentcode, allowbadtrials, alignsacnum, oncode, offcode)
@@ -57,7 +57,7 @@ function [alignedrasters, alignindex, trialindex, alltrigtosac, ...
 
 %global allonofftime;
 %global trialonofftime;
-global rexnumtrials;
+global rexnumtrials clustercodes;
 
 tasktype=get(findobj('Tag','taskdisplay'),'String');
 if strcmp(tasktype,'gapstop') || strcmp(tasktype,'base2rem50')
@@ -149,6 +149,10 @@ allvistotrig=[];
 badidx=[];
 allssd=[];
 % allcondtime = [];
+
+%% Which Cluster?
+%%%%%%%%%%%%%%%%%
+selclus = str2double(get(findobj('Tag','whichclus'),'String'));
 
 %  Loop through all of the trials using rex_first_trial and rex_next_trial.
 %  See if each trial has the right codes, and try to align the spike data

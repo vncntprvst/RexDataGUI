@@ -1,4 +1,4 @@
-function [ecodeout, etimeout, spkchan, spk, arate, h, v, start_time, badtrial, curtrialsacInfo] = rdd_rex_trial(name, trial, clus, reload)
+function [ecodeout, etimeout, spkchan, spk, arate, h, v, start_time, badtrial, curtrialsacInfo] = rdd_rex_trial(name, trial, selclus, reload)
 
 % [ecodeout, etimeout, spkchan, spk, arate, h, v, start_time, badtrial] 
 %     = rex_trial(name, trial)
@@ -36,6 +36,7 @@ if nargin<4
     reload=0;
 end
 
+
 ecodeout = [];
 etimeout = [];
 spkchan = 0;
@@ -68,6 +69,14 @@ if trial < 1 || trial > rexnumtrials
     return;
 end;
 
+howmanyclus = double(length(allspk_clus));
+if ~(selclus == round(selclus)) || selclus > howmanyclus || selclus < 1
+    fprintf('Invalis cluster selected. Maximum is %d Setting to cluster 1\n',howmanyclus);
+    set(findobj('Tag','whichclus'),'String','1');
+    selclus = 1;
+end
+
+%%
 % tried using matfile function for each trial, instead of
 % using global variables, but it's slower to acces the data from
 % disk than memory. 
@@ -76,7 +85,8 @@ ecodeout = allcodes(trial,~isnan(allcodes(trial,:)));
 etimeout = alltimes(trial,~isnan(alltimes(trial,:)));
 spkchan = allspkchan(trial);
 %spk = allspk(trial,~isnan(allspk(trial,:)));
-spk = allspk_clus{selclus}(trial,~isnan(allspk_clus(trial,:)));
+temp_allspk = allspk_clus{selclus};
+spk = temp_allspk(trial,~isnan(temp_allspk(trial,:)));
 arate = allrates(trial);
 h = allh(trial,~isnan(allh(trial,:)));
 v = allv(trial,~isnan(allv(trial,:)));

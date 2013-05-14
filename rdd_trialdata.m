@@ -38,7 +38,12 @@ if nargin<3
     reload=0;
 end
 
-[ecodeout, etimeout, spkchan, spk, arate, h, v, start_time, badtrial, curtrialsacInfo] = rdd_rex_trial(rdd_filename, trialnumber, reload);%, rdt_includeaborted);
+global clustercodes
+%% Which Cluster?
+%%%%%%%%%%%%%%%%%
+selclus = str2double(get(findobj('Tag','whichclus'),'String'));
+
+[ecodeout, etimeout, spkchan, spk, arate, h, v, start_time, badtrial, curtrialsacInfo] = rdd_rex_trial(rdd_filename, trialnumber, selclus, reload);%, rdt_includeaborted);
 
     clear noiseIdx ssacbound esacbound last; %newsacstartposition newsacendposition
     
