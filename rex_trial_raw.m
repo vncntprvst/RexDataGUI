@@ -81,16 +81,10 @@ if ~strcmp(currecodename, ecname) || reprocess
 	[ecodes, etimes] = rex_ecodes(name);
 		if replacespikes
             disp('I am about to replace ecodes.');
-            howmanyclus = max(clustercodes);
-            selclus = str2double(get(findobj('Tag','whichclus'),'String'));
-            if ~(selclus == round(selclus)) || selclus > howmanyclus || selclus < 1
-                fprintf('Invalis cluster selected. Maximum is %d Setting to cluster 1\n',howmanyclus);
-                set(findobj('Tag','whichclus'),'String','1');
-                selclus = 1;
-            end
-        [ecodes, etimes] = replaceecodes(ecodes,etimes);
-        %[ecodes, etimes] = replaceecodes(ecodes,etimes);
-        spike2aidx = find(ecodes == -112);
+            howmanyclus = double(max(clustercodes));
+            [ecodes, etimes] = replaceecodes(ecodes,etimes);
+            %[ecodes, etimes] = replaceecodes(ecodes,etimes);
+            spike2aidx = find(ecodes == -112);
         end
 	% trial start and ends
 	trialstart = find(ecodes == 1001);

@@ -188,6 +188,15 @@ fsigma= str2num(get(findobj('Tag','sigmaval'),'String'));
 mstart= str2num(get(findobj('Tag','msbefore'),'String'));
 mstop= str2num(get(findobj('Tag','msafter'),'String'));
 
+%% Which Cluster?
+%%%%%%%%%%%%%%%%%
+
+selclus = str2double(get(findobj('Tag','whichclus'),'String'));
+if ~(selclus == round(selclus)) || selclus > howmanyclus || selclus < 1
+    fprintf('Invalis cluster selected. Maximum is %d Setting to cluster 1\n',howmanyclus);
+    set(findobj('Tag','whichclus'),'String','1');
+    selclus = 1;
+end
 %% include bad trials?
 %%%%%%%%%%%%%%%%%%%%%%%
 includebad= get(findobj('Tag','badtrialsbutton'),'value');
@@ -483,7 +492,7 @@ for cnc=1:numcodes
         numplots=numcodes;
     end
     [rasters,aidx, trialidx, trigtosacs, sactotrigs, trigtovis, vistotrigs, eyeh,eyev,eyevel,...
-        amplitudes,peakvels,peakaccs,allgreyareas,badidx,ssd] = rdd_rasters( rdd_filename, spikechannel,...
+        amplitudes,peakvels,peakaccs,allgreyareas,badidx,ssd] = rdd_rasters( rdd_filename, spikechannel, selclus, ...
         allaligncodes(cnc,:), nonecodes, includebad, alignsacnum, aligntype, collapsecode, adjconditions);
     
     if isempty( rasters )

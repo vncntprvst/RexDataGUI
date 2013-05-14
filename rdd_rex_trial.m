@@ -1,4 +1,4 @@
-function [ecodeout, etimeout, spkchan, spk, arate, h, v, start_time, badtrial, curtrialsacInfo] = rdd_rex_trial(name, trial, reload)
+function [ecodeout, etimeout, spkchan, spk, arate, h, v, start_time, badtrial, curtrialsacInfo] = rdd_rex_trial(name, trial, clus, reload)
 
 % [ecodeout, etimeout, spkchan, spk, arate, h, v, start_time, badtrial] 
 %     = rex_trial(name, trial)
@@ -27,12 +27,12 @@ function [ecodeout, etimeout, spkchan, spk, arate, h, v, start_time, badtrial, c
 %     allcodes alltimes allspkchan allspk allrates ...
 %     allh allv allstart allbad alldeleted allsacstart allsacend...
 %     allcodelen allspklen alleyelen allsaclen saccadeInfo;
-global allcodes alltimes allspkchan allspk allrates ...
+global allcodes alltimes allspkchan allspk allspk_clus allrates ...
         allh allv allstart allbad saccadeInfo;
 global sessiondata rexloadedname rexnumtrials;
 
     
-if nargin<3
+if nargin<4
     reload=0;
 end
 
@@ -75,7 +75,8 @@ end;
 ecodeout = allcodes(trial,~isnan(allcodes(trial,:)));
 etimeout = alltimes(trial,~isnan(alltimes(trial,:)));
 spkchan = allspkchan(trial);
-spk = allspk(trial,~isnan(allspk(trial,:)));
+%spk = allspk(trial,~isnan(allspk(trial,:)));
+spk = allspk_clus{selclus}(trial,~isnan(allspk_clus(trial,:)));
 arate = allrates(trial);
 h = allh(trial,~isnan(allh(trial,:)));
 v = allv(trial,~isnan(allv(trial,:)));
