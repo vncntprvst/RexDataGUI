@@ -51,7 +51,7 @@ badtrial = 1;
 % end
 
 if ~strcmp( name,rexloadedname ) || reload;
-     success = rex_load_processed( name );
+     success = rex_load_processed( name, selclus );
      if ~success
          s = sprintf( 'rex_trial:  could not load the data for %s (cannot find .mat or A and E files).', name );
          disp( s );
@@ -69,17 +69,19 @@ if trial < 1 || trial > rexnumtrials
     return;
 end;
 
-howmanyclus = double(length(allspk_clus));
-if ~(selclus == round(selclus)) || selclus > howmanyclus || selclus < 1
-    fprintf('Invalis cluster selected. Maximum is %d Setting to cluster 1\n',howmanyclus);
-    set(findobj('Tag','whichclus'),'String','1');
-    selclus = 1;
-end
-
 %%
 % tried using matfile function for each trial, instead of
 % using global variables, but it's slower to acces the data from
 % disk than memory. 
+
+% Check if selected cluster (selclus) is greater than number of clusters or
+% otherwise nonsensical
+howmanyclus = double(length(allspk_clus));
+if ~(selclus == round(selclus)) || selclus > howmanyclus || selclus < 1
+    fprintf('Invalid cluster selected. Maximum is %d Setting to cluster 1\n',howmanyclus);
+    set(findobj('Tag','whichclus'),'String','1');
+    selclus = 1;
+end
 
 ecodeout = allcodes(trial,~isnan(allcodes(trial,:)));
 etimeout = alltimes(trial,~isnan(alltimes(trial,:)));

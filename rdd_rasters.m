@@ -57,7 +57,7 @@ function [alignedrasters, alignindex, trialindex, alltrigtosac, ...
 
 %global allonofftime;
 %global trialonofftime;
-global rexnumtrials clustercodes;
+global rexnumtrials;
 
 tasktype=get(findobj('Tag','taskdisplay'),'String');
 if strcmp(tasktype,'gapstop') || strcmp(tasktype,'base2rem50')
