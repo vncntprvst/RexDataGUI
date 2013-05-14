@@ -88,7 +88,7 @@ if ~strcmp(currecodename, ecname) || reprocess
                 set(findobj('Tag','whichclus'),'String','1');
                 selclus = 1;
             end
-        [ecodes, etimes] = replaceecodes(ecodes,etimes,selclus);
+        [ecodes, etimes] = replaceecodes(ecodes,etimes);
         %[ecodes, etimes] = replaceecodes(ecodes,etimes);
         spike2aidx = find(ecodes == -112);
         end
@@ -127,7 +127,6 @@ if ~strcmp(currecodename, ecname) || reprocess
 	trialstarttimes = etimes(trialstart);
 	trialendtimes = etimes(trialend);
     
-	
 end;
 
 %% indices of start and end of this trial
@@ -599,8 +598,8 @@ badtrial = badtt;
 %% spikes!
 sidx = find(currcode > 600 & currcode < 700);
 
-uspk = sort(unique(currcode(sidx)));
-numspkchan = length(uspk);
+uspk = sort(unique(currcode(sidx))); % each different label
+numspkchan = length(uspk); % how many cluster labels?
 
 %% each channels spikes are in a cell in array spk
 if numspkchan == 0

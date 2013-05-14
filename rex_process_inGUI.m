@@ -110,6 +110,15 @@ global spike2times
 spike2times = data.times;
 global clustercodes
 clustercodes = data.codes(:,1);
+howmanyclus = max(clustercodes);
+allspk_clus = cell(howmanyclus,1);
+for a = 1:howmanyclus
+    allspk_clus{a} = [];
+end
+else
+    howmanyclus = 1;
+    allspk_clus = cell(1,1);
+    allspk_clus{1} = [];
 end
 
 next = 1;
@@ -208,6 +217,15 @@ for trialnumber = 1:nt
         end;
         allh = cat_variable_size_row( allh, h );
         allv = cat_variable_size_row( allv, v );
+        
+        for  a = 1:howmanyclus
+            if (a <= length(spk))
+            allspk_clus{a} = cat_variable_size_row(allspk_clus{a},spk{a});
+            else
+            allspk_clus{a} = cat_variable_size_row(allspk_clus{a},0);
+            end
+        end
+        
         %alleyelen( next ) = length( h );
         allstart(next) = start_time;
         %collect absolute times for bad trials, trigger and reward
@@ -667,7 +685,7 @@ rexnumtrials = next -1; %nt;
 allrexnotes = sprintf( '%s, converted on %s\n%d trials\n', rexname, datestr( now ), rexnumtrials );
 disp(allrexnotes);
 save( newname, 'rexname', 'rexnumtrials', 'alloriginaltrialnums', 'allnewtrialnums',...
-    'allcodes', 'alltimes', 'allspkchan', 'allspk', 'allrates', 'allh', 'allv', 'allstart',...
+    'allcodes', 'alltimes', 'allspkchan', 'allspk', 'allspk_clus', 'allrates', 'allh', 'allv', 'allstart',...
     'allbad', 'alltrigin', 'alltrigout', 'allrew', 'alldeleted', 'allsacstart', 'allsacend',...
     'allspklen', 'allsaclen', 'allrexnotes', 'saccadeInfo','outlandmismtch','-v7.3'); %using '-v7.3' input arguments so that matfile loading runs well when retrieving data from file
 %removed allcodelen and alleyelen. allspklen should go too, and allrates be included
