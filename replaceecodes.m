@@ -1,8 +1,5 @@
-function [newecodes, newetimes] = replaceecodes(ecodes,etimes,whichclus,figs)
-if nargin < 3
-    whichclus = 1;
-    figs=0;
-elseif nargin <4
+function [newecodes, newetimes] = replaceecodes(ecodes,etimes,figs)
+if nargin <3
     figs=0;
 end
 
@@ -10,6 +7,8 @@ global triggertimes spike2times clustercodes
 whentrigs = round(triggertimes.*1e3);
 whenspikes = round(spike2times.*1e3);
 whatcodes = clustercodes;
+howmanyclus = double(max(whatcodes));
+
 %% recast in terms of REX times
 starttrigs =  etimes(ecodes == 1001);
 
@@ -71,28 +70,34 @@ end
 
 whenspikes = whenspikes+offset;
 
-%% Isolate cluster
-whenspikes = whenspikes(whatcodes == whichclus);
+%% Remove old spikes
 
-%% Remove old spikes and references to analog
 newecodes = ecodes;
 newetimes = etimes;
 
 newetimes(newecodes == 610) = [];
 newecodes(newecodes == 610) = [];
- 
+
+%% Remove old references to analog
  atimes = newetimes(newecodes == -112);
  newetimes(newecodes == -112) = [];
  newecodes(newecodes == -112) = [];
+ 
+%% Label new clusters
+for a = 1:howmanyclus
+    clus_label = 600+10.*a;
+    thesespikes = whenspikes(whatcodes == a); % Isolate cluster
+    addecodes = clus_label.*ones(length(thesespikes),1);
+    newecodes = [ newecodes; addecodes];
+    newetimes = [ newetimes; thesespikes]; % Add new spikes
+end
 
-%% Add new spikes and sort
-addecodes = 610.*ones(length(whenspikes),1);
-newecodes = [ newecodes; addecodes];
-newetimes = [ newetimes; whenspikes];
+%% sort
 
 [newetimes,ind] = sort(newetimes);
 newecodes = newecodes(ind);
 
+%% add analog references
 addacodes = -112.*ones(length(atimes),1);
 newetimes = [newetimes; atimes];
 newecodes = [newecodes; addacodes];

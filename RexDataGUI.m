@@ -1570,10 +1570,8 @@ function usespike2_Callback(hObject, eventdata, handles)
 global replacespikes %directory slash
 if get(hObject,'Value')
     replacespikes = 1;
-    set(findobj('tag','whichclus'),'Enable','on')
 else
     replacespikes = 0;
-    set(findobj('tag','whichclus'),'Enable','off')
 end
 
 function whichclus_Callback(hObject, eventdata, handles)
