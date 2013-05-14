@@ -81,16 +81,10 @@ if ~strcmp(currecodename, ecname) || reprocess
 	[ecodes, etimes] = rex_ecodes(name);
 		if replacespikes
             disp('I am about to replace ecodes.');
-            howmanyclus = max(clustercodes);
-            selclus = str2double(get(findobj('Tag','whichclus'),'String'));
-            if ~(selclus == round(selclus)) || selclus > howmanyclus || selclus < 1
-                fprintf('Invalis cluster selected. Maximum is %d Setting to cluster 1\n',howmanyclus);
-                set(findobj('Tag','whichclus'),'String','1');
-                selclus = 1;
-            end
-        [ecodes, etimes] = replaceecodes(ecodes,etimes,selclus);
-        %[ecodes, etimes] = replaceecodes(ecodes,etimes);
-        spike2aidx = find(ecodes == -112);
+            howmanyclus = double(max(clustercodes));
+            [ecodes, etimes] = replaceecodes(ecodes,etimes);
+            %[ecodes, etimes] = replaceecodes(ecodes,etimes);
+            spike2aidx = find(ecodes == -112);
         end
 	% trial start and ends
 	trialstart = find(ecodes == 1001);
@@ -127,7 +121,6 @@ if ~strcmp(currecodename, ecname) || reprocess
 	trialstarttimes = etimes(trialstart);
 	trialendtimes = etimes(trialend);
     
-	
 end;
 
 %% indices of start and end of this trial
@@ -599,8 +592,8 @@ badtrial = badtt;
 %% spikes!
 sidx = find(currcode > 600 & currcode < 700);
 
-uspk = sort(unique(currcode(sidx)));
-numspkchan = length(uspk);
+uspk = sort(unique(currcode(sidx))); % each different label
+numspkchan = length(uspk); % how many cluster labels?
 
 %% each channels spikes are in a cell in array spk
 if numspkchan == 0

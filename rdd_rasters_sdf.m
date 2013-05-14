@@ -1,4 +1,4 @@
-function datalign = rdd_rasters_sdf(rdd_filename, trialdirs, plotrasts)
+ function datalign = rdd_rasters_sdf(rdd_filename, trialdirs, plotrasts)
 % rdd_rasters_sdf(rdd_filename, tasktype, trialdirs)
 % display subplots of rasters and sdf overlayed
 
@@ -483,7 +483,7 @@ for cnc=1:numcodes
         numplots=numcodes;
     end
     [rasters,aidx, trialidx, trigtosacs, sactotrigs, trigtovis, vistotrigs, eyeh,eyev,eyevel,...
-        amplitudes,peakvels,peakaccs,allgreyareas,badidx,ssd] = rdd_rasters( rdd_filename, spikechannel,...
+        amplitudes,peakvels,peakaccs,allgreyareas,badidx,ssd] = rdd_rasters( rdd_filename, spikechannel, ...
         allaligncodes(cnc,:), nonecodes, includebad, alignsacnum, aligntype, collapsecode, adjconditions);
     
     if isempty( rasters )

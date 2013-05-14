@@ -1,4 +1,4 @@
-function [ecodeout, etimeout, spkchan, spk, arate, h, v, start_time, badtrial, curtrialsacInfo] = rdd_rex_trial(name, trial, reload)
+function [ecodeout, etimeout, spkchan, spk, arate, h, v, start_time, badtrial, curtrialsacInfo] = rdd_rex_trial(name, trial, selclus, reload)
 
 % [ecodeout, etimeout, spkchan, spk, arate, h, v, start_time, badtrial] 
 %     = rex_trial(name, trial)
@@ -27,14 +27,15 @@ function [ecodeout, etimeout, spkchan, spk, arate, h, v, start_time, badtrial, c
 %     allcodes alltimes allspkchan allspk allrates ...
 %     allh allv allstart allbad alldeleted allsacstart allsacend...
 %     allcodelen allspklen alleyelen allsaclen saccadeInfo;
-global allcodes alltimes allspkchan allspk allrates ...
+global allcodes alltimes allspkchan allspk allspk_clus allrates ...
         allh allv allstart allbad saccadeInfo;
 global sessiondata rexloadedname rexnumtrials;
 
     
-if nargin<3
+if nargin<4
     reload=0;
 end
+
 
 ecodeout = [];
 etimeout = [];
@@ -50,7 +51,7 @@ badtrial = 1;
 % end
 
 if ~strcmp( name,rexloadedname ) || reload;
-     success = rex_load_processed( name );
+     success = rex_load_processed( name, selclus );
      if ~success
          s = sprintf( 'rex_trial:  could not load the data for %s (cannot find .mat or A and E files).', name );
          disp( s );
@@ -68,14 +69,26 @@ if trial < 1 || trial > rexnumtrials
     return;
 end;
 
+%%
 % tried using matfile function for each trial, instead of
 % using global variables, but it's slower to acces the data from
 % disk than memory. 
 
+% Check if selected cluster (selclus) is greater than number of clusters or
+% otherwise nonsensical
+howmanyclus = double(length(allspk_clus));
+if ~(selclus == round(selclus)) || selclus > howmanyclus || selclus < 1
+    fprintf('Invalid cluster selected. Maximum is %d Setting to cluster 1\n',howmanyclus);
+    set(findobj('Tag','whichclus'),'String','1');
+    selclus = 1;
+end
+
 ecodeout = allcodes(trial,~isnan(allcodes(trial,:)));
 etimeout = alltimes(trial,~isnan(alltimes(trial,:)));
 spkchan = allspkchan(trial);
-spk = allspk(trial,~isnan(allspk(trial,:)));
+%spk = allspk(trial,~isnan(allspk(trial,:)));
+temp_allspk = allspk_clus{selclus};
+spk = temp_allspk(trial,~isnan(temp_allspk(trial,:)));
 arate = allrates(trial);
 h = allh(trial,~isnan(allh(trial,:)));
 v = allv(trial,~isnan(allv(trial,:)));

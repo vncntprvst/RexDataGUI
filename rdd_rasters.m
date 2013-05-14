@@ -150,6 +150,10 @@ badidx=[];
 allssd=[];
 % allcondtime = [];
 
+%% Which Cluster?
+%%%%%%%%%%%%%%%%%
+selclus = str2double(get(findobj('Tag','whichclus'),'String'));
+
 %  Loop through all of the trials using rex_first_trial and rex_next_trial.
 %  See if each trial has the right codes, and try to align the spike data
 %  to one of the alignment codes.
@@ -167,7 +171,7 @@ while ~islast
     % rex_first_trial and rex_next_trial).
     
     %[ecodeout, etimeout, spkchan, spk, arate, h, v, start_time, badtrial ] = rex_trial(name, d );
-    [ecodeout, etimeout, spkchan, spk, arate, h, v, start_time, isbadtrial, curtrialsacInfo] = rdd_rex_trial(name, d);%, rdt_includeaborted);
+    [ecodeout, etimeout, spkchan, spk, arate, h, v, start_time, isbadtrial, curtrialsacInfo] = rdd_rex_trial(name, d, selclus);%, rdt_includeaborted);
     
     %if ~isbadtrial
     if logical(sum((ecodeout==2222)))  % had a weird case of a trial with ecode 2222. Don't know what that was. See file S110L4A5_12951
