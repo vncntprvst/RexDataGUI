@@ -836,7 +836,7 @@ if iscell(dataaligned) %multiple alignements
     snames=cellfun(@(x) x.savealignname, arrayfun(@(x) x, dataaligned),'UniformOutput', false);
     savealignname=[dataaligned{1}(1).savealignname(1:end-3) cell2mat(cellfun(@(x) regexp(x,'\w\w\w$','match'),snames(~cellfun('isempty',snames))))];
 else
-    savealignname=dataaligned.savealignname;
+    savealignname = dataaligned.savealignname;
 end
 save(savealignname,'dataaligned','-v7.3');
 

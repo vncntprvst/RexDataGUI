@@ -870,7 +870,8 @@ if strcmp(tasktype,'optiloc')
 else
     parsename=unique({datalign.alignlabel});
 end
-datalign(1).savealignname = cat( 2, directory, 'processed',slash, 'aligned',slash, rdd_filename, '_', cell2mat(parsename));
+selclus = get(findobj('Tag','whichclus'),'String');
+datalign(1).savealignname = cat( 2, directory, 'processed',slash, 'aligned',slash, rdd_filename, '_', cell2mat(parsename),'_c',selclus);
 
 % comparison of raster from different methods
 %    figure(21);
