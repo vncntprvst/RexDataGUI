@@ -34,7 +34,8 @@ rast_starttrigs = double(ismember(rast_starttrigs, starttrigs));
 rast_whentrigs = double(ismember(rast_whentrigs, whentrigs));
 
 [corr_vec,lag_range] = xcorr(rast_starttrigs,rast_whentrigs);
-offset = keep_min_rex - keep_min_spk2 + lag_range(corr_vec == max(corr_vec));
+where_max = lag_range(corr_vec == max(corr_vec));
+offset = keep_min_rex - keep_min_spk2 + where_max(1);
 
 if figs
     fprintf('There are %d triggers\n',length(whentrigs));
