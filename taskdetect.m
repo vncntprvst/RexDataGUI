@@ -21,12 +21,14 @@ if iscell(curtasktype)
     curtasktype=cell2mat(curtasktype);
 end
 
+firstind = find(codes(1, :) >= 4000 & codes(1, :) < 8000, 1); % finds the index of the basecode, only works if basecode is dropped at same index in each row
+
 alltasktypes={'vg_saccades','base2rem50','memguided','st_saccades','gapstop','gapsac','delayedsac','optiloc','tokens','fixation','twoafc'};
 %fsttlecode=floor(allcodes(1,2)/10)*10;
 if size(codes,1)>1 %for a full file of ecodes
-    ecodetypes=unique(floor(codes(:,2)/10)*10); %gives away the different ecode if mixed task
+    ecodetypes=unique(floor(codes(:,firstind)/10)*10); %gives away the different ecode if mixed task
 else %if called during a trial, there's only one line
-    ecodetypes=floor(codes(2)/10)*10;
+    ecodetypes=floor(codes(firstind)/10)*10;
 end
 
 if ecodetypes(1) < 4000; %twoafc task has basecode (4050) dropped as codes(5), not codes(2)
