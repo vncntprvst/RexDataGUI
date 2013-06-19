@@ -47,7 +47,7 @@ if figs
     
     figure(99);clf;
 
-    whentrigs = whentrigs + lag_range(corr_vec == max(corr_vec)) + keep_min_rex - 1;
+    whentrigs = whentrigs + where_max(1) + keep_min_rex - 1;
     
     plot(whentrigs,whentrigs.^0,'rd','MarkerSize',20); % red diamonds: spike2 triggers
     hold on;
@@ -69,7 +69,7 @@ if figs
 
 end
 
-whenspikes = whenspikes+offset;
+whenspikes = whenspikes + offset;
 
 %% Remove old spikes
 
