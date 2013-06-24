@@ -1485,7 +1485,8 @@ else
     exportfn=filename;
     exporttsk=tasktype;
 end
-exportfigname=[directory,'figures\',exportfn,'_',exporttsk,'_',alignment];
+selclus = get(findobj('Tag','whichclus'),'String');
+exportfigname=[directory,'figures\',exportfn,'_',exporttsk,'_',alignment,'cl_',selclus];
 exportfig=figure('color','white','position',figuresize);
 for k=1:length(subplots)
     copyobj(subplots(k),exportfig);
