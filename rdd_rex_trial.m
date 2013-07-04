@@ -77,7 +77,7 @@ end;
 % Check if selected cluster (selclus) is greater than number of clusters or
 % otherwise nonsensical
 howmanyclus = double(length(allspk_clus));
-if ~(selclus == round(selclus)) || selclus > howmanyclus || selclus < 1
+if howmanyclus && (~(selclus == round(selclus)) || selclus > howmanyclus || selclus < 1)
     fprintf('Invalid cluster selected. Maximum is %d Setting to cluster 1\n',howmanyclus);
     set(findobj('Tag','whichclus'),'String','1');
     selclus = 1;
@@ -86,9 +86,12 @@ end
 ecodeout = allcodes(trial,~isnan(allcodes(trial,:)));
 etimeout = alltimes(trial,~isnan(alltimes(trial,:)));
 spkchan = allspkchan(trial);
-%spk = allspk(trial,~isnan(allspk(trial,:)));
-temp_allspk = allspk_clus{selclus};
-spk = temp_allspk(trial,~isnan(temp_allspk(trial,:)));
+if howmanyclus
+    temp_allspk = allspk_clus{selclus};
+    spk = temp_allspk(trial,~isnan(temp_allspk(trial,:)));
+else
+    spk = allspk(trial,~isnan(allspk(trial,:)));
+end
 arate = allrates(trial);
 h = allh(trial,~isnan(allh(trial,:)));
 v = allv(trial,~isnan(allv(trial,:)));
