@@ -923,7 +923,9 @@ if strcmp(archst, 'maci64')
     elseif strcmp(name, 'Frank')
         directory = '/Users/Frank/Desktop/monkeylab/data/';
     elseif strcmp(name, 'zacharyabzug')
-        directory = '/Users/zacharyabzug/Desktop/zackdata/';
+        directory = '/Users/zacharyabzug/Desktop/zackdata/';    
+    elseif strcmp(name, 'zmabzug')
+        directory = '/Users/zmabzug/Desktop/zackdata/';
     end
     slash = '/';
 elseif strcmp(archst, 'win32') || strcmp(archst, 'win64')
