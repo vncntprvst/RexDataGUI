@@ -46,7 +46,7 @@ global directory;
     end
 
     %% get SSRT used for alignement
-        [overallMeanSSRT,meanIntSSRT,meanSSRT,~,~,tachomc]=findssrt(recname);
+        [overallMeanSSRT,meanIntSSRT,meanSSRT,~,~,tachomc,tachowidth]=findssrt(recname,1);
     mssrt=[overallMeanSSRT,meanIntSSRT,meanSSRT];
     mssrt=round(nanmean(mssrt(mssrt>40 & mssrt<150)));
     if isnan(mssrt) || ~(mssrt>50 & mssrt<150) %get tachomc and lookup SSRT/tachomc fit. If fit missing, run SSRT_TachoMP
@@ -205,8 +205,8 @@ for i=1:numrast
             elseif strcmp(datalign(i).alignlabel,'tgt') && latmach
                 plot(sactimes(j),j-0.5,'kd','MarkerSize', 3,'LineWidth', 1.5)
             elseif strcmp(datalign(i).alignlabel,'stop_cancel') && latmach
-                plot(alignidx+ssdvalues(ssdtotsidx(end))-start,j-0.5,'k^','MarkerSize', 2,'LineWidth', 1)
-                plot(alignidx+ssdvalues(ssdtotsidx(end))+round(mssrt)-start,j-0.5,'kv','MarkerSize', 2,'LineWidth', 1)
+                plot(alignidx+ssdvalues(ssdtotsidx(end))-start,j-0.5,'k^','MarkerSize', 2,'LineWidth', 1) % SSD
+                plot(alignidx+ssdvalues(ssdtotsidx(end))+round(mssrt)-start,j-0.5,'kv','MarkerSize', 2,'LineWidth', 1) % SSD +SSRT
             end
         end  
     end
@@ -222,6 +222,13 @@ for i=1:numrast
 %     end
     
     set(hrastplot(i),'xlim',[1 length(start:stop)]);
+    if strcmp(datalign(i).alignlabel,'stop_cancel') && latmach
+    axes(hrastplot(i));
+            patch([repmat((alignidx+ssdvalues(ssdtotsidx(end))+round(mssrt)-start)-tachowidth/2,1,2)...
+                repmat((alignidx+ssdvalues(ssdtotsidx(end))+round(mssrt)-start)+tachowidth/2,1,2)], ...
+            [[0 size(rasters,1)] fliplr([0 size(rasters,1)])], ...
+            [0 0 0 0],[1 0 0],'EdgeColor','none','FaceAlpha',0.5);
+    end
     axis(gca, 'off'); % axis tight sets the axis limits to the range of the data.
 
     
@@ -518,5 +525,6 @@ exportfigname=[directory,'figures\cmd\',recname,'_',comp];
 newpos =  get(gcf,'Position')/60;
 set(gcf,'PaperUnits','inches','PaperPosition',newpos);
 print(gcf, '-dpng', '-noui', '-opengl','-r600', exportfigname);
-
+plot2svg([exportfigname,'.svg'],gcf, 'png');
+delete(gcf);
 end
