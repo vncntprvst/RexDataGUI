@@ -625,6 +625,10 @@ if strcmp(aligntype,'stop') % make additional analysis
         disp_cmd(rdd_filename,datalign,1);
      end
         plotrasts=0;
+elseif strcmp(aligntype,'ecode') % may need task-specific analysis
+    if adjconditions(1)==465 %2AFC rule target 
+        disp_2AFC(rdd_filename,datalign);
+    end
 end
 
 %% Now plotting rasters
