@@ -619,10 +619,10 @@ end
 if strcmp(aligntype,'stop') % make additional analysis
      if ATPbuttonnb==6 % saccade
 %     [p_cancellation,h_cancellation] = cmd_wilco_cancellation(rdd_filename,datalign);
-        disp_cmd(rdd_filename,datalign,0);
+        disp_cmd(rdd_filename,datalign,0,0); %0, 0: latmatch, no; triplot, no
 %     disp_cmd(rdd_filename,datalign,1);
     elseif ATPbuttonnb==7 % target
-        disp_cmd(rdd_filename,datalign,1);
+        disp_cmd(rdd_filename,datalign,1,1);
      end
         plotrasts=0;
 elseif strcmp(aligntype,'ecode') % may need task-specific analysis
