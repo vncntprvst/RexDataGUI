@@ -203,6 +203,10 @@ else
     spikechannel = 1;
 end
 
+if get(findobj('Tag','usespike2'),'value'); % using data from Spike2 processing
+ spikechannel = str2double(get(findobj('Tag','whichclus'),'String'));
+end
+
 %% Fusing task type and direction into ecode
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if (ecodealign(1))<1000 % if only three numbers
@@ -627,7 +631,7 @@ if strcmp(aligntype,'stop') % make additional analysis
         plotrasts=0;
 elseif strcmp(aligntype,'ecode') % may need task-specific analysis
     if adjconditions(1)==465 %2AFC rule target 
-        disp_2AFC(rdd_filename,datalign);
+        disp_2AFC(rdd_filename,datalign,spikechannel);
     end
     plotrasts=0;
 end
@@ -879,8 +883,8 @@ if strcmp(tasktype,'optiloc')
 else
     parsename=unique({datalign.alignlabel});
 end
-selclus = get(findobj('Tag','whichclus'),'String');
-datalign(1).savealignname = cat( 2, directory, 'processed',slash, 'aligned',slash, rdd_filename, '_', cell2mat(parsename),'_c',selclus);
+
+datalign(1).savealignname = cat( 2, directory, 'processed',slash, 'aligned',slash, rdd_filename, '_', cell2mat(parsename),'_c',spikechannel);
 
 % comparison of raster from different methods
 %    figure(21);

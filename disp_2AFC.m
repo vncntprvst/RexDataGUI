@@ -1,4 +1,4 @@
-function disp_2AFC(recname,datalign)
+function disp_2AFC(recname,datalign,selclus)
 % Called from Rex Data GUI when using Ecodes 465 as alignement (collapse
 % all directions together when doing that)
 % This function will sort data to compare either:
@@ -24,7 +24,7 @@ numsubplot=numrast/2+numrast; %dividing the panel in two compartments with unequ
 hrastplot=nan(4,1);
 sdfplot=nan(4,1);
 
-fsigma=20; %smoothing
+fsigma=50; %smoothing
 cc=lines(numrast); %colors
 
 alignidx=datalign.alignidx;
@@ -212,7 +212,8 @@ for fignum=1:2
     subplots=findobj(AFCplots(fignum),'Type','axes');
     axespos=cell2mat(get(subplots,'Position'));
     figtitleh = title(subplots(find(axespos(:,2)==max(axespos(:,2)),1)),...
-        ['File ',recname,' Alignment: ',aligntype{2*fignum-1},' vs ',aligntype{2*fignum}]);
+        ['File ',recname,' Clus',num2str(selclus),' Alignment: ',aligntype{2*fignum-1},' vs ',...
+        aligntype{2*fignum}]);
     set(figtitleh,'Interpreter','none');
     
     %% condense plot
@@ -225,7 +226,7 @@ for fignum=1:2
     % to check if file already exists and open it:
     % eval(['!' exportfigname '.pdf']);
     comp=fnaligntype{fignum};
-    exportfigname=[directory,'figures\2AFC\',recname,'_',comp];
+    exportfigname=[directory,'figures\2AFC\',recname,'_',comp,'_Clus',num2str(selclus)];
     %basic png fig:
     newpos =  get(AFCplots(fignum),'Position')/60;
     set(AFCplots(fignum),'PaperUnits','inches','PaperPosition',newpos);
