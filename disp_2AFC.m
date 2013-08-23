@@ -25,6 +25,7 @@ cc=lines(numrast);
 numsubplot=numrast/2+numrast; %dividing the panel in two compartments with unequal number of subplots (2/4)
 
 alignidx=datalign.alignidx;
+addevents=datalign.allgreyareas;
 plotstart=400; %200 ms before alignment time
 plotstop=1000; %600 ms after alignment time
 
@@ -97,7 +98,8 @@ for dataset=1:numrast
             isnantrial(rastlines)=1;
             spiketimes(find(isnan(rasters(rastlines,start:stop))))=0; %#ok<FNDSB>
         else
-            plot([spiketimes;spiketimes],[ones(size(spiketimes))*rastlines;ones(size(spiketimes))*rastlines-1],'color',cc(dataset,:),'LineStyle','-');
+            plot([spiketimes;spiketimes],[ones(size(spiketimes))*rastlines;ones(size(spiketimes))*rastlines-1],...
+                'color',cc(dataset,:),'LineStyle','-','LineWidth',1.5);
         end
     end
     set(hrastplot(dataset),'xlim',[1 length(start:stop)]);
@@ -129,15 +131,17 @@ for dataset=1:numrast
             [[0 currylim(2)] fliplr([0 currylim(2)])], ...
             [0 0 0 0],[1 0 0],'EdgeColor','none','FaceAlpha',0.5);
     end
-   
     
-    %% keep sdf 
+    
+    %% keep sdf
     allsdf{dataset}=sdf;
     
 end
 
-%% moving rasters if needed
+%% last adjustments and save
 for fignum=1:2
+    
+    %% moving rasters if needed
     if numrast==1
         allrastpos=get(hrastplot(2*fignum-1:2*fignum),'position');
         sdfpos=get(sdfplot(2*fignum-1:2*fignum),'position');
@@ -145,23 +149,24 @@ for fignum=1:2
         allrastpos=cell2mat(get(hrastplot(2*fignum-1:2*fignum),'position'));
         sdfpos=cell2mat(get(sdfplot(2*fignum-1:2*fignum),'position'));
     end
-        
-        disttosdf=allrastpos(1,2)-(sdfpos(1,2)+sdfpos(1,4));
-        allrastpos(:,2)=allrastpos(:,2)-disttosdf/2;
-  
-    if numrast>1
-        allrastpos=mat2cell(allrastpos,ones(1,size(allrastpos,1))); %reconversion to cell .. un brin penible
-        set(hrastplot(2*fignum-1:2*fignum),{'position'},allrastpos);
-    else
-        set(hrastplot(2*fignum-1:2*fignum),'position',allrastpos);
+    
+    disttosdf=allrastpos(1,2)-(sdfpos(1,2)+sdfpos(1,4));
+    if disttosdf>0.2
+        allrastpos(:,2)=allrastpos(:,2)-disttosdf/3;
+        if numrast>1
+            allrastpos=mat2cell(allrastpos,ones(1,size(allrastpos,1))); %reconversion to cell .. un brin penible
+            set(hrastplot(2*fignum-1:2*fignum),{'position'},allrastpos);
+        else
+            set(hrastplot(2*fignum-1:2*fignum),'position',allrastpos);
+        end
     end
     
-    % plot a legend in SDF graph
+    %% plot a legend in SDF graph
     
     hlegdir = legend(sdflines(2*fignum-1:2*fignum), aligntype(2*fignum-1:2*fignum)','Location','NorthEast');
     set(hlegdir,'Interpreter','none', 'Box', 'off','LineWidth',1.5,'FontName','calibri','FontSize',9);
     
-    % setting sdf plot y axis
+    %% setting sdf plot y axis
     ylimdata=get(findobj(sdfplot(fignum*2),'Type','line'),'YDATA');
     if ~iscell(ylimdata)
         ylimdata={ylimdata};
@@ -187,14 +192,12 @@ for fignum=1:2
     figtitleh = title(subplots(find(axespos(:,2)==max(axespos(:,2)),1)),...
         ['File ',recname,' Alignment: ',aligntype{2*fignum-1},' vs ',aligntype{2*fignum}]);
     set(figtitleh,'Interpreter','none');
-    % tpos=get(figtitleh,'position');
-    set(figtitleh,'position',[700 50 1]);
     
     %% condense plot
-%     set(subplots,'Units','pixels');
-%     figuresize=getpixelposition(AFCplots(fignum));
-%     figuresize(4)=figuresize(4)*0.9;
-%     set(gcf,'position',figuresize);
+    %     set(subplots,'Units','pixels');
+    %     figuresize=getpixelposition(AFCplots(fignum));
+    %     figuresize(4)=figuresize(4)*0.9;
+    %     set(gcf,'position',figuresize);
     
     %% save figure
     % to check if file already exists and open it:
@@ -206,7 +209,7 @@ for fignum=1:2
     set(AFCplots(fignum),'PaperUnits','inches','PaperPosition',newpos);
     print(AFCplots(fignum), '-dpng', '-noui', '-opengl','-r600', exportfigname);
     %vector graphics if needed
-%     plot2svg([exportfigname,'.svg'],AFCplots(fignum), 'png');
+    %     plot2svg([exportfigname,'.svg'],AFCplots(fignum), 'png');
     %delete(gcf); %if batch processing
 end
 end
