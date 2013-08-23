@@ -1,10 +1,12 @@
 function disp_2AFC(recname,datalign)
-% Called from Rex Data GUI when using Ecodes 465 as alignement
+% Called from Rex Data GUI when using Ecodes 465 as alignement (collapse
+% all directions together when doing that)
 % This function will sort data to compare either:
 %   - self-selected vs instructed
-%   - rule 1 vs rule 0
+%   - rule 0 vs rule 1
 % (will do sub-comparisons later)
-%  We keep only trials where rule-selecting saccade was contralateral
+%  We keep only trials where rule-selecting saccade was contralateral (see
+%  line 45 or so)
 % 8/22/2013 - VP
 
 global directory;
@@ -15,19 +17,20 @@ AFCplots=nan(2,1);
 
 allsdf=cell(4,1);
 allrast=cell(4,1);
-% alleventstimes=cell(4,1);
+alladdevents=cell(4,1);
 
-numrast=4; %ploting two sets of data per figure
+numrast=4; %Two figures, ploting two sets of data per figure
+numsubplot=numrast/2+numrast; %dividing the panel in two compartments with unequal number of subplots (2/4)
 hrastplot=nan(4,1);
 sdfplot=nan(4,1);
-fsigma=20;
-cc=lines(numrast);
-numsubplot=numrast/2+numrast; %dividing the panel in two compartments with unequal number of subplots (2/4)
+
+fsigma=20; %smoothing
+cc=lines(numrast); %colors
 
 alignidx=datalign.alignidx;
 addevents=datalign.allgreyareas;
-plotstart=400; %200 ms before alignment time
-plotstop=1000; %600 ms after alignment time
+plotstart=400; %400 ms before alignment time
+plotstop=1000; %1000 ms after alignment time
 
 aligntype={'Self-selected','Instructed','Rule 0','Rule 1'}; % set alignment types for legend
 fnaligntype={'SSvsINS','R0vsR1'};
@@ -38,24 +41,30 @@ if size(logical(datalign.bad),2)~=size(allbad(~logical(allbad)),2)
     return
 end
 allgoodcodes=allcodes(~logical(allbad),:); %#ok<NODEF>
-% allgoodtimes=alltimes(~logical(allbad),:); %#ok<NODEF>
+allgoodtimes=alltimes(~logical(allbad),:); %#ok<NODEF>
 
 %% keeping trials with contralateral rule-selecting saccade
 crsrasts=datalign.rasters(allgoodcodes(:,17)==1901,:); % rasters
 crscodes=allgoodcodes(allgoodcodes(:,17)==1901,:); % ecodes
+crsaddevents=addevents(allgoodcodes(:,17)==1901); % additional events
 
 %% sort trials: SS vs INS
 allrast{1}=crsrasts(crscodes(:,2)==1700,:); % Self-selected trials
 allrast{2}=crsrasts(crscodes(:,2)==1701,:); % Instructed trials
 
+alladdevents{1}=crsaddevents(crscodes(:,2)==1700); % Self-selected trials
+alladdevents{2}=crsaddevents(crscodes(:,2)==1701); % Instructed trials
+
 %% sort trials: Rule 0  vs Rule 1
 allrast{3}=crsrasts(crscodes(:,14)==1800,:); % Rule 0 trials
 allrast{4}=crsrasts(crscodes(:,14)==1801,:); % Rule 1 trials
 
+alladdevents{3}=crsaddevents(crscodes(:,14)==1800); % Rule 0 trials
+alladdevents{4}=crsaddevents(crscodes(:,14)==1801); % Rule 1 trials
 
 %% plotting figures: first instructions then rules
 for fignum=1:2
-    AFCplots(fignum)=figure('color','white','position',[826 49  524   636]);
+    AFCplots(fignum)=figure('color','white','position',[20   300  524   636]);
 end
 for dataset=1:numrast
     
@@ -66,9 +75,12 @@ for dataset=1:numrast
         figure(AFCplots(2)); % Rule 0 vs Rule 1 figure
     end
     
+    % get rasters for that particular dataset
     rasters=allrast{dataset};
-    %    eventstimes
+    % and events time
+    eventstimes=alladdevents{dataset};
     
+    % start and stop times
     start=alignidx - plotstart;
     stop=alignidx + plotstop;
     
@@ -78,6 +90,14 @@ for dataset=1:numrast
     if stop > length(rasters)
         stop = length(rasters);
     end
+    
+    % sorting rasters according saccade times
+        sactimes=cellfun(@(x) x(2,1),eventstimes)-start;      %saccade onset (505y)
+        eyefixtimes=cellfun(@(x) x(1,2),eventstimes)-start;   %eye in fixation pt window (585y),
+                                                        %using hacked tgtoffcode
+        [sactimes,sortidx]=sort(sactimes,'ascend');
+        eyefixtimes=eyefixtimes(sortidx);
+        rasters=rasters(sortidx,:);                                                
     
     %% Plot rasters
     hrastplot(dataset)=subplot(numsubplot,1,2-mod(dataset,2),'Layer','top', ...
@@ -101,6 +121,8 @@ for dataset=1:numrast
             plot([spiketimes;spiketimes],[ones(size(spiketimes))*rastlines;ones(size(spiketimes))*rastlines-1],...
                 'color',cc(dataset,:),'LineStyle','-','LineWidth',1.5);
         end
+        plot(sactimes(rastlines),rastlines-0.5,'kd','MarkerSize', 3,'LineWidth', 0.7)
+        plot(eyefixtimes(rastlines),rastlines-0.5,'kx','MarkerSize', 3,'LineWidth', 0.7)
     end
     set(hrastplot(dataset),'xlim',[1 length(start:stop)]);
     axis(gca, 'off'); % axis tight sets the axis limits to the range of the data.
@@ -210,6 +232,6 @@ for fignum=1:2
     print(AFCplots(fignum), '-dpng', '-noui', '-opengl','-r600', exportfigname);
     %vector graphics if needed
     %     plot2svg([exportfigname,'.svg'],AFCplots(fignum), 'png');
-    %delete(gcf); %if batch processing
+    delete(AFCplots(fignum)); %if needed
 end
 end

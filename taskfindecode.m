@@ -59,7 +59,7 @@ elseif strcmp(tasktype,'twoafc') % need to add additional ecodes
     fixcode=425;
     fixoffcode=485;
     tgtcode=465;
-    tgtoffcode=585; %none but hacking this code: eye in fix pt window
+    tgtoffcode=585; %1997 but hacking this code: eye in fix pt window
     saccode=505;
     errcode2=17386;
 elseif strcmp(tasktype,'fixation')

@@ -235,8 +235,8 @@ if ~isempty(curtasktype) && ~sum(find(codes==17385))
             ecodesacstart=8;
             ecodesacend=9;
          case 'twoafc'
-            ecodecueon=9;
-            ecodesacstart=11;
-            ecodesacend=13;
+            ecodecueon=8;
+            ecodesacstart=10;
+            ecodesacend=12;
     end
 end
