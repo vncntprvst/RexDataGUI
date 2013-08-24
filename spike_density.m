@@ -18,7 +18,7 @@ for row = 1:size(train,1)
     gek2s2 = exp( -1 * (k .* k ) / (fixedsigma * fixedsigma ) );
     gdenom = sqrt( 2 * pi * fixedsigma * fixedsigma );
     gksigma = (1 / gdenom) * gek2s2;
-    sdfconv = conv( train, gksigma );
+    sdfconv = conv( train(row, :), gksigma );
     center = ceil( length( sdfconv ) / 2 );
     sdf = sdfconv( center - halflen:(center+halflen-1) );
 

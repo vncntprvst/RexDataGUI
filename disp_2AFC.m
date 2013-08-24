@@ -1,4 +1,4 @@
-function disp_2AFC(recname,datalign,selclus)
+function disp_2AFC(recname,datalign,selclus,aligncode)
 % Called from Rex Data GUI when using Ecodes 465 as alignement (collapse
 % all directions together when doing that)
 % This function will sort data to compare either:
@@ -13,6 +13,12 @@ global directory;
 load(recname,'allbad','allcodes','alltimes');  % saccadeInfo probably not needed
 
 %% preallocs and definitions
+if aligncode == 465;
+    alignname = 'RuleStim';
+end
+if aligncode == 585;
+    alignname = 'Refix';
+end
 AFCplots=nan(2,1);
 
 allsdf=cell(4,1);
@@ -144,6 +150,12 @@ for dataset=1:numrast
     
     % Calculating standard errors
     sdfgrid = repmat(sdf, size(rasters, 1), 1);
+    indsdf = spike_density(rasters(~isnantrial, start-fsigma:stop+fsigma), fsigma);
+    indsdf = indsdf(:, fsigma+1:end-fsigma);
+    sd = sqrt(sum((indsdf-sdfgrid).^2)./size(rasters, 1))./sqrt(size(rasters, 1));
+
+    sdlines(dataset, 1)=plot(sdf+sd, ':', 'Color',cc(dataset, :), 'LineWidth', 1);
+    sdlines(dataset, 2)=plot(sdf-sd, ':', 'Color',cc(dataset, :), 'LineWidth', 1);
     
     axis(gca,'tight');
     box off;
@@ -216,7 +228,7 @@ for fignum=1:2
     axespos=cell2mat(get(subplots,'Position'));
     figtitleh = title(subplots(find(axespos(:,2)==max(axespos(:,2)),1)),...
         ['File ',recname,' Clus',num2str(selclus),' Alignment: ',aligntype{2*fignum-1},' vs ',...
-        aligntype{2*fignum}]);
+        aligntype{2*fignum}, ' Aligned at ', alignname]);
     set(figtitleh,'Interpreter','none');
     
     %% condense plot
@@ -229,7 +241,7 @@ for fignum=1:2
     % to check if file already exists and open it:
     % eval(['!' exportfigname '.pdf']);
     comp=fnaligntype{fignum};
-    exportfigname=[directory,'figures\2AFC\',recname,'_',comp,'_Clus',num2str(selclus), '_', num2str(alignidx)];
+    exportfigname=[directory,'figures\2AFC\',recname,'_',comp,'_Clus',num2str(selclus), '_', alignname];
     %basic png fig:
     newpos =  get(AFCplots(fignum),'Position')/60;
     set(AFCplots(fignum),'PaperUnits','inches','PaperPosition',newpos);
