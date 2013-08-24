@@ -630,7 +630,7 @@ if strcmp(aligntype,'stop') % make additional analysis
      end
         plotrasts=0;
 elseif strcmp(aligntype,'ecode') % may need task-specific analysis
-    if adjconditions(1)==465 %2AFC rule target 
+    if adjconditions(1)==465 || 585 %2AFC rule target 
         disp_2AFC(rdd_filename,datalign,spikechannel);
     end
     plotrasts=0;

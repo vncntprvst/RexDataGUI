@@ -142,6 +142,9 @@ for dataset=1:numrast
     
     sdflines(dataset)=plot(sdf,'Color',cc(dataset,:),'LineWidth',1.8);
     
+    % Calculating standard errors
+    sdfgrid = repmat(sdf, size(rasters, 1), 1);
+    
     axis(gca,'tight');
     box off;
     set(gca,'Color','white','TickDir','out','FontName','calibri','FontSize',8);
@@ -226,7 +229,7 @@ for fignum=1:2
     % to check if file already exists and open it:
     % eval(['!' exportfigname '.pdf']);
     comp=fnaligntype{fignum};
-    exportfigname=[directory,'figures\2AFC\',recname,'_',comp,'_Clus',num2str(selclus)];
+    exportfigname=[directory,'figures\2AFC\',recname,'_',comp,'_Clus',num2str(selclus), '_', num2str(alignidx)];
     %basic png fig:
     newpos =  get(AFCplots(fignum),'Position')/60;
     set(AFCplots(fignum),'PaperUnits','inches','PaperPosition',newpos);
