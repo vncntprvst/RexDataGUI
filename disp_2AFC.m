@@ -12,6 +12,8 @@ function disp_2AFC(recname,datalign,selclus,aligncode)
 global directory;
 load(recname,'allbad','allcodes','alltimes');  % saccadeInfo probably not needed
 
+pool = 1; % set to 0 for contralateral only, 1 for ipsi + contra
+
 %% preallocs and definitions
 if aligncode == 465;
     alignname = 'RuleStim';
@@ -53,6 +55,12 @@ allgoodtimes=alltimes(~logical(allbad),:); %#ok<NODEF>
 crsrasts=datalign.rasters(allgoodcodes(:,17)==1901,:); % rasters
 crscodes=allgoodcodes(allgoodcodes(:,17)==1901,:); % ecodes
 crsaddevents=addevents(allgoodcodes(:,17)==1901); % additional events
+
+if pool
+    crsrasts=datalign.rasters;
+    crscodes=allgoodcodes;
+    crsaddevents=addevents;
+end
 
 %% sort trials: SS vs INS
 allrast{1}=crsrasts(crscodes(:,2)==1700,:); % Self-selected trials
@@ -224,11 +232,17 @@ for fignum=1:2
     %% quantify differential activity
     
     %% set title
+    poolstr1 = [];
+    poolstr2 = [];
+    if pool
+        poolstr1 = ', pooled';
+        poolstr2 = '_pooled';
+    end
     subplots=findobj(AFCplots(fignum),'Type','axes');
     axespos=cell2mat(get(subplots,'Position'));
     figtitleh = title(subplots(find(axespos(:,2)==max(axespos(:,2)),1)),...
         ['File ',recname,' Clus',num2str(selclus),' Alignment: ',aligntype{2*fignum-1},' vs ',...
-        aligntype{2*fignum}, ' Aligned at ', alignname]);
+        aligntype{2*fignum}, ' Aligned at ', alignname, poolstr1]);
     set(figtitleh,'Interpreter','none');
     
     %% condense plot
@@ -241,7 +255,7 @@ for fignum=1:2
     % to check if file already exists and open it:
     % eval(['!' exportfigname '.pdf']);
     comp=fnaligntype{fignum};
-    exportfigname=[directory,'figures\2AFC\',recname,'_',comp,'_Clus',num2str(selclus), '_', alignname];
+    exportfigname=[directory,'figures\2AFC\',recname,'_',comp,'_Clus',num2str(selclus), '_', alignname, poolstr2];
     %basic png fig:
     newpos =  get(AFCplots(fignum),'Position')/60;
     set(AFCplots(fignum),'PaperUnits','inches','PaperPosition',newpos);
@@ -250,4 +264,7 @@ for fignum=1:2
     %     plot2svg([exportfigname,'.svg'],AFCplots(fignum), 'png');
     delete(AFCplots(fignum)); %if needed
 end
+
+sdfsave = [directory, 'processed\Shuffles\',recname,'_Clus', num2str(selclus), '_',alignname, poolstr2, '_SDFs'];
+save(sdfsave, allsdf);
 end
