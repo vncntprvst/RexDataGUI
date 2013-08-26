@@ -157,10 +157,10 @@ for dataset=1:numrast
     sdflines(dataset)=plot(sdf,'Color',cc(dataset,:),'LineWidth',1.8);
     
     % Calculating standard errors
-    sdfgrid = repmat(sdf, size(rasters, 1), 1);
+    sdfgrid = repmat(sdf, size(rasters(~isnantrial, start-fsigma:stop+fsigma), 1), 1);
     indsdf = spike_density(rasters(~isnantrial, start-fsigma:stop+fsigma), fsigma);
     indsdf = indsdf(:, fsigma+1:end-fsigma);
-    sd = sqrt(sum((indsdf-sdfgrid).^2)./size(rasters, 1))./sqrt(size(rasters, 1));
+    sd = sqrt(sum((indsdf-sdfgrid).^2)./size(rasters(~isnantrial, start-fsigma:stop+fsigma), 1))./sqrt(size(rasters(~isnantrial, start-fsigma:stop+fsigma), 1));
 
     sdlines(dataset, 1)=plot(sdf+sd, ':', 'Color',cc(dataset, :), 'LineWidth', 1);
     sdlines(dataset, 2)=plot(sdf-sd, ':', 'Color',cc(dataset, :), 'LineWidth', 1);
