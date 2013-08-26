@@ -12,7 +12,13 @@ function disp_2AFC(recname,datalign,selclus,aligncode)
 global directory;
 load(recname,'allbad','allcodes','alltimes');  % saccadeInfo probably not needed
 
-pool = 1; % set to 0 for contralateral only, 1 for ipsi + contra
+pool = 0; % set to 0 for contralateral only, 1 for ipsi + contra
+poolstr1 = [];
+poolstr2 = [];
+if pool
+    poolstr1 = ', pooled';
+    poolstr2 = '_pooled';
+end
 
 %% preallocs and definitions
 if aligncode == 465;
@@ -232,12 +238,6 @@ for fignum=1:2
     %% quantify differential activity
     
     %% set title
-    poolstr1 = [];
-    poolstr2 = [];
-    if pool
-        poolstr1 = ', pooled';
-        poolstr2 = '_pooled';
-    end
     subplots=findobj(AFCplots(fignum),'Type','axes');
     axespos=cell2mat(get(subplots,'Position'));
     figtitleh = title(subplots(find(axespos(:,2)==max(axespos(:,2)),1)),...
@@ -265,6 +265,6 @@ for fignum=1:2
     delete(AFCplots(fignum)); %if needed
 end
 
-sdfsave = [directory, 'processed\Shuffles\',recname,'_Clus', num2str(selclus), '_',alignname, poolstr2, '_SDFs'];
-save(sdfsave, allsdf);
+sdfsave = [directory, '/SDFs/',recname,'_Clus', num2str(selclus), '_',alignname, poolstr2, '_SDFs'];
+save(sdfsave, 'allsdf');
 end
