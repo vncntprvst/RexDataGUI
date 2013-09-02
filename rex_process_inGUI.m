@@ -592,6 +592,8 @@ if logical(regexpi(rawdir(1:end-1),'Rigel$'))
         procdir = '/Users/zacharyabzug/Desktop/zackdata/processed/Rigel/';
     elseif strcmp(getenv('USER'),'zmabzug')
         procdir = '/Users/zmabzug/Desktop/zackdata/processed/Rigel/';
+    elseif strcmp(getenv('username'),'The Doctor')
+        procdir = 'C:\Users\The Doctor\Data\processed\Rigel\';
     else
         procdir='B:\data\Recordings\processed\Rigel\';
     end
@@ -619,6 +621,8 @@ elseif logical(regexpi(rawdir(1:end-1),'Sixx$'))
         procdir = '/Users/zacharyabzug/Desktop/zackdata/processed/Sixx/';  
     elseif strcmp(getenv('USER'),'zmabzug')
         procdir = '/Users/zmabzug/Desktop/zackdata/processed/Sixx/'; 
+    elseif strcmp(getenv('username'),'The Doctor')
+        procdir = 'C:\Users\The Doctor\Data\processed\Sixx\';
     else
         procdir='B:\data\Recordings\processed\Sixx\';
     end
@@ -645,7 +649,9 @@ elseif logical(regexpi(rawdir(1:end-1),'Hilda$'))
     elseif strcmp(getenv('USER'),'zacharyabzug')
         procdir = '/Users/zacharyabzug/Desktop/zackdata/processed/Hilda/'; 
     elseif strcmp(getenv('USER'),'zmabzug')
-        procdir = '/Users/zmabzug/Desktop/zackdata/processed/Hilda/';
+        procdir = '/Users/zmabzug/Desktop/zackdata/processed/Hilda/'; 
+    elseif strcmp(getenv('username'),'The Doctor')
+        procdir = 'C:\Users\The Doctor\Data\processed\Hilda\';
     else
         procdir='B:\data\Recordings\processed\Hilda\';
     end
@@ -673,6 +679,8 @@ elseif logical(regexpi(rawdir(1:end-1),'Shuffles$'))
         procdir = '/Users/zacharyabzug/Desktop/zackdata/processed/Shuffles/';  
     elseif strcmp(getenv('USER'),'zmabzug')
         procdir = '/Users/zmabzug/Desktop/zackdata/processed/Shuffles/'; 
+    elseif strcmp(getenv('username'),'The Doctor')
+        procdir = 'C:\Users\The Doctor\Data\processed\Shuffles\'; 
     else
         procdir='B:\data\Recordings\processed\Shuffles\';
     end
