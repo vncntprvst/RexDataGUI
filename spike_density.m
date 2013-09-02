@@ -6,8 +6,8 @@ function [allsdf, gksigma] = spike_density( train, fixedsigma )
 %  if train is 1000Hz (each point is a millisecond) then [fixedsigma] will
 %  be in milliseconds.  By default the sigma is 5.
 %
-%  [allsdf] is the smoothed output, i.e. the spike density function.
-%  I'm not sure what the output [gksigma] is.
+%  allsdf is the smoothed output, i.e. the spike density function.
+%  gksigma is the gaussian kernel.
 
 allsdf = zeros(size(train));
 
@@ -15,8 +15,8 @@ for row = 1:size(train,1)
     numdata = size(train,2);
     halflen = ceil( numdata / 2 );
     k = -halflen:halflen;
-    gek2s2 = exp( -1 * (k .* k ) / (fixedsigma * fixedsigma ) );
-    gdenom = sqrt( 2 * pi * fixedsigma * fixedsigma );
+    gek2s2 = exp( -1 * (k .^ 2 ) / (2 * fixedsigma ^ 2) );
+    gdenom = sqrt( 2 * pi * fixedsigma ^ 2 );
     gksigma = (1 / gdenom) * gek2s2;
     sdfconv = conv( train(row, :), gksigma );
     center = ceil( length( sdfconv ) / 2 );

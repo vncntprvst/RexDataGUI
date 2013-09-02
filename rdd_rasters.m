@@ -475,10 +475,10 @@ while ~islast
                     else %older recordings without trigger code
                         %                         triggercode=0;
                         trigtosac=aligntime-etimeout(1)-1; %in case there is a trigger channel available in the SH recording
-                        trigtovis=max(visevents(visevents<trigtosac)); %the latest visual event occuring before alignment time
+                        trigtovis=max(visevents(visevents<=trigtosac)); %the latest visual event occuring before alignment time
                         if find(ecodeout==1030) %good trial
                             sactotrig=etimeout(find(ecodeout==1030,1))+1-aligntime;%1ms between reward code and valve opening
-                            vistotrig=etimeout(find(ecodeout==1030,1))+1-max(visevents(visevents<trigtosac)+etimeout(1)+1);
+                            vistotrig=etimeout(find(ecodeout==1030,1))+1-max(visevents(visevents<=trigtosac)+etimeout(1)+1);
                         else %wrong trial
                             sactotrig=NaN;
                             vistotrig=NaN;
