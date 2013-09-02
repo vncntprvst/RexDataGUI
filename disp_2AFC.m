@@ -265,6 +265,6 @@ for fignum=1:2
     delete(AFCplots(fignum)); %if needed
 end
 
-sdfsave = [directory, '/SDFs/',recname,'_Clus', num2str(selclus), '_',alignname, poolstr2, '_SDFs'];
+sdfsave = [directory, 'SDFs/',recname,'_Clus', num2str(selclus), '_',alignname, poolstr2, '_SDFs'];
 save(sdfsave, 'allsdf');
 end
