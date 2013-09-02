@@ -884,7 +884,7 @@ else
     parsename=unique({datalign.alignlabel});
 end
 
-datalign(1).savealignname = cat( 2, directory, 'processed',slash, 'aligned',slash, rdd_filename, '_', cell2mat(parsename),'_c',spikechannel);
+datalign(1).savealignname = cat( 2, directory, 'processed',slash, 'aligned',slash, rdd_filename, '_', cell2mat(parsename),'_c',num2str(spikechannel));
 
 % comparison of raster from different methods
 %    figure(21);
