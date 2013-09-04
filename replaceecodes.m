@@ -86,7 +86,7 @@ newecodes(newecodes == 610) = [];
  
 %% Label new clusters
 for a = 1:howmanyclus
-    clus_label = 600+10.*a;
+    clus_label = 600+a;
     thesespikes = whenspikes(whatcodes == a); % Isolate cluster
     addecodes = clus_label.*ones(length(thesespikes),1);
     newecodes = [ newecodes; addecodes];
