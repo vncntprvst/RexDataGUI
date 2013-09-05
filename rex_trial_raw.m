@@ -74,12 +74,6 @@ end;
 ecname = [name,'_ecodes'];
 etname = [name,'_etimes'];
 
-if replacespikes
-    howmanyclus = double(max(clustercodes));
-else
-    howmanyclus = 1;
-end
-
 if ~strcmp(currecodename, ecname) || reprocess
 	currecodename = ecname;
     
@@ -87,10 +81,11 @@ if ~strcmp(currecodename, ecname) || reprocess
 	[ecodes, etimes] = rex_ecodes(name);
 		if replacespikes
             disp('I am about to replace ecodes.');
+            howmanyclus = double(max(clustercodes));
             [ecodes, etimes] = replaceecodes(ecodes,etimes,0);
             %[ecodes, etimes] = replaceecodes(ecodes,etimes);
             spike2aidx = find(ecodes == -112);
-        end        
+        end
 	% trial start and ends
 	trialstart = find(ecodes == 1001);
 	
@@ -595,13 +590,11 @@ start_time = analog_time;
 badtrial = badtt;
 
 %% spikes!
+sidx = find(currcode > 600 & currcode < 700);
 
-%sidx = find(currcode > 600 & currcode < 700);
-%uspk = sort(unique(currcode(sidx))); % each different label
-% numspkchan = length(uspk); % how many cluster labels?
+uspk = sort(unique(currcode(sidx))); % each different label
+numspkchan = length(uspk); % how many cluster labels?
 
-numspkchan = howmanyclus;
-uspk = ones(1,howmanyclus).*600+[1:howmanyclus];
 %% each channels spikes are in a cell in array spk
 if numspkchan == 0
     spkchan = [];
@@ -609,11 +602,7 @@ if numspkchan == 0
 else
     for s = 1:numspkchan
         spkchan(s) = uspk(s);
-        if find(currcode == uspk(s))
         spk{s} = currtime(find(currcode == uspk(s))) - analog_time;
-        else
-        spk{s} = nan(1,1);
-        end
     end;  % looping through spike channels
 end;
 
