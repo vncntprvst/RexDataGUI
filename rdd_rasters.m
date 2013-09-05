@@ -2,7 +2,7 @@ function [alignedrasters, alignindex, trialindex, alltrigtosac, ...
     allsactotrig, alltrigtovis, allvistotrig,eyehoriz, eyevert, ....
     eyevelocity, amplitudes, peakvels,...
     peakaccs, allonoffcodetime,badidx,allssd] = ...
-    rdd_rasters( name, spikechannel, aligntocode, noneofcodes,...
+    rdd_rasters( name, selclus, aligntocode, noneofcodes,...
     allowbadtrials, alignsacnum, aligntype, collapse, conditions)
 
 % used to be: rdd_rasters( name, spikechannel, anyofcodes, allofcodes, noneofcodes, alignmentcode, allowbadtrials, alignsacnum, oncode, offcode)
@@ -60,6 +60,7 @@ function [alignedrasters, alignindex, trialindex, alltrigtosac, ...
 global rexnumtrials;
 
 tasktype=get(findobj('Tag','taskdisplay'),'String');
+
 if strcmp(tasktype,'gapstop') || strcmp(tasktype,'base2rem50')
     multicodetask=1;
 else
@@ -68,9 +69,9 @@ end
 
 if strcmp(aligntype,'stop') % get ssrt
     try
-    [overallMeanSSRT,meanIntSSRT,meanSSRT,~,~,tachomc]=findssrt(name);
-    mssrt=[overallMeanSSRT,meanIntSSRT,meanSSRT];
-    mssrt=round(nanmean(mssrt(mssrt>40 & mssrt<150)))
+        [overallMeanSSRT,meanIntSSRT,meanSSRT,~,~,tachomc]=findssrt(name);
+        mssrt=[overallMeanSSRT,meanIntSSRT,meanSSRT];
+        mssrt=round(nanmean(mssrt(mssrt>40 & mssrt<150)))
     catch
         mssrt=NaN;
         tachomc=NaN;
@@ -82,7 +83,7 @@ if strcmp(aligntype,'stop') % get ssrt
             %SSRT_TachoMP
         end
         %get tacho curve midpoint
-            tachomc=mean(tachomc);
+        tachomc=mean(tachomc);
         if tachomc<20 || isnan(tachomc)
             tachomc=20;
         end
@@ -98,6 +99,12 @@ if strcmp(aligntype,'stop') % get ssrt
             mssrt=round(mssrt/3+foSSRT*2/3)
         end
     end
+    
+    % get 1st align type (sac or tgt)
+    AlignTimePanelH=findobj('Tag','aligntimepanel');%align time panel handle
+    ATPSelectedButton= get(get(AlignTimePanelH,'SelectedObject'),'Tag');%selected button's tag
+    ATPbuttonnb=find(strcmp(ATPSelectedButton,get(findall(AlignTimePanelH),'Tag')));%converted to handle tag list's number
+    
 end
 
 [~, ~, tgtcode, tgtoffcode] = taskfindecode(tasktype);
@@ -152,7 +159,8 @@ allssd=[];
 
 %% Which Cluster?
 %%%%%%%%%%%%%%%%%
-selclus = str2double(get(findobj('Tag','whichclus'),'String'));
+% selclus = str2double(get(findobj('Tag','whichclus'),'String')); %
+% unnecessary now: spikechannel and selclus are now one and the same
 
 %  Loop through all of the trials using rex_first_trial and rex_next_trial.
 %  See if each trial has the right codes, and try to align the spike data
@@ -299,27 +307,31 @@ while ~islast
                 
                 % If it's a stop alignement code, two different cases
                 if strcmp(aligntype,'stop')
-                        if find(ecodeout==1503)
-                            ncecode=10;
-                        else
-                            ncecode=9;
-                        end
+                    if find(ecodeout==1503)
+                        ncecode=10;
+                    else
+                        ncecode=9;
+                    end
                     if isbadtrial % non-canceled stop trial
-                        % for non-canceled stop trial, align to saccade
-                        % initiation
-                        if ecodeout(ncecode)==17385 || ecodeout(ncecode)==16386
-                            ampsacofint=[];
-                            nwsacstart=cat(1,curtrialsacInfo.starttime);
-                            sacofint=nwsacstart>etimeout(7);
-                            ampsacofint=zeros(1,length(sacofint));
-                            for k=find(sacofint,1):length(sacofint)
-                                ampsacofint(1,k)=abs(getfield(curtrialsacInfo, {k}, 'amplitude'));
+                        if ATPbuttonnb==6
+                            % for non-canceled stop trial, align to saccade
+                            % initiation
+                            if ecodeout(ncecode)==17385 || ecodeout(ncecode)==16386
+                                ampsacofint=[];
+                                nwsacstart=cat(1,curtrialsacInfo.starttime);
+                                sacofint=nwsacstart>etimeout(7);
+                                ampsacofint=zeros(1,length(sacofint));
+                                for k=find(sacofint,1):length(sacofint)
+                                    ampsacofint(1,k)=abs(getfield(curtrialsacInfo, {k}, 'amplitude'));
+                                end
+                                if sum(sacofint)
+                                    aligntime=getfield(curtrialsacInfo, {find(ampsacofint>3,1)}, 'starttime');
+                                else
+                                    alignmentfound = 0;
+                                end
                             end
-                            if sum(sacofint)
-                                aligntime=getfield(curtrialsacInfo, {find(ampsacofint>3,1)}, 'starttime');
-                            else
-                                alignmentfound = 0;
-                            end
+                        elseif ATPbuttonnb==7
+                            aligntime = etimeout(find(floor(ecodeout./10) == 487,1)) * (arate / 1000);
                         end
                     else
                         % for successfully canceled stop trials, align to stop
@@ -463,10 +475,10 @@ while ~islast
                     else %older recordings without trigger code
                         %                         triggercode=0;
                         trigtosac=aligntime-etimeout(1)-1; %in case there is a trigger channel available in the SH recording
-                        trigtovis=max(visevents(visevents<trigtosac)); %the latest visual event occuring before alignment time
+                        trigtovis=max(visevents(visevents<=trigtosac)); %the latest visual event occuring before alignment time
                         if find(ecodeout==1030) %good trial
                             sactotrig=etimeout(find(ecodeout==1030,1))+1-aligntime;%1ms between reward code and valve opening
-                            vistotrig=etimeout(find(ecodeout==1030,1))+1-max(visevents(visevents<trigtosac)+etimeout(1)+1);
+                            vistotrig=etimeout(find(ecodeout==1030,1))+1-max(visevents(visevents<=trigtosac)+etimeout(1)+1);
                         else %wrong trial
                             sactotrig=NaN;
                             vistotrig=NaN;

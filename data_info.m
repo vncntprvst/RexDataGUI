@@ -72,4 +72,7 @@ set(findobj('Tag','taskdisplay'),'String',curtasktype);
 
 %findings all used directions from ecodes
 trialtypes=allcodes(:,2);
+if trialtypes(1) < 4000; % twoafc drops the basecode in allcodes(:, 4)
+    trialtypes = allcodes(:, 4);
+end
 trialdirs=unique(trialtypes-floor(trialtypes./10)*10);

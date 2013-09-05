@@ -34,7 +34,8 @@ rast_starttrigs = double(ismember(rast_starttrigs, starttrigs));
 rast_whentrigs = double(ismember(rast_whentrigs, whentrigs));
 
 [corr_vec,lag_range] = xcorr(rast_starttrigs,rast_whentrigs);
-offset = keep_min_rex - keep_min_spk2 + lag_range(corr_vec == max(corr_vec));
+where_max = lag_range(corr_vec == max(corr_vec));
+offset = keep_min_rex - keep_min_spk2 + where_max(1);
 
 if figs
     fprintf('There are %d triggers\n',length(whentrigs));
@@ -46,7 +47,7 @@ if figs
     
     figure(99);clf;
 
-    whentrigs = whentrigs + lag_range(corr_vec == max(corr_vec)) + keep_min_rex - 1;
+    whentrigs = whentrigs + where_max(1) + keep_min_rex - 1;
     
     plot(whentrigs,whentrigs.^0,'rd','MarkerSize',20); % red diamonds: spike2 triggers
     hold on;
@@ -68,7 +69,7 @@ if figs
 
 end
 
-whenspikes = whenspikes+offset;
+whenspikes = whenspikes + offset;
 
 %% Remove old spikes
 
@@ -85,7 +86,7 @@ newecodes(newecodes == 610) = [];
  
 %% Label new clusters
 for a = 1:howmanyclus
-    clus_label = 600+10.*a;
+    clus_label = 600+a;
     thesespikes = whenspikes(whatcodes == a); % Isolate cluster
     addecodes = clus_label.*ones(length(thesespikes),1);
     newecodes = [ newecodes; addecodes];
