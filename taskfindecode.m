@@ -54,6 +54,14 @@ elseif strcmp(tasktype,'tokens')
     tgtcode=tokcode;
     tgtoffcode=103; %none
     saccode=466;
+elseif strcmp(tasktype,'twoafc') % need to add additional ecodes
+    basecode=405;
+    fixcode=425;
+    fixoffcode=485;
+    tgtcode=465;
+    tgtoffcode=585; %1997 but hacking this code: eye in fix pt window
+    saccode=505;
+    errcode2=17386;
 elseif strcmp(tasktype,'fixation')
     basecode=401;
     fixcode=421;

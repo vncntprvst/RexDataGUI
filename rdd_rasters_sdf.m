@@ -203,6 +203,10 @@ else
     spikechannel = 1;
 end
 
+if get(findobj('Tag','usespike2'),'value'); % using data from Spike2 processing
+ spikechannel = str2double(get(findobj('Tag','whichclus'),'String'));
+end
+
 %% Fusing task type and direction into ecode
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if (ecodealign(1))<1000 % if only three numbers
@@ -619,12 +623,17 @@ end
 if strcmp(aligntype,'stop') % make additional analysis
      if ATPbuttonnb==6 % saccade
 %     [p_cancellation,h_cancellation] = cmd_wilco_cancellation(rdd_filename,datalign);
-        disp_cmd(rdd_filename,datalign,0);
+        disp_cmd(rdd_filename,datalign,0,0); %0, 0: latmatch, no; triplot, no
 %     disp_cmd(rdd_filename,datalign,1);
     elseif ATPbuttonnb==7 % target
-        disp_cmd(rdd_filename,datalign,1);
+        disp_cmd(rdd_filename,datalign,1,1);
      end
         plotrasts=0;
+elseif strcmp(aligntype,'ecode') % may need task-specific analysis
+    if adjconditions(1)==465 %2AFC rule target 
+        disp_2AFC(rdd_filename,datalign,spikechannel,ecodealign);
+    end
+    plotrasts=0;
 end
 
 %% Now plotting rasters
@@ -845,7 +854,7 @@ if plotrasts
         sumall=sum(rasters(~isnantrial{cnp},start:stop));
         sdf=spike_density(sumall,fsigma)./length(find(~isnantrial{cnp})); %instead of number of trials
         %pdf = probability_density( sumall, fsigma ) ./ trials;
-        
+        maxes(cnp) = max(sdf);
         axes(sdfploth(cnp));
         %         sdfaxh = axes('Position',get(rasterh(cnp),'Position'),...
         %            'XAxisLocation','top',...
@@ -862,6 +871,10 @@ if plotrasts
             [0 0 0 0],[1 0 0],'EdgeColor','none','FaceAlpha',0.5);
         
     end
+    for yind = 1:numplots;
+        axes(sdfploth(yind));
+        ylim([0 1.5*max(maxes)])
+    end
 end
 
 %% last item: save name
@@ -870,8 +883,8 @@ if strcmp(tasktype,'optiloc')
 else
     parsename=unique({datalign.alignlabel});
 end
-selclus = get(findobj('Tag','whichclus'),'String');
-datalign(1).savealignname = cat( 2, directory, 'processed',slash, 'aligned',slash, rdd_filename, '_', cell2mat(parsename),'_c',selclus);
+
+datalign(1).savealignname = cat( 2, directory, 'processed',slash, 'aligned',slash, rdd_filename, '_', cell2mat(parsename),'_c',num2str(spikechannel));
 
 % comparison of raster from different methods
 %    figure(21);
