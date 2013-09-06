@@ -613,6 +613,7 @@ else
         spk{s} = currtime(find(currcode == uspk(s))) - analog_time;
         else
         spk{s} = nan(1,1);
+        %spk{s} = 0;
         end
     end;  % looping through spike channels
 end;
