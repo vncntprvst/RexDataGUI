@@ -157,7 +157,9 @@ for dataset=1:numrast
     else
         sumall=sum(rasters(~isnantrial,start-fsigma:stop+fsigma));
     end
-    sdf=spike_density(sumall,fsigma)./length(find(~isnantrial)); %instead of number of trials
+%     sdf=spike_density(sumall,fsigma)./length(find(~isnantrial)); %instead
+%     of number of trials
+    sdf=fullgauss_filtconv(sumall,fsigma,0)./length(find(~isnantrial)).*1000;  %.*1000 to convert to spk/s
     sdf=sdf(fsigma+1:end-fsigma);
     
     sdflines(dataset)=plot(sdf,'Color',cc(dataset,:),'LineWidth',1.8);
@@ -165,6 +167,7 @@ for dataset=1:numrast
     % Calculating standard errors
     sdfgrid = repmat(sdf, size(rasters(~isnantrial, start-fsigma:stop+fsigma), 1), 1);
     indsdf = spike_density(rasters(~isnantrial, start-fsigma:stop+fsigma), fsigma);
+%     indsdf = fullgauss_filtconv(rasters(~isnantrial, start-fsigma:stop+fsigma), fsigma,0);
     indsdf = indsdf(:, fsigma+1:end-fsigma);
     sd = sqrt(sum((indsdf-sdfgrid).^2)./size(rasters(~isnantrial, start-fsigma:stop+fsigma), 1))./sqrt(size(rasters(~isnantrial, start-fsigma:stop+fsigma), 1));
 

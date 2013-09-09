@@ -283,14 +283,14 @@ while ~islast
                     %restriction window) after relevant ecode (ecodesacstart-1)
                     if ~logical(sum(ampsacofint))
                         alignmentfound = 0;
-                    elseif logical(sum(ampsacofint>3))
+                    elseif logical(sum(ampsacofint>2.5))
                         if strcmp(aligntype,'sac') || strcmp(aligntype,'error2')
-                            aligntime=getfield(curtrialsacInfo, {find(ampsacofint>3,1)}, 'starttime');
-                            sacamp=getfield(curtrialsacInfo, {find(ampsacofint>3,1)}, 'amplitude');
-                            sacpeakpeakvel=getfield(curtrialsacInfo, {find(ampsacofint>3,1)}, 'peakVelocity');
-                            sacpeakacc=getfield(curtrialsacInfo, {find(ampsacofint>3,1)}, 'peakAcceleration');
-                        elseif strcmp(aligntype,'corsac')  &&  find(ampsacofint>3,1)+1<=length(ampsacofint)% If we are looking for the n-th saccade after the main one
-                            nextgoodsac=find(ampsacofint>3,1)+1;
+                            aligntime=getfield(curtrialsacInfo, {find(ampsacofint>2.5,1)}, 'starttime');
+                            sacamp=getfield(curtrialsacInfo, {find(ampsacofint>2.5,1)}, 'amplitude');
+                            sacpeakpeakvel=getfield(curtrialsacInfo, {find(ampsacofint>2.5,1)}, 'peakVelocity');
+                            sacpeakacc=getfield(curtrialsacInfo, {find(ampsacofint>2.5,1)}, 'peakAcceleration');
+                        elseif strcmp(aligntype,'corsac')  &&  find(ampsacofint>2.5,1)+1<=length(ampsacofint)% If we are looking for the n-th saccade after the main one
+                            nextgoodsac=find(ampsacofint>2.5,1)+1;
                             aligntime=getfield(curtrialsacInfo, {nextgoodsac}, 'starttime');
                             if aligntime>etimeout(ecodeout==1030)
                                 alignmentfound = 0; % secondary saccade after reward. Not considered corrective saccade
@@ -325,7 +325,7 @@ while ~islast
                                     ampsacofint(1,k)=abs(getfield(curtrialsacInfo, {k}, 'amplitude'));
                                 end
                                 if sum(sacofint)
-                                    aligntime=getfield(curtrialsacInfo, {find(ampsacofint>3,1)}, 'starttime');
+                                    aligntime=getfield(curtrialsacInfo, {find(ampsacofint>2.5,1)}, 'starttime');
                                 else
                                     alignmentfound = 0;
                                 end
@@ -463,10 +463,10 @@ while ~islast
                     if find(ecodeout==1502) % Trigger code
                         %                         triggercode=1;
                         trigtosac=aligntime-etimeout(1)-1; %trigger code is 1ms before 1001
-                        trigtovis=max(visevents(visevents<trigtosac)); %the latest visual event occuring before alignment time
+                        trigtovis=max(visevents(visevents<=trigtosac)); %the latest visual event occuring before alignment time
                         if find(ecodeout==1030)
                             sactotrig=etimeout(find(ecodeout==1502,1))+1-aligntime; %the second trigger channel is actually the start of the next trial
-                            vistotrig=etimeout(find(ecodeout==1502,1))+1-max(visevents(visevents<trigtosac)+etimeout(1)+1);
+                            vistotrig=etimeout(find(ecodeout==1502,1))+1-max(visevents(visevents<=trigtosac)+etimeout(1)+1);
                         else
                             sactotrig=NaN;
                             vistotrig=NaN;

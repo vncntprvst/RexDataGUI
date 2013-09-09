@@ -626,7 +626,7 @@ if strcmp(aligntype,'stop') % make additional analysis
         disp_cmd(rdd_filename,datalign,0,0); %0, 0: latmatch, no; triplot, no
 %     disp_cmd(rdd_filename,datalign,1);
     elseif ATPbuttonnb==7 % target
-        disp_cmd(rdd_filename,datalign,1,1);
+        disp_cmd(rdd_filename,datalign,1,0); % keep triplot off until fixed
      end
         plotrasts=0;
 elseif strcmp(aligntype,'ecode') % may need task-specific analysis

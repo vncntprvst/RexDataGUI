@@ -427,9 +427,9 @@ for trialnumber = 1:nt
         for k=find(sacofint,1):length(sacofint)
             ampsacofint(1,k)=abs(getfield(saccadeInfo, {next,k}, 'amplitude'));
         end
-        if exist('ampsacofint') & find(ampsacofint>2,1)
-            goodsac(next)=find(ampsacofint>2,1);
-            saccadeInfo(next,find(ampsacofint>2,1)).latency=saccadeInfo(next,find(ampsacofint>2,1)).starttime-etimeout(ecodecueon);
+        if exist('ampsacofint') & find(ampsacofint>2.5,1)
+            goodsac(next)=find(ampsacofint>2.5,1);
+            saccadeInfo(next,find(ampsacofint>2.5,1)).latency=saccadeInfo(next,find(ampsacofint>2.5,1)).starttime-etimeout(ecodecueon);
         end
         
         if logical(sum(length(etimeout)<ecodesacstart+2)) || ~codefound || ~isfield(saccadeInfo, 'starttime') || isempty(saccadeInfo(next).starttime)

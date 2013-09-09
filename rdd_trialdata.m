@@ -238,7 +238,7 @@ AccThreshold = 0.1;          %if acc > 100000 degrees/s^2, that is 0.1 deg/ms^2,
             if strcmp(tasktype,'vg_saccades') %to replace with optiloc when changes have been made
                 winlim=1.5;
             else
-                winlim=3;
+                winlim=2.5;
             end
             %start time of first saccade greater than 3 degrees (typical
             %restriction window) after relevant ecode (ecodesacstart-1)

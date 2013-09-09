@@ -246,14 +246,15 @@ for i=1:numrast
     %sdfh = axes('Position', [.15 .65 .2 .2], 'Layer','top');
     title('Spike Density Function','FontName','calibri','FontSize',11);
     hold on;
-    if size(rasters,1)==1 %if only one good trial
+    if size(rasters,1)<5 %if only one good trial
         %sumall=rasters(~isnantrial,start-fsigma:stop+fsigma);
         %useless plotting this
         sumall=NaN;
     else
         sumall=sum(rasters(~isnantrial,start-fsigma:stop+fsigma));
     end
-    sdf=spike_density(sumall,fsigma)./length(find(~isnantrial)); %instead of number of trials
+%     sdf=spike_density(sumall,fsigma)./length(find(~isnantrial)); %instead of number of trials
+    sdf=fullgauss_filtconv(sumall,fsigma,0)./length(find(~isnantrial)).*1000;
     sdf=sdf(fsigma+1:end-fsigma);
     
     plot(sdf,'Color',cc(i,:),'LineWidth',1.8);
@@ -405,7 +406,8 @@ for rasts=1:2
         rasters(rastunit,isnan(rasters(rastunit,:)))=0;
         allbaseline(rastunit,:)=rasters(rastunit, viscuetimes(rastunit)-200-fsigma:viscuetimes(rastunit)-1+fsigma);
     end
-    precuesdf{rasts}=spike_density(nansum(allbaseline),fsigma)./size(rasters,1);
+%     precuesdf{rasts}=spike_density(nansum(allbaseline),fsigma)./size(rasters,1);
+    precuesdf{rasts}=fullgauss_filtconv(nansum(allbaseline),fsigma,0)./size(rasters,1).*1000;
     precuesdf{rasts}=precuesdf{rasts}(fsigma+1:end-fsigma);
     
    if size(allrast{rasts},1)>1 %if more than one good trial
@@ -423,7 +425,8 @@ for rasts=1:2
            end
        end
    end
-    fullsdf{rasts}=spike_density(sumall,fsigma)./size(rasters,1);
+%     fullsdf{rasts}=spike_density(sumall,fsigma)./size(rasters,1);
+    fullsdf{rasts}=fullgauss_filtconv(sumall,fsigma,0)./size(rasters,1).*1000;
     fullsdf{rasts}=fullsdf{rasts}(fsigma+1:end-fsigma);
 end
     
@@ -465,18 +468,18 @@ if max(sigdiffepochs)
         end
     end
     if max(confsigdiffepochs)
-        figure(1)
+        figure(cmdplots)
         if plotstart==200 %aligned to target
             plot(sdfplot,find(confsigdiffepochs)-400,ones(1,sum(confsigdiffepochs))*10,'xr','markersize',12);
             if sum(find(confsigdiffepochs)-400>alignidx+ssdvalues(ssdtotsidx(end))-start &...
                 find(confsigdiffepochs)-400<alignidx+ssdvalues(ssdtotsidx(end))+round(mssrt)-start)
-                    cancellation_time=alignidx+ssdvalues(ssdtotsidx(end))+round(mssrt)-start-(find(confsigdiffepochs,1)-400)
-                    cancellation_strengh=max(diffsdf(sigdiffepochs==sigdiffepochs(find(confsigdiffepochs,1)))) 
+                    cancellation_time=alignidx+ssdvalues(ssdtotsidx(end))+round(mssrt)-start-(find(confsigdiffepochs,1)-400);
+                    cancellation_strengh=max(diffsdf(sigdiffepochs==sigdiffepochs(find(confsigdiffepochs,1))));
             end
         else
             plot(sdfplot,find(confsigdiffepochs),ones(1,sum(confsigdiffepochs))*10,'xr','markersize',12);
             if sum(find(confsigdiffepochs)>alignidx-start)
-                    error_time=find(confsigdiffepochs(alignidx-start:end),1)-1
+                    error_time=find(confsigdiffepochs(alignidx-start:end),1)-1;
 %                     cancellation_strengh
             end
         end
@@ -486,8 +489,8 @@ end
 %% condense plot
 % figuresize=getpixelposition(gcf);
 % figuresize(1:2)=[80 167];
-figure(1)
- subplots=findobj(gcf,'Type','axes');
+% figure(1)
+ subplots=findobj(cmdplots,'Type','axes');
 %  set(subplots,'Units','pixels')
  axespos=cell2mat(get(subplots,'Position'));
  figtitleh = title(subplots(find(axespos(:,2)==max(axespos(:,2)),1)),...
@@ -534,6 +537,6 @@ exportfigname=[directory,'figures\cmd\',recname,'_',comp];
 newpos =  get(gcf,'Position')/60;
 set(gcf,'PaperUnits','inches','PaperPosition',newpos);
 print(gcf, '-dpng', '-noui', '-opengl','-r600', exportfigname);
-plot2svg([exportfigname,'.svg'],gcf, 'png');
+% plot2svg([exportfigname,'.svg'],gcf, 'png');
 delete(gcf);
 end
