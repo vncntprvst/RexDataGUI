@@ -203,7 +203,7 @@ else
     spikechannel = 1;
 end
 
-if get(findobj('Tag','usespike2'),'value'); % using data from Spike2 processing
+if get(findobj('Tag','usespike2'),'value')||strcmp(rdd_filename(end-2:end),'Sp2'); % using data from Spike2 processing
  spikechannel = str2double(get(findobj('Tag','whichclus'),'String'));
 end
 
