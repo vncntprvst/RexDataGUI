@@ -639,6 +639,7 @@ end
 %% Now plotting rasters
 %%%%%%%%%%%%%%%%%%%%%%
 if plotrasts
+    tic;
     figure(gcf);
     %some housekeeping: removing previous uigridcontainers
     childlist=get(findobj('Tag','rasterspanel'),'children');    
@@ -771,16 +772,18 @@ if plotrasts
         end
         
         %% plotting rasters trial by trial
-        for j=1:size(rasters,1)
-            spiketimes=find(rasters(j,start:stop)); %converting from a matrix representation to a time collection, within selected time range
-            if isnan(sum(rasters(j,start:stop)))
-                isnantrial{cnp}(j)=1;
-                 spiketimes(find(isnan(rasters(j,start:stop))))=0; %#ok<FNDSB>
-            end
-            rastploth=plot([spiketimes;spiketimes],[ones(size(spiketimes))*j;ones(size(spiketimes))*j-1],'k-');
-            uistack(rastploth,'down');
-            %plot([spiketimes;spiketimes],[ones(size(spiketimes))*j;ones(size(spiketimes))*j-1],'k-');
-        end
+        cut_rasters = rasters(:,start:stop);
+        
+        nancheck = sum(cut_rasters,2);
+        isnantrial{cnp} = isnan(nancheck);
+        
+        cut_rasters(isnan(cut_rasters)) = 0;
+        
+        [indy, indx] = ind2sub(size(cut_rasters),find(cut_rasters));
+        indy = -indy+size(cut_rasters,1);
+        
+        plot([indx';indx'],[indy';indy'+1],'k-');
+
         
         if exist('greylim1')
             uistack(greylim1,'top');
@@ -876,6 +879,8 @@ if plotrasts
         axes(sdfploth(yind));
         ylim([0 1.5*max(maxes)])
     end
+    
+    toc;
 end
 
 %% last item: save name
