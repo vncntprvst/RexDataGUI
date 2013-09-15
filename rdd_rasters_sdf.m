@@ -772,6 +772,8 @@ if plotrasts
         end
         
         %% plotting rasters trial by trial
+        % RD 9/15/2013
+        % made all raster rows plot at once for improved speed
         cut_rasters = rasters(:,start:stop);
         
         nancheck = sum(cut_rasters,2);
@@ -855,7 +857,7 @@ if plotrasts
         
         %% sdf plot
         % for kernel optimization, see : http://176.32.89.45/~hideaki/res/ppt/histogram-kernel_optimization.pdf
-        sumall=sum(rasters(~isnantrial{cnp},start:stop));
+        sumall=sum(cut_rasters);
         sdf=spike_density(sumall,fsigma)./length(find(~isnantrial{cnp})); %instead of number of trials
         %pdf = probability_density( sumall, fsigma ) ./ trials;
         maxes(cnp) = max(sdf);
