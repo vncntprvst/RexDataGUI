@@ -782,7 +782,7 @@ if plotrasts
         [indy, indx] = ind2sub(size(cut_rasters),find(cut_rasters));
         %indy = -indy+size(cut_rasters,1);
         
-        plot([indx';indx'],[indy';indy'+1],'k-');
+        plot([indx';indx'],[indy';indy'-1],'k-');
 
         
         if exist('greylim1')
