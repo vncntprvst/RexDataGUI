@@ -780,7 +780,7 @@ if plotrasts
         cut_rasters(isnan(cut_rasters)) = 0;
         
         [indy, indx] = ind2sub(size(cut_rasters),find(cut_rasters));
-        indy = -indy+size(cut_rasters,1);
+        %indy = -indy+size(cut_rasters,1);
         
         plot([indx';indx'],[indy';indy'+1],'k-');
 
