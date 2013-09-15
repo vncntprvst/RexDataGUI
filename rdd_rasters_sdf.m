@@ -779,6 +779,7 @@ if plotrasts
             end
             rastploth=plot([spiketimes;spiketimes],[ones(size(spiketimes))*j;ones(size(spiketimes))*j-1],'k-');
             uistack(rastploth,'down');
+            %plot([spiketimes;spiketimes],[ones(size(spiketimes))*j;ones(size(spiketimes))*j-1],'k-');
         end
         
         if exist('greylim1')
