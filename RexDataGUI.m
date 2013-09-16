@@ -823,8 +823,12 @@ load('myBreakpoints.mat');
 dbstop(s);
 rdd_filename=get(findobj('Tag','filenamedisplay'),'String');
 [rdd_nt, trialdirs] = data_info( rdd_filename );
-dataaligned=rdd_rasters_sdf(rdd_filename, trialdirs,1);
-guidata(findobj('Tag','exportdata'),dataaligned);
+try
+    dataaligned=rdd_rasters_sdf(rdd_filename, trialdirs,1);
+    guidata(findobj('Tag','exportdata'),dataaligned);
+catch
+    disp('rdd_rasters_sdf failed: possible bad cluster number?')
+end
 
 % --- Executes on button press in exportdata.
 function exportdata_Callback(hObject, eventdata, handles)
