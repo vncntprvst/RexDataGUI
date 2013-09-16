@@ -113,7 +113,7 @@ spike2times = data.times;
 global clustercodes
 clustercodes = data.codes(:,1);
 clus_names = unique((clustercodes(clustercodes ~= 0)));
-howmanyclus = length(clus_names);
+howmanyclus = max(clus_names);
 allspk_clus = cell(howmanyclus,1);
 for a = 1:howmanyclus
     allspk_clus{a} = [];
