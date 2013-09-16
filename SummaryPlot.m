@@ -360,8 +360,10 @@ if ~iscell(ylimdata)
     ylimdata={ylimdata};
 end
 if sum((cell2mat(cellfun(@(x) logical(isnan(sum(x))), ylimdata, 'UniformOutput', false)))) %if NaN data
-    ylimdata=ylimdata(~(cell2mat(cellfun(@(x) logical(isnan(sum(x))),...
-        ylimdata, 'UniformOutput', false))));
+%     ylimdata=ylimdata(~(cell2mat(cellfun(@(x) logical(isnan(sum(x))),...
+%         ylimdata, 'UniformOutput', false)))); 
+% I think I went overboard with that one. Much simpler:
+ylimdata={ylimdata{1}(~isnan(ylimdata{:}))};
 end
 if sum(logical(cellfun(@(x) length(x),ylimdata)-1))~=length(ylimdata) %some strange data with a single value
     ylimdata=ylimdata(logical(cellfun(@(x) length(x),ylimdata)-1));
