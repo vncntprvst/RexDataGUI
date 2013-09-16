@@ -83,19 +83,14 @@ if ~isempty(allspk_clus)
     % otherwise nonsensical
     
     howmanyclus = double(length(allspk_clus));
-    %if howmanyclus && (~(selclus == round(selclus)) || selclus > howmanyclus || selclus < 1)
-    %fprintf('Invalid cluster selected. Maximum is %d Setting to cluster 1\n',howmanyclus);
-    %set(findobj('Tag','whichclus'),'String','1');
-    %selclus = 1;
-    %end
-    try
-        temp_allspk = allspk_clus{selclus};
-        spk = temp_allspk(trial,~isnan(temp_allspk(trial,:)));
-    catch
-        fprintf('Invalid cluster selected. Maximum is %d Setting to cluster 1\n',howmanyclus);
-        set(findobj('Tag','whichclus'),'String','1');
-        return;
+    if howmanyclus && (~(selclus == round(selclus)) || selclus > howmanyclus || selclus < 1)
+    fprintf('Invalid cluster selected. Maximum is %d Setting to cluster 1\n',howmanyclus);
+    set(findobj('Tag','whichclus'),'String','1');
+    selclus = 1;
     end
+    
+    temp_allspk = allspk_clus{selclus};
+    spk = temp_allspk(trial,~isnan(temp_allspk(trial,:)));
     
 else
     spk = allspk(trial,~isnan(allspk(trial,:)));

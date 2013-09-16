@@ -38,7 +38,6 @@ persistent etimes;
 persistent trialstarttimes;
 persistent trialendtimes;
 persistent arecs;
-persistent uspk;
 
 %% Radu: for spike2 cluster names
 persistent spike2aidx
@@ -83,11 +82,9 @@ if ~strcmp(currecodename, ecname) || reprocess
 		if replacespikes
             disp('I am about to replace ecodes.');
             howmanyclus = double(max(clustercodes));
-            [ecodes, etimes,uspk] = replaceecodes(ecodes,etimes,0);
+            [ecodes, etimes] = replaceecodes(ecodes,etimes,0);
             %[ecodes, etimes] = replaceecodes(ecodes,etimes);
             spike2aidx = find(ecodes == -112);
-        else
-            uspk = 1;
         end
 	% trial start and ends
 	trialstart = find(ecodes == 1001);
@@ -595,8 +592,9 @@ badtrial = badtt;
 %% spikes!
 sidx = find(currcode > 600 & currcode < 700);
 
-%uspk = sort(unique(currcode(sidx))); % each different label
+uspk = sort(unique(currcode(sidx))); % each different label
 numspkchan = length(uspk); % how many cluster labels?
+
 %% each channels spikes are in a cell in array spk
 if numspkchan == 0
     spkchan = [];

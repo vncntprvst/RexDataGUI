@@ -112,15 +112,13 @@ global spike2times
 spike2times = data.times;
 global clustercodes
 clustercodes = data.codes(:,1);
-clus_names = unique((clustercodes(clustercodes ~= 0)));
-howmanyclus = length(clus_names);
+howmanyclus = max(clustercodes);
 allspk_clus = cell(howmanyclus,1);
 for a = 1:howmanyclus
     allspk_clus{a} = [];
 end
 else
     howmanyclus = 1;
-    clus_names = 1;
     allspk_clus = cell(1,1);
     allspk_clus{1} = [];
 end
@@ -223,10 +221,10 @@ for trialnumber = 1:nt
         allv = cat_variable_size_row( allv, v );
         
         for  a = 1:howmanyclus
-            if ~isempty(spk{a})
+            if (a <= length(spk))
             allspk_clus{a} = cat_variable_size_row(allspk_clus{a},spk{a});
             else
-            allspk_clus{a} = cat_variable_size_row(allspk_clus{a},nan);
+            allspk_clus{a} = cat_variable_size_row(allspk_clus{a},0);
             end
         end
         

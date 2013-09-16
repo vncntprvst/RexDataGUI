@@ -1,13 +1,13 @@
-function [newecodes, newetimes,clus_names] = replaceecodes(ecodes,etimes,figs)
+function [newecodes, newetimes] = replaceecodes(ecodes,etimes,figs)
 if nargin <3
     figs=0;
 end
 
 global triggertimes spike2times clustercodes
 whentrigs = round(triggertimes.*1e3);
-whenspikes = round(spike2times(clustercodes ~= 0).*1e3);
-whatcodes = double(clustercodes(clustercodes ~= 0));
-clus_names = unique(whatcodes);
+whenspikes = round(spike2times.*1e3);
+whatcodes = clustercodes;
+howmanyclus = double(max(whatcodes));
 
 %% recast in terms of REX times
 starttrigs =  etimes(ecodes == 1001);
@@ -85,10 +85,9 @@ newecodes(newecodes == 610) = [];
  newecodes(newecodes == -112) = [];
  
 %% Label new clusters
-howmanyclus = length(clus_names);
 for a = 1:howmanyclus
-    clus_label = 600+clus_names(a);
-    thesespikes = whenspikes(whatcodes == clus_names(a)); % Isolate cluster
+    clus_label = 600+10.*a;
+    thesespikes = whenspikes(whatcodes == a); % Isolate cluster
     addecodes = clus_label.*ones(length(thesespikes),1);
     newecodes = [ newecodes; addecodes];
     newetimes = [ newetimes; thesespikes]; % Add new spikes
