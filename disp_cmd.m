@@ -532,7 +532,7 @@ elseif strcmp('sac',datalign(1).alignlabel) && latmach
 elseif strcmp('sac',datalign(1).alignlabel) && ~latmach
     comp='NSSvsNCSS_sac';
 end
-exportfigname=[directory,'figures\cmd\',recname,'_',comp];
+exportfigname=[cell2mat(regexp(directory,'\w+:\\\w+\\','match')),'Analysis\Countermanding\',recname,'_',comp];
 %basic png fig:
 newpos =  get(gcf,'Position')/60;
 set(gcf,'PaperUnits','inches','PaperPosition',newpos);
