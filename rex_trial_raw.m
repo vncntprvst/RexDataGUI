@@ -596,8 +596,15 @@ badtrial = badtt;
 sidx = find(currcode > 600 & currcode < 700);
 
 present_clus = sort(unique(currcode(sidx))); % each different label
-uspk = 600+[1:max(clus_label)];
-numspkchan = max(clus_label); % how many cluster labels?
+
+if replacespikes
+    uspk = 600+[1:max(clus_label)];
+    numspkchan = max(clus_label); % how many cluster labels?
+else
+    uspk = 610;
+    numspkchan = 1;
+end
+
 %% each channels spikes are in a cell in array spk
 if numspkchan == 0
     spkchan = [];
