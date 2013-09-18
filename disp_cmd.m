@@ -3,7 +3,7 @@ global directory;
 % if latmach
     %% first get SSDs and SSRT, to later parse latency-matched trials and CSS according to SSDs
 
-    load(recname,'allbad','allcodes','alltimes','saccadeInfo'); % 
+    load(recname(1:end-6),'allbad','allcodes','alltimes','saccadeInfo'); % 
     alllats=reshape({saccadeInfo.latency},size(saccadeInfo));
     alllats=alllats';%needs to be transposed because the logical indexing below will be done column by column, not row by row
     allgoodsacs=~cellfun('isempty',reshape({saccadeInfo.latency},size(saccadeInfo)));
@@ -23,6 +23,17 @@ global directory;
     %get reward time for NSS trials
     goodsactimes=alltimes(logical(sum(allgoodsacs,2)),:);
     rewtimes=goodsactimes(allcodes(logical(sum(allgoodsacs,2)),:)==1030);
+    
+    % find Cmd protocol: fixed SSDs or staircase
+    allssds=cat(find(size(datalign(1,2).ssd)==max(size(datalign(1,2).ssd))),datalign(1,2:3).ssd);
+    [~,ordersstrials]=sort([datalign(1,2:3).trials]);
+    allssds=allssds(ordersstrials); %put ssds in the order they occured
+    sddsteps=diff(allssds);
+    if std(sddsteps(sddsteps>0))>20
+        disp('multiple fixed ssd')
+    else
+        disp('staircase')
+    end
     
     %% get CSS SSDs
     ccssd=datalign(2).ssd;
@@ -46,7 +57,8 @@ global directory;
     end
 
     %% get SSRT used for alignement
-        [overallMeanSSRT,meanIntSSRT,meanSSRT,~,~,tachomc,tachowidth]=findssrt(recname,1);
+    
+   [overallMeanSSRT,meanIntSSRT,meanSSRT,~,~,tachomc,tachowidth]=findssrt(recname(1:end-6),1); %1 is for plotting psychophysic curves
     mssrt=[overallMeanSSRT,meanIntSSRT,meanSSRT];
     mssrt=round(nanmean(mssrt(mssrt>40 & mssrt<150)));
     if isnan(mssrt) || ~(mssrt>50 & mssrt<150) %get tachomc and lookup SSRT/tachomc fit. If fit missing, run SSRT_TachoMP
@@ -61,9 +73,9 @@ global directory;
             tachomc=20;
         end
         % find reciprocal SSRT value
-        mssrt=max([round(tachomc*fit.coeff(1)+fit.coeff(2)) 50]);
+        mssrt=max([round(tachomc*fit.coeff(1)+fit.coeff(2)) 75]);
     end
-    if ~(mssrt>50 & mssrt<150)
+    if ~(mssrt>75 & mssrt<150)
         load([recname(1),'_evolSSRT'],'evolSSRT','foSSRT');
         session=regexp(recname,'\d+','match');
         if min(abs(evolSSRT(2,:)-str2num(session{1})))<=5
@@ -94,46 +106,47 @@ else % aligned to sac
     plotstop=400;
 end
 
+
 %% preallocs and definitions
 allsdf=cell(2,1);
 allrast=cell(2,1);
 allviscuetimes=cell(2,1);
 allalignidx=cell(2,1);
-    
-cmdplots=figure('color','white','position',[826    49   524   636]);
+
 if triplot
     numrast=3;
 else
     numrast=2;
 end
-fsigma=20;
+fsigma=5;
 cc=lines(numrast);
 numsubplot=numrast*3; %dividing the panel in three compartments with wequal number of subplots  
     
-%% plotting figure
-for i=1:numrast
-    if strcmp('tgt',datalign(i).alignlabel) && latmach
-        rasters=datalign(i).rasters(matchlatidx,:);
-        alignidx=datalign(i).alignidx;
-        greyareas=datalign(i).allgreyareas(matchlatidx);
+%% plotting main figure
+cmdplots=figure('color','white','position',[826    49   524   636]);
+for trialtype=1:numrast
+    if strcmp('tgt',datalign(trialtype).alignlabel) && latmach
+        rasters=datalign(trialtype).rasters(matchlatidx,:);
+        alignidx=datalign(trialtype).alignidx;
+        greyareas=datalign(trialtype).allgreyareas(matchlatidx);
         matchrewtimes=rewtimes(matchlatidx);
-    elseif (strcmp('stop_cancel',datalign(i).alignlabel) || strcmp('stop_non_cancel',datalign(i).alignlabel)) && latmach
-        ssdidx=(datalign(i).ssd==ssdvalues(ssdtotsidx(end)) | datalign(i).ssd==ssdvalues(ssdtotsidx(end))-1 | datalign(i).ssd==ssdvalues(ssdtotsidx(end))+1);
-       	rasters=datalign(i).rasters(ssdidx,:);
-        if strcmp('stop_non_cancel',datalign(i).alignlabel)
-            alignidx=datalign(i).alignidx;
+    elseif (strcmp('stop_cancel',datalign(trialtype).alignlabel) || strcmp('stop_non_cancel',datalign(trialtype).alignlabel)) && latmach
+        ssdidx=(datalign(trialtype).ssd==ssdvalues(ssdtotsidx(end)) | datalign(trialtype).ssd==ssdvalues(ssdtotsidx(end))-1 | datalign(trialtype).ssd==ssdvalues(ssdtotsidx(end))+1);
+       	rasters=datalign(trialtype).rasters(ssdidx,:);
+        if strcmp('stop_non_cancel',datalign(trialtype).alignlabel)
+            alignidx=datalign(trialtype).alignidx;
         else
-            alignidx=datalign(i).alignidx-(ssdvalues(ssdtotsidx(end))+round(mssrt)); % shifting rasters to target presentation, using most prevalent SSD
+            alignidx=datalign(trialtype).alignidx-(ssdvalues(ssdtotsidx(end))+round(mssrt)); % shifting rasters to target presentation, using most prevalent SSD
         end
-        greyareas=datalign(i).allgreyareas(ssdidx);
+        greyareas=datalign(trialtype).allgreyareas(ssdidx);
     else
-        rasters=datalign(i).rasters;
-        alignidx=datalign(i).alignidx;
-        greyareas=datalign(i).allgreyareas;
-        timetorew=datalign(i).sactotrig;
-        if strcmp(datalign(i).alignlabel,'stop_non_cancel')
-            if size(datalign(i).ssd,2)>size(datalign(i).ssd,1)
-                datalign(i).ssd=permute(datalign(i).ssd,[2,1]);
+        rasters=datalign(trialtype).rasters;
+        alignidx=datalign(trialtype).alignidx;
+        greyareas=datalign(trialtype).allgreyareas;
+        timetorew=datalign(trialtype).sactotrig;
+        if strcmp(datalign(trialtype).alignlabel,'stop_non_cancel')
+            if size(datalign(trialtype).ssd,2)>size(datalign(trialtype).ssd,1)
+                datalign(trialtype).ssd=permute(datalign(trialtype).ssd,[2,1]);
             end
         end
     end
@@ -152,7 +165,7 @@ for i=1:numrast
     isnantrial=zeros(1,size(rasters,1));
     
 
-    hrastplot(i)=subplot(numsubplot,1,i,'Layer','top', ...
+    hrastplot(trialtype)=subplot(numsubplot,1,trialtype,'Layer','top', ...
             'XTick',[],'YTick',[],'XColor','white','YColor','white', 'Parent', cmdplots);
 
     %reducing spacing between rasters
@@ -172,7 +185,7 @@ for i=1:numrast
 %         end
             sactimes(grst)=greyareas{grst}(2,1)-start;
     end
-    if strcmp(datalign(i).alignlabel,'tgt') && latmach
+    if strcmp(datalign(trialtype).alignlabel,'tgt') && latmach
             [sactimes,sortidx]=sort(sactimes,'ascend');
             viscuetimes=viscuetimes(sortidx,:);
             rasters=rasters(sortidx,:);
@@ -191,7 +204,7 @@ for i=1:numrast
             isnantrial(j)=1;
             spiketimes(find(isnan(rasters(j,start:stop))))=0; %#ok<FNDSB>
         else
-        plot([spiketimes;spiketimes],[ones(size(spiketimes))*j;ones(size(spiketimes))*j-1],'color',cc(i,:),'LineStyle','-');
+        plot([spiketimes;spiketimes],[ones(size(spiketimes))*j;ones(size(spiketimes))*j-1],'color',cc(trialtype,:),'LineStyle','-');
         end
 
         % drawing the grey areas
@@ -209,11 +222,11 @@ for i=1:numrast
             patch([greytimes(1) greytimes(end) greytimes(end) greytimes(1)],[j j j-1 j-1],...
                 [0 0 0], 'EdgeColor', 'none','FaceAlpha', 0.3);
                     % if NCSS, plot diamong at SSD
-            if strcmp(datalign(i).alignlabel,'stop_non_cancel')
-                plot(greytimes(1)+datalign(i).ssd(j,1),j-0.5,'gd','MarkerSize', 3,'LineWidth', 1.2)
-            elseif strcmp(datalign(i).alignlabel,'tgt') && latmach
+            if strcmp(datalign(trialtype).alignlabel,'stop_non_cancel')
+                plot(greytimes(1)+datalign(trialtype).ssd(j,1),j-0.5,'gd','MarkerSize', 3,'LineWidth', 1.2)
+            elseif strcmp(datalign(trialtype).alignlabel,'tgt') && latmach
                 plot(sactimes(j),j-0.5,'kd','MarkerSize', 3,'LineWidth', 1.5)
-            elseif strcmp(datalign(i).alignlabel,'stop_cancel') && latmach
+            elseif strcmp(datalign(trialtype).alignlabel,'stop_cancel') && latmach
                 plot(alignidx+ssdvalues(ssdtotsidx(end))-start,j-0.5,'k^','MarkerSize', 2,'LineWidth', 1) % SSD
                 plot(alignidx+ssdvalues(ssdtotsidx(end))+round(mssrt)-start,j-0.5,'kv','MarkerSize', 2,'LineWidth', 1) % SSD +SSRT
             end
@@ -230,9 +243,9 @@ for i=1:numrast
 %             [0 0 0 0],[1 1 1],'EdgeColor','none','FaceAlpha',1);
 %     end
     
-    set(hrastplot(i),'xlim',[1 length(start:stop)]);
-    if strcmp(datalign(i).alignlabel,'stop_cancel') && latmach
-    axes(hrastplot(i));
+    set(hrastplot(trialtype),'xlim',[1 length(start:stop)]);
+    if strcmp(datalign(trialtype).alignlabel,'stop_cancel') && latmach
+    axes(hrastplot(trialtype));
             patch([repmat((alignidx+ssdvalues(ssdtotsidx(end))+round(mssrt)-start)-tachowidth/2,1,2)...
                 repmat((alignidx+ssdvalues(ssdtotsidx(end))+round(mssrt)-start)+tachowidth/2,1,2)], ...
             [[0 size(rasters,1)] fliplr([0 size(rasters,1)])], ...
@@ -254,12 +267,12 @@ for i=1:numrast
         sumall=sum(rasters(~isnantrial,start-fsigma:stop+fsigma));
     end
 %     sdf=spike_density(sumall,fsigma)./length(find(~isnantrial)); %instead of number of trials
-    sdf=fullgauss_filtconv(sumall,fsigma,0)./length(find(~isnantrial)).*1000;
+    sdf=fullgauss_filtconv(sumall,fsigma,1)./length(find(~isnantrial)).*1000;
     sdf=sdf(fsigma+1:end-fsigma);
     
-    plot(sdf,'Color',cc(i,:),'LineWidth',1.8);
+    plot(sdf,'Color',cc(trialtype,:),'LineWidth',1.8);
     
-            if strcmp(datalign(i).alignlabel,'stop_cancel') && latmach
+            if strcmp(datalign(trialtype).alignlabel,'stop_cancel') && latmach
                         patch([repmat((alignidx+ssdvalues(ssdtotsidx(end))-start)-1,1,2) repmat((alignidx+ssdvalues(ssdtotsidx(end))-start)+1,1,2)], ...
             [[0 currylim(2)] fliplr([0 currylim(2)])],[0 0 0 0],'k^','EdgeColor','none','FaceAlpha',0.5);
                          patch([repmat((alignidx+ssdvalues(ssdtotsidx(end))+round(mssrt)-start)-1,1,2) repmat((alignidx+ssdvalues(ssdtotsidx(end))+round(mssrt)-start)+1,1,2)], ...
@@ -288,9 +301,9 @@ for i=1:numrast
     
     hold on;
     if ~isempty(rasters)
-        eyevel=datalign(i).eyevel;
+        eyevel=datalign(trialtype).eyevel;
         eyevel=mean(eyevel(:,start:stop));
-        heyevelline(i)=plot(eyevel,'Color',cc(i,:),'LineWidth',1);
+        heyevelline(trialtype)=plot(eyevel,'Color',cc(trialtype,:),'LineWidth',1);
         %axis(gca,'tight');
         eyevelymax=max(eyevel);
         if eyevelymax>0.8
@@ -306,20 +319,20 @@ for i=1:numrast
             [0 0 0 0],[1 0 0],'EdgeColor','none','FaceAlpha',0.5);
         
         % get directions for the legend
-        curdir{i}=datalign(i).dir;
-        aligntype{i}=datalign(i).alignlabel;
+        curdir{trialtype}=datalign(trialtype).dir;
+        aligntype{trialtype}=datalign(trialtype).alignlabel;
     else
-        curdir{i}='no';
-        aligntype{i}='data';
+        curdir{trialtype}='no';
+        aligntype{trialtype}='data';
     end
     
     %% keep sdf, rasters etc
-    allsdf{i}=sdf;
-    allrast{i}=rasters;
+    allsdf{trialtype}=sdf;
+    allrast{trialtype}=rasters;
 %     alltimetorew{i}=timetorew;
-    allalignidx{i}=alignidx;
+    allalignidx{trialtype}=alignidx;
     % get pre-cue 200ms activity
-    allviscuetimes{i}=viscuetimes(:,1);
+    allviscuetimes{trialtype}=viscuetimes(:,1);
 
 end
 
@@ -538,5 +551,5 @@ newpos =  get(gcf,'Position')/60;
 set(gcf,'PaperUnits','inches','PaperPosition',newpos);
 print(gcf, '-dpng', '-noui', '-opengl','-r600', exportfigname);
 % plot2svg([exportfigname,'.svg'],gcf, 'png');
-delete(gcf);
+% delete(gcf);
 end

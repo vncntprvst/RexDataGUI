@@ -313,49 +313,56 @@ end
 
 % determines computer type
 archst  = computer('arch');
-if strcmp(archst, 'maci64')
-    [rfname, rfpathname]=uigetfile({'*.*','All Files';'*A','A Files'},'raw files directory',...
-        monkeydir);
-else
-    [rfname, rfpathname]=uigetfile({'*A','A Files';'*.*','All Files'},'raw files directory',...
-        monkeydir);
-end
 
-%check if file exists already
-rfname=rfname(1:length(rfname)-1);
-overwrite = 1;
-if strcmp(monkeydirselected,'rigelselect')
-    if ~strcmp(rfname(1),'R')
-        procname=cat(2,'R', rfname);
-        set(findobj('Tag','filenamedisplay'),'String',procname);
+try
+    if strcmp(archst, 'maci64')
+        [rfname, rfpathname]=uigetfile({'*.*','All Files';'*A','A Files'},'raw files directory',...
+            monkeydir);
     else
-        procname=rfname;
-        set(findobj('Tag','filenamedisplay'),'String',rfname);
+        [rfname, rfpathname]=uigetfile({'*A','A Files';'*.*','All Files'},'raw files directory',...
+            monkeydir);
     end
-elseif strcmp(monkeydirselected,'sixxselect')
-    if ~strcmp(rfname(1),'S')
-        procname=cat(2,'S', rfname);
-        set(findobj('Tag','filenamedisplay'),'String',procname);
-    else
-        procname=rfname;
-        set(findobj('Tag','filenamedisplay'),'String',rfname);
+    %check if file exists already
+    rfname=rfname(1:length(rfname)-1);
+    overwrite = 1;
+    
+    if strcmp(monkeydirselected,'rigelselect')
+        if ~strcmp(rfname(1),'R')
+            procname=cat(2,'R', rfname);
+            set(findobj('Tag','filenamedisplay'),'String',procname);
+        else
+            procname=rfname;
+            set(findobj('Tag','filenamedisplay'),'String',rfname);
+        end
+    elseif strcmp(monkeydirselected,'sixxselect')
+        if ~strcmp(rfname(1),'S')
+            procname=cat(2,'S', rfname);
+            set(findobj('Tag','filenamedisplay'),'String',procname);
+        else
+            procname=rfname;
+            set(findobj('Tag','filenamedisplay'),'String',rfname);
+        end
+    elseif strcmp(monkeydirselected,'hildaselect')
+        if ~strcmp(rfname(1),'H')
+            procname=cat(2,'H', rfname);
+            set(findobj('Tag','filenamedisplay'),'String',procname);
+        else
+            procname=rfname;
+            set(findobj('Tag','filenamedisplay'),'String',rfname);
+        end
+    elseif strcmp(monkeydirselected,'shufflesselect')
+        if ~strcmp(rfname(1),'S')
+            procname=cat(2,'S', rfname);
+            set(findobj('Tag','filenamedisplay'),'String',procname);
+        else
+            procname=rfname;
+            set(findobj('Tag','filenamedisplay'),'String',rfname);
+        end
     end
-elseif strcmp(monkeydirselected,'hildaselect')
-    if ~strcmp(rfname(1),'H')
-        procname=cat(2,'H', rfname);
-        set(findobj('Tag','filenamedisplay'),'String',procname);
-    else
-        procname=rfname;
-        set(findobj('Tag','filenamedisplay'),'String',rfname);
-    end
-elseif strcmp(monkeydirselected,'shufflesselect')
-    if ~strcmp(rfname(1),'S')
-        procname=cat(2,'S', rfname);
-        set(findobj('Tag','filenamedisplay'),'String',procname);
-    else
-        procname=rfname;
-        set(findobj('Tag','filenamedisplay'),'String',rfname);
-    end
+
+catch
+    disp('Aborted raw import.');
+    return;
 end
 if exist(cat(2,procdir, procname,'.mat'), 'file')==2 %'B:\data\Recordings\processed\',
     % Construct question dialog

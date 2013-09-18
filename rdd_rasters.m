@@ -88,13 +88,14 @@ if strcmp(aligntype,'stop') % get ssrt
             tachomc=20;
         end
         % find reciprocal SSRT value
-        mssrt=max([round(tachomc*fit.coeff(1)+fit.coeff(2)) 50]);
+        mssrt=max([round(tachomc*fit.coeff(1)+fit.coeff(2)) 75]);
     end
-    if ~(mssrt>50 & mssrt<150)
+    if ~(mssrt>75 & mssrt<150)
         load([name(1),'_evolSSRT'],'evolSSRT','foSSRT');
         session=regexp(name,'\d+','match');
         if min(abs(evolSSRT(2,:)-str2num(session{1})))<=5
-            mssrt=round(mssrt/3+(evolSSRT(1,find(abs(evolSSRT(2,:)-str2num(session{1}))==min(abs(evolSSRT(2,:)-str2num(session{1}))),1)))*2/3)
+            mssrt=round(mssrt/3+(evolSSRT(1,find(abs(evolSSRT(2,:)-str2num(session{1}))==...
+                min(abs(evolSSRT(2,:)-str2num(session{1}))),1)))*2/3)
         else
             mssrt=round(mssrt/3+foSSRT*2/3)
         end
