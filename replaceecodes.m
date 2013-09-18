@@ -19,7 +19,7 @@ if length(whentrigs)/sum(ecodes == 1001) == 2 %expected ratio of triggers to tri
 else %either spurious codes in token task, or wrong recording sequence (e.g. Spike2 recording started after REX recording)
 
     disp('Warning! Inconsistent number of triggers. Will attempt to align via cross correlation.');
-    pause;
+    %pause;
     
 end
     
