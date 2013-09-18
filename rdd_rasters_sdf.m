@@ -689,6 +689,7 @@ if plotrasts
         rasters=datalign(cnp).rasters;
         
         if isempty(rasters)
+            disp('rdd_rasters_sdf: empty rasters, skipping direction.');
             continue
         end
         
@@ -711,13 +712,19 @@ if plotrasts
         % adjust temporal axis
         start = aidx - mstart;
         stop = aidx + mstop;
+        
+        if stop > size( rasters ,2)
+            stop = size( rasters, 2);
+        end
+        
         if start < 1
             start = 1;
         end
-        if stop > length( rasters )
-            stop = length( rasters );
-        end
         
+        if start > stop
+            disp('rdd_rasters_sdf: all rasters shorter than stop-start, skipping direction.');
+            continue
+        end
         %get the current axes
         axes(rasterh(cnp));
         %plot the rasters
@@ -729,8 +736,8 @@ if plotrasts
         %                     testbin=testbin-1;
         %                     end
         trials = size(rasters,1);
-        isnantrial(cnp)={zeros(1,size(rasters,1))};
-        axis([0 stop-start+1 1 size(rasters,1)+1]);
+        %isnantrial(cnp)={zeros(1,trials)};
+        axis([0 stop-start+1 1 trials+1]);
         hold on
         
         %% grey patches for multiple plots
@@ -782,12 +789,11 @@ if plotrasts
         [indy, indx] = ind2sub(cut_rast_siz,find(cut_rasters)); %find row and column coordinates of spikes
         %indy = -indy+size(cut_rasters,1); % flip so that the top raster plots on the top
         
-        if(cut_rast_siz(1) == 1)
-            plot([indx;indx],[indy;indy+1],'k-'); % plot rasters
-        else
-            plot([indx';indx'],[indy';indy'+1],'k-'); % plot rasters
-        end
-        
+            if(cut_rast_siz(1) == 1)
+                plot([indx;indx],[indy;indy+1],'k-'); % plot rasters
+            else
+                plot([indx';indx'],[indy';indy'+1],'k-'); % plot rasters
+            end
 
         
         if exist('greylim1')
@@ -865,7 +871,11 @@ if plotrasts
         sdf=fullgauss_filtconv(sumall,fsigma,0)./length(find(~isnantrial{cnp})); %instead of number of trials
         %pdf = probability_density( sumall, fsigma ) ./ trials;
         
-        maxes(cnp) = max(sdf);
+        if cut_rast_siz(1) == 1
+            maxes(cnp) = 0;
+        else
+            maxes(cnp) = max(sdf);
+        end
         axes(sdfploth(cnp));
         %         sdfaxh = axes('Position',get(rasterh(cnp),'Position'),...
         %            'XAxisLocation','top',...
@@ -883,8 +893,9 @@ if plotrasts
         
     end
     for yind = 1:numplots;
-        axes(sdfploth(yind));
-        ylim([0 1.5*max(maxes)])
+        set(sdfploth(yind),'YLim',[0 1.5*max(maxes)]);
+        %axes(sdfploth(yind));
+        %ylim([0 1.5*max(maxes)])
     end
     
     %toc;
