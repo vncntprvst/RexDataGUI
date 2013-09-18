@@ -730,7 +730,7 @@ if plotrasts
         %                     end
         trials = size(rasters,1);
         isnantrial(cnp)={zeros(1,size(rasters,1))};
-        axis([0 stop-start+1 0 size(rasters,1)]);
+        axis([0 stop-start+1 1 size(rasters,1)+1]);
         hold on
         
         %% grey patches for multiple plots
@@ -773,16 +773,21 @@ if plotrasts
         
         %% plotting rasters for this subplot
         cut_rasters = rasters(:,start:stop); % Isolate rasters of interest
-        
+        cut_rast_siz = size(cut_rasters);
         nancheck = sum(cut_rasters,2);
         isnantrial{cnp} = isnan(nancheck); % Identify nantrials
         
         cut_rasters(isnan(cut_rasters)) = 0; % take nans out so they don't get plotted
         
-        [indy, indx] = ind2sub(size(cut_rasters),find(cut_rasters)); %find row and column coordinates of spikes
+        [indy, indx] = ind2sub(cut_rast_siz,find(cut_rasters)); %find row and column coordinates of spikes
         %indy = -indy+size(cut_rasters,1); % flip so that the top raster plots on the top
         
-        plot([indx';indx'],[indy';indy'+1],'k-'); % plot rasters
+        if(cut_rast_siz(1) == 1)
+            plot([indx;indx],[indy;indy+1],'k-'); % plot rasters
+        else
+            plot([indx';indx'],[indy';indy'+1],'k-'); % plot rasters
+        end
+        
 
         
         if exist('greylim1')
@@ -856,8 +861,10 @@ if plotrasts
         %% sdf plot
         % for kernel optimization, see : http://176.32.89.45/~hideaki/res/ppt/histogram-kernel_optimization.pdf
         sumall=sum(rasters(~isnantrial{cnp},start:stop));
-        sdf=spike_density(sumall,fsigma)./length(find(~isnantrial{cnp})); %instead of number of trials
+        %sdf=spike_density(sumall,fsigma)./length(find(~isnantrial{cnp})); %instead of number of trials
+        sdf=fullgauss_filtconv(sumall,fsigma,0)./length(find(~isnantrial{cnp})); %instead of number of trials
         %pdf = probability_density( sumall, fsigma ) ./ trials;
+        
         maxes(cnp) = max(sdf);
         axes(sdfploth(cnp));
         %         sdfaxh = axes('Position',get(rasterh(cnp),'Position'),...
