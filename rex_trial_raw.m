@@ -39,6 +39,8 @@ persistent trialstarttimes;
 persistent trialendtimes;
 persistent arecs;
 persistent clus_label;
+persistent ovlanl; %overlook first analog pointer in trial following aborted trial
+
 
 %% Radu: for spike2 cluster names
 persistent spike2aidx
@@ -170,16 +172,25 @@ end;
 % but rather look at all future -112s, and see if one fits the time frame.
 
     if replacespikes
+        % Radu: Replacing REX spikes with Spike2 spikes made rex_trial_raw unable to process the file.
+        % My solution to that was to collect all code -112 ecodes and and
+        % corresponding etimes at the end of the ecodes/etimes vector and
+        % delete them one by one as processing goes on. This means that the
+        % ovlanl indicator won't work in the same way.
         aidx = spike2aidx;
         aoffset = etimes(spike2aidx);
     else
         aidx = find( ecodes( idx1:end ) == -112 );
+        if ~isempty(ovlanl) && ovlanl==trial-1
+            aidx=aidx(2:end);
+        end
         temptimes = etimes( idx1:end );
         aoffset = temptimes( aidx );
     end
 
-
-
+nxtcentdouze=etimes( find(ecodes(idx2:end) == -112,1) + idx2 - 1);
+lastcentdouze=currtime(find( currcode == -112,1,'last')); % potentially bad news for the next trial if lastcentdouze is empty % might want to restrain trial
+                                                          
 % aidx = find( currcode == -112 );
 % aoffset = currtime( aidx );
 
@@ -231,6 +242,16 @@ if ~isempty(aidx)
 
         %%%%%%%%%%%%%%%%%%%%%%%%   Uncomment the first for processing mode 1
         %%%%%%%%%%%%%%%%%%%%%%%%   Reverse for mode 2.
+        
+        %Correction of early aborted trials, so that they don't mess up
+        %next trial's analog data - not working - misplaced analog pointer- VP 9/2013  
+        if isempty(lastcentdouze) && ~replacespikes   
+            outbound=find(ismember(aoffset,nxtcentdouze))+1;
+            ovlanl=trial;
+        else
+            outbound=length(aoffset)+1;
+            ovlanl=-1;
+        end
 
         while (cnt112 <= length( aoffset )) && keepgoing
             %%%while (cnt112 <= length( aoffset )) && (atm < endofthistrial) %-101 )
@@ -257,7 +278,7 @@ if ~isempty(aidx)
             % I guess means that there is no analog data for this trial.  To
             % handle that, I'm inserting a foundanalogdata flag.
             %  pause;
-            if (foundanalogdata && atm>0 && ~acont)
+            if (foundanalogdata && atm>0 && ~acont) || cnt112==outbound
                 keepgoing = 0;
             end;
             % RCA 01/30/09 - Ok, maybe not.  Assume that the -112s in this trial go to
@@ -265,8 +286,6 @@ if ~isempty(aidx)
             % some rex files had -112s in the next trial.  Until I solve this, I'm
             % leaving the possibility of two types of processing.
 
-            %%%%%%%%%%%%%%%  Uncomment the first for processing mode 1.
-            %%%%%%%%%%%%%%%  Reverse for mode 2.
             if (atm > 0 && ofst==0)
                 %%%if ((atm >= startofthistrial) && (atm < endofthistrial))
 
@@ -275,7 +294,7 @@ if ~isempty(aidx)
             else
                 timeok = 0;
             end;
-            if timeok || (ofst && acont && continuationdataok )
+            if (timeok || (ofst && acont && continuationdataok )) && cnt112<outbound
 
                 % s = sprintf( 'start of trial %d is time %d, end is %d, atm was %d, ofst is %d and acont is %d.', trial, startofthistrial, endofthistrial, atm, ofst, acont );
                 %  disp( s );
