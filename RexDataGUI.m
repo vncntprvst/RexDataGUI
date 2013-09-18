@@ -782,7 +782,7 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
         try
             dataaligned=rdd_rasters_sdf(rdd_filename, trialdirs,1); %align data, plot rasters
         catch
-            disp('rdd_rasters_sdf failed.');
+            disp('rdd_rasters_sdf failed on line 785.');
             return;
         end
             dataaligned=dataaligned(~cellfun('isempty',{dataaligned.alignidx}));
@@ -831,7 +831,8 @@ rdd_filename=get(findobj('Tag','filenamedisplay'),'String');
 try
     dataaligned=rdd_rasters_sdf(rdd_filename, trialdirs,1);
 catch
-    disp('rdd_rasters_sdf failed: possible bad cluster number?')
+    disp('rdd_rasters_sdf failed on line 834.');
+    return;
 end
     guidata(findobj('Tag','exportdata'),dataaligned);
 
