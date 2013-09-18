@@ -780,7 +780,7 @@ if plotrasts
         cut_rasters(isnan(cut_rasters)) = 0; % take nans out so they don't get plotted
         
         [indy, indx] = ind2sub(size(cut_rasters),find(cut_rasters)); %find row and column coordinates of spikes
-        indy = -indy+size(cut_rasters,1); % flip so that the top raster plots on the top
+        %indy = -indy+size(cut_rasters,1); % flip so that the top raster plots on the top
         
         plot([indx';indx'],[indy';indy'+1],'k-'); % plot rasters
 
