@@ -145,6 +145,11 @@ for trialnumber = 1:nt
     if  strcmp(tasktype,'optiloc') && logical(sum(find(ecodeout==16386)))
         badtrial=1;
     end
+    if  strcmp(tasktype,'st_saccades') && logical(sum(find(ecodeout==16386)))
+        if diff(find(ecodeout==16386 | ecodeout==17385),1)==1 %just making that's the right configuration
+            ecodeout(ecodeout==17385)=16386; %became obsolete
+        end
+    end
     %[ecodeout, etimeout, spkchan, spk, arate, h, v, start_time, badtrial ] = rex_trial_fake(rexname, trialnumber, includeaborted);
     if length(badtrial)>1 %rare event: two identical error code in the same trial
         secbadtrltime=badtrial(2)-analog_time;

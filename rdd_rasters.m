@@ -210,7 +210,7 @@ while ~islast
         if logical(sum(find(noneofcodes==alignto(1)))) ... %in case the purpose IS to align to a noneof code
                 || allowbadtrials % or if we want the bad trials too
             noneof = 1;
-            isbadtrial=~has_none_of(ecodeout, noneofcodes); %make sure trials with noneofcodes other than 17385 are tagged is bad
+            isbadtrial=~has_none_of(ecodeout, noneofcodes); %make sure trials with noneofcodes other than 17385 are tagged as bad
         else
             noneof = has_none_of( ecodeout, noneofcodes );
         end
