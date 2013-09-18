@@ -639,7 +639,7 @@ end
 %% Now plotting rasters
 %%%%%%%%%%%%%%%%%%%%%%
 if plotrasts
-    tic;
+    %tic;
     figure(gcf);
     %some housekeeping: removing previous uigridcontainers
     childlist=get(findobj('Tag','rasterspanel'),'children');    
@@ -771,18 +771,18 @@ if plotrasts
             end
         end
         
-        %% plotting rasters trial by trial
-        cut_rasters = rasters(:,start:stop);
+        %% plotting rasters for this subplot
+        cut_rasters = rasters(:,start:stop); % Isolate rasters of interest
         
         nancheck = sum(cut_rasters,2);
-        isnantrial{cnp} = isnan(nancheck);
+        isnantrial{cnp} = isnan(nancheck); % Identify nantrials
         
-        cut_rasters(isnan(cut_rasters)) = 0;
+        cut_rasters(isnan(cut_rasters)) = 0; % take nans out so they don't get plotted
         
-        [indy, indx] = ind2sub(size(cut_rasters),find(cut_rasters));
-        indy = -indy+size(cut_rasters,1);
+        [indy, indx] = ind2sub(size(cut_rasters),find(cut_rasters)); %find row and column coordinates of spikes
+        indy = -indy+size(cut_rasters,1); % flip so that the top raster plots on the top
         
-        plot([indx';indx'],[indy';indy'+1],'k-');
+        plot([indx';indx'],[indy';indy'+1],'k-'); % plot rasters
 
         
         if exist('greylim1')
@@ -880,7 +880,7 @@ if plotrasts
         ylim([0 1.5*max(maxes)])
     end
     
-    toc;
+    %toc;
 end
 
 %% last item: save name
