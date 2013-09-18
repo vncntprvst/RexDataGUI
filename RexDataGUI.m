@@ -786,8 +786,13 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
         %set(trialdatapanelH,'UserData',whatever might be needed);
         
         rdd_trialdata(rdd_filename, trialnumber); % add 1 to make sure it reloads file
-        dataaligned=rdd_rasters_sdf(rdd_filename, trialdirs,1); %align data, plot rasters
-        dataaligned=dataaligned(~cellfun('isempty',{dataaligned.alignidx}));
+        try
+            dataaligned=rdd_rasters_sdf(rdd_filename, trialdirs,1); %align data, plot rasters
+        catch
+            disp('rdd_rasters_sdf failed on line 785.');
+            return;
+        end
+            dataaligned=dataaligned(~cellfun('isempty',{dataaligned.alignidx}));
         %% do stats
         [p_sac,h_sac,p_rmanov,mcstats]=raststats(dataaligned);
         for psda=1:length(dataaligned)
@@ -830,8 +835,13 @@ load('myBreakpoints.mat');
 dbstop(s);
 rdd_filename=get(findobj('Tag','filenamedisplay'),'String');
 [rdd_nt, trialdirs] = data_info( rdd_filename );
-dataaligned=rdd_rasters_sdf(rdd_filename, trialdirs,1);
-guidata(findobj('Tag','exportdata'),dataaligned);
+try
+    dataaligned=rdd_rasters_sdf(rdd_filename, trialdirs,1);
+catch
+    disp('rdd_rasters_sdf failed on line 834.');
+    return;
+end
+    guidata(findobj('Tag','exportdata'),dataaligned);
 
 % --- Executes on button press in exportdata.
 function exportdata_Callback(hObject, eventdata, handles)

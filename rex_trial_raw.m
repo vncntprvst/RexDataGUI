@@ -38,7 +38,9 @@ persistent etimes;
 persistent trialstarttimes;
 persistent trialendtimes;
 persistent arecs;
+persistent clus_label;
 persistent ovlanl; %overlook first analog pointer in trial following aborted trial
+
 
 %% Radu: for spike2 cluster names
 persistent spike2aidx
@@ -83,9 +85,11 @@ if ~strcmp(currecodename, ecname) || reprocess
 		if replacespikes
             disp('I am about to replace ecodes.');
             howmanyclus = double(max(clustercodes));
-            [ecodes, etimes] = replaceecodes(ecodes,etimes,0);
+            [ecodes, etimes,clus_label] = replaceecodes(ecodes,etimes,0);
             %[ecodes, etimes] = replaceecodes(ecodes,etimes);
             spike2aidx = find(ecodes == -112);
+        else
+            clus_label = 1;
         end
 	% trial start and ends
 	trialstart = find(ecodes == 1001);
@@ -610,8 +614,15 @@ badtrial = badtt;
 %% spikes!
 sidx = find(currcode > 600 & currcode < 700);
 
-uspk = sort(unique(currcode(sidx))); % each different label
-numspkchan = length(uspk); % how many cluster labels?
+present_clus = sort(unique(currcode(sidx))); % each different label
+
+if replacespikes
+    uspk = 600+[1:max(clus_label)];
+    numspkchan = max(clus_label); % how many cluster labels?
+else
+    uspk = 610;
+    numspkchan = 1;
+end
 
 %% each channels spikes are in a cell in array spk
 if numspkchan == 0
@@ -620,7 +631,15 @@ if numspkchan == 0
 else
     for s = 1:numspkchan
         spkchan(s) = uspk(s);
-        spk{s} = currtime(find(currcode == uspk(s))) - analog_time;
+        if ismember(uspk(s),present_clus)
+            if ~isempty(find(currcode == uspk(s)))
+                spk{s} = currtime(find(currcode == uspk(s))) - analog_time;
+            else
+                spk{s} = nan;
+            end
+        else
+            spk{s} = nan;
+        end
     end;  % looping through spike channels
 end;
 
