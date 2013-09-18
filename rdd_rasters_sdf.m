@@ -871,7 +871,7 @@ if plotrasts
         sdf=fullgauss_filtconv(sumall,fsigma,0)./length(find(~isnantrial{cnp})); %instead of number of trials
         %pdf = probability_density( sumall, fsigma ) ./ trials;
         
-        if cut_rast_siz(1) == 1
+        if cut_rast_siz(1) == 1 || length(sdf) <= 1
             maxes(cnp) = 0;
         else
             maxes(cnp) = max(sdf);

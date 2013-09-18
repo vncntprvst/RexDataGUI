@@ -632,7 +632,7 @@ else
     for s = 1:numspkchan
         spkchan(s) = uspk(s);
         if ismember(uspk(s),present_clus)
-            if find(currcode == uspk(s))
+            if ~isempty(find(currcode == uspk(s)))
                 spk{s} = currtime(find(currcode == uspk(s))) - analog_time;
             else
                 spk{s} = nan;
