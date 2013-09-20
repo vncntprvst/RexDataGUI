@@ -40,7 +40,6 @@ persistent trialendtimes;
 persistent arecs;
 persistent clus_label;
 persistent ovlanl; %overlook first analog pointer in trial following aborted trial
-persistent offset;
 
 %% Radu: for spike2 cluster names
 persistent spike2aidx
@@ -76,7 +75,7 @@ end;
 %% grab all the ecodes
 ecname = [name,'_ecodes'];
 etname = [name,'_etimes'];
-
+offset = nan; % on trials other than the first one, output a placeholder for the offset.
 if ~strcmp(currecodename, ecname) || reprocess
 	currecodename = ecname;
     
@@ -90,7 +89,7 @@ if ~strcmp(currecodename, ecname) || reprocess
             spike2aidx = find(ecodes == -112);
         else
             clus_label = 1;
-            offset = nan;
+            offset = 0;
         end
 	% trial start and ends
 	trialstart = find(ecodes == 1001);

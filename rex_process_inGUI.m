@@ -53,6 +53,7 @@ alloriginaltrialnums = [];
 allnewtrialnums = [];
 hmarks = [];
 vmarks = [];
+spk2offset = [];
 success = 0;
 usedexfile = 0;
 
@@ -132,7 +133,7 @@ nt = rex_numtrials_raw( rexname, includeaborted ); %rawdir
 %% trialnumber is the trial # from the recorded file. Some may be discarded in this loop. next is the resulting trial number
 for trialnumber = 1:nt
     try
-        [ecodeout, etimeout, spkchan, spk, arate, h, v, start_time, badtrial, analog_time, spk2offset] = rex_trial_raw(rexname, trialnumber, includeaborted, reprocess); %rawdir
+        [ecodeout, etimeout, spkchan, spk, arate, h, v, start_time, badtrial, analog_time, tempoff] = rex_trial_raw(rexname, trialnumber, includeaborted, reprocess); %rawdir
         if reprocess
             reprocess=0; %unnecessary after 1st call to rex_trial_raw
         end
@@ -522,6 +523,10 @@ for trialnumber = 1:nt
         next = next + 1;
     end;
     waitbar( (trialnumber/nt)*0.9, wb, 'Converting Rex data...' );
+    
+    if ~isnan(tempoff) %get the offset between spike2 and Rex
+        spk2offset = tempoff;
+    end
 end;
 
 %% data clinic
