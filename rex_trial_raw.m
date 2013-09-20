@@ -1,4 +1,4 @@
-function [ecodeout, etimeout, spkchan, spk, arate, h, v, start_time, badtrial, analog_time] =...
+function [ecodeout, etimeout, spkchan, spk, arate, h, v, start_time, badtrial, analog_time, offset] =...
     rex_trial_raw(name, trial, includeaborted, reprocess)
 
 % function [ecodeout, etimeout, spkchan, spk, arate, h, v, start_time] =
@@ -40,7 +40,7 @@ persistent trialendtimes;
 persistent arecs;
 persistent clus_label;
 persistent ovlanl; %overlook first analog pointer in trial following aborted trial
-
+persistent offset;
 
 %% Radu: for spike2 cluster names
 persistent spike2aidx
@@ -85,11 +85,12 @@ if ~strcmp(currecodename, ecname) || reprocess
 		if replacespikes
             disp('I am about to replace ecodes.');
             howmanyclus = double(max(clustercodes));
-            [ecodes, etimes,clus_label] = replaceecodes(ecodes,etimes,0);
+            [ecodes, etimes,clus_label,offset] = replaceecodes(ecodes,etimes,0);
             %[ecodes, etimes] = replaceecodes(ecodes,etimes);
             spike2aidx = find(ecodes == -112);
         else
             clus_label = 1;
+            offset = nan;
         end
 	% trial start and ends
 	trialstart = find(ecodes == 1001);

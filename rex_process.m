@@ -100,7 +100,7 @@ nt = rex_numtrials_raw( rexname, includeaborted );
 %nt = rex_numtrials_fake( rexname, includeaborted );
 %% trialnumber is the trial # from the recorded file. Some may be discarded in this loop. next is the resulting trial number  
 for trialnumber = 1:nt
-    [ecodeout, etimeout, spkchan, spk, arate, h, v, start_time, badtrial ] = rex_trial_raw(rexname, trialnumber, includeaborted);
+    [ecodeout, etimeout, spkchan, spk, arate, h, v, start_time, badtrial , ~] = rex_trial_raw(rexname, trialnumber, includeaborted);
     %[ecodeout, etimeout, spkchan, spk, arate, h, v, start_time, badtrial ] = rex_trial_fake(rexname, trialnumber, includeaborted);
     if isempty(h) || isempty(ecodeout)
         disp( 'rex_process.m:  Something wrong with trial, no data.  The trial will be skipped, and trial numbers will shift in the converted file to reflect this.' );

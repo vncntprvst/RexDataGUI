@@ -132,7 +132,7 @@ nt = rex_numtrials_raw( rexname, includeaborted ); %rawdir
 %% trialnumber is the trial # from the recorded file. Some may be discarded in this loop. next is the resulting trial number
 for trialnumber = 1:nt
     try
-        [ecodeout, etimeout, spkchan, spk, arate, h, v, start_time, badtrial, analog_time] = rex_trial_raw(rexname, trialnumber, includeaborted, reprocess); %rawdir
+        [ecodeout, etimeout, spkchan, spk, arate, h, v, start_time, badtrial, analog_time, spk2offset] = rex_trial_raw(rexname, trialnumber, includeaborted, reprocess); %rawdir
         if reprocess
             reprocess=0; %unnecessary after 1st call to rex_trial_raw
         end
@@ -714,7 +714,7 @@ rexnumtrials = next -1; %nt;
 allrexnotes = sprintf( '%s, converted on %s\n%d trials\n', rexname, datestr( now ), rexnumtrials );
 disp(allrexnotes);
 save( newname, 'rexname', 'rexnumtrials', 'alloriginaltrialnums', 'allnewtrialnums',...
-    'allcodes', 'alltimes', 'allspkchan', 'allspk', 'allspk_clus', 'allrates', 'allh', 'allv', 'allstart',...
+    'allcodes', 'alltimes', 'allspkchan', 'allspk', 'allspk_clus', 'spk2offset', 'allrates', 'allh', 'allv', 'allstart',...
     'allbad', 'alltrigin', 'alltrigout', 'allrew', 'alldeleted', 'allsacstart', 'allsacend',...
     'allspklen', 'allsaclen', 'allrexnotes', 'saccadeInfo','outlandmismtch','-v7.3'); %using '-v7.3' input arguments so that matfile loading runs well when retrieving data from file
 %removed allcodelen and alleyelen. allspklen should go too, and allrates be included
