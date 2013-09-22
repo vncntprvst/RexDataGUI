@@ -215,7 +215,7 @@ end
 
 %% Fusing task type and direction into ecode
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if (ecodealign(1))<1000 % if only three numbers
+if ecodealign<1000 % if only three numbers
     for i=1:length(trialdirs)
         aligncodes(i,:)=ecodealign*10+trialdirs(i);
     end
@@ -223,7 +223,7 @@ else
     aligncodes=ecodealign;
 end
 if logical(secondcode)
-    if (secondcode(1))<1000
+    if secondcode<1000
         for i=1:length(trialdirs)
             alignseccodes(i,:)=secondcode*10+trialdirs(i);
         end
