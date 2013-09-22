@@ -54,13 +54,19 @@ function RexDataGUI_OpeningFcn(hObject, eventdata, handles, varargin)
 
 % Choose default command line output for RexDataGUI
 handles.output = hObject;
-global replacespikes;
+global replacespikes user;
 replacespikes = 0;
 % tiny design changes
 set(hObject,'DefaultTextFontName','Calibri'); %'Color',[0.9 .9 .8]
 % unprocfilebtxt=sprintf('Unprocessed\rfiles');
 % uibutton(findobj('tag','unprocfilebutton'),'string',unprocfilebtxt);
 
+%only display selection box for appropriate subjects
+selboxh=get(findobj('tag','monkeyselect'),'Children');
+set(selboxh(strcmp(get(selboxh,'tag'),'shufflesselect')),'visible','off')
+set(selboxh(strcmp(get(selboxh,'tag'),'hildaselect')),'position',[0.1667 0.02 0.7083 0.3857]);
+set(selboxh(strcmp(get(selboxh,'tag'),'sixxselect')),'position',[0.1667 0.32 0.7083 0.3857]);
+set(selboxh(strcmp(get(selboxh,'tag'),'rigelselect')),'position',[0.1667 0.62 0.7083 0.3857]);
 
 % use varargin to allow for direct input of the name of the file to be analyzed.
 % see http://www.mathworks.com/help/techdoc/creating_guis/f10-998580.html
@@ -922,27 +928,27 @@ function displaymfiles_CreateFcn(hObject, eventdata, handles)
 % hObject    handle to displaymfiles (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
-global directory slash unprocfiles;
+global directory slash unprocfiles user;
 
 % Hint: listbox controls usually have a white background on Windows.
 %       See ISPC and COMPUTER.
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+% get list of subject select boxes
+selboxh=get(findobj('tag','monkeyselect'),'Children');
 
 % determines computer type
 archst  = computer('arch');
 
 if strcmp(archst, 'maci64')
     name = getenv('USER');
-    if strcmp(name, 'nick')
-        directory = '/Users/nick/Dropbox/filesforNick/';
-    elseif strcmp(name, 'Frank')
-        directory = '/Users/Frank/Desktop/monkeylab/data/';
-    elseif strcmp(name, 'zacharyabzug')
-        directory = '/Users/zacharyabzug/Desktop/zackdata/';    
+    if strcmp(name, 'zacharyabzug')
+        directory = '/Users/zacharyabzug/Desktop/zackdata/';
+        user='Zach';
     elseif strcmp(name, 'zmabzug')
         directory = '/Users/zmabzug/Desktop/zackdata/';
+        user='Zach';
     end
     slash = '/';
 elseif strcmp(archst, 'win32') || strcmp(archst, 'win64')
@@ -952,14 +958,20 @@ elseif strcmp(archst, 'win32') || strcmp(archst, 'win64')
             strcmp(getenv('username'),'JuanandKimi') || ...
             strcmp(getenv('username'),'vp35')
         directory = 'C:\Data\Recordings\';
+        user='generic';
     elseif strcmp(getenv('username'),'DangerZone')
         directory = 'E:\data\Recordings\';
+        user='Vincent';
+        set(selboxh(strcmp(get(selboxh,'tag'),'sixxselect')),'value',1)
     elseif strcmp(getenv('username'),'Radu')
         directory = 'E:\Spike_Sorting\';
+        user='Radu';
     elseif strcmp(getenv('username'),'The Doctor')
         directory = 'C:\Users\The Doctor\Data\';
+        user='generic';
     else
         directory = 'B:\data\Recordings\';
+        user='generic';
     end
     slash = '\';
 end
