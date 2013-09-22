@@ -110,7 +110,12 @@ alignseccodes=[];
 alignlabel=[];
 secalignlabel=[];
 collapsecode=0;
-getraw=0; %get raw traces in addition to rasters
+
+if strcmp(get(findobj('Tag','rawsigoption'),'Checked'),'off'); %get raw traces in addition to rasters
+    getraw=0;
+else
+    getraw=1;
+end
 
 %define ecodes according to task
 %add last number for direction
@@ -869,9 +874,10 @@ if plotrasts
         
         %% sdf plot
         % for kernel optimization, see : http://176.32.89.45/~hideaki/res/ppt/histogram-kernel_optimization.pdf
-        sumall=sum(rasters(~isnantrial{cnp},start:stop));
+        sumall=sum(rasters(~isnantrial{cnp},start-fsigma:stop+fsigma));
         %sdf=spike_density(sumall,fsigma)./length(find(~isnantrial{cnp})); %instead of number of trials
-        sdf=fullgauss_filtconv(sumall,fsigma,0)./length(find(~isnantrial{cnp})); %instead of number of trials
+        sdf=fullgauss_filtconv(sumall,fsigma,0)./length(find(~isnantrial{cnp})).*1000; %instead of number of trials
+        sdf=sdf(fsigma+1:end-fsigma);
         %pdf = probability_density( sumall, fsigma ) ./ trials;
         
         if cut_rast_siz(1) == 1 || length(sdf) <= 1
@@ -902,6 +908,10 @@ if plotrasts
     end
     
     %toc;
+end
+
+if getraw
+    PlotRawSigRasters(rawsigs,alignrawidx);
 end
 
 %% last item: save name

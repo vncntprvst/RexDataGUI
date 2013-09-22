@@ -23,7 +23,7 @@ function varargout = RexDataGUI(varargin)
 %
 % See also: GUIDE, GUIDATA, GUIHANDLES
 
-% Last Modified by GUIDE v2.5 21-Sep-2013 20:27:17
+% Last Modified by GUIDE v2.5 22-Sep-2013 13:12:46
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -1489,12 +1489,16 @@ global directory slash;
 
 if get(findobj('Tag','rigelselect'),'Value')
     dirlisting = dir([directory,'processed',slash,'Rigel',slash]); %('B:\data\Recordings\processed\Rigel');
+    sinitial='R';
 elseif get(findobj('Tag','sixxselect'),'Value')
     dirlisting = dir([directory,'processed',slash,'Sixx',slash]); %('B:\data\Recordings\processed\Sixx');\
+    sinitial='S';
 elseif get(findobj('Tag','hildaselect'),'Value')
     dirlisting = dir([directory,'processed',slash,'Hilda',slash]); %('B:\data\Recordings\processed\Sixx');
+    sinitial='H';
 elseif get(findobj('Tag','shufflesselect'),'Value')
     dirlisting = dir([directory,'processed',slash,'Shuffles',slash]); %('B:\data\Recordings\processed\Sixx');
+    sinitial='S';
 end
 fileNames = {dirlisting.name};  % Put the file names in a cell array
 
@@ -1502,37 +1506,22 @@ if hObject==findobj('Tag','displayfbt_files')
     
     % Order by date
     filedates=cell2mat({dirlisting(:).datenum});
-    [filedates,fdateidx] = sort(filedates,'descend');
+    [~,fdateidx] = sort(filedates,'descend');
     dirlisting = {dirlisting(:).name};
     dirlisting = dirlisting(fdateidx);
     dirlisting = dirlisting(~cellfun('isempty',strfind(dirlisting,'mat')));
+%     dirlisting = dirlisting(~cellfun('isempty',strfind(dirlisting,'REX')));
     dirlisting = dirlisting(cellfun('isempty',strfind(dirlisting,'myBreakpoints')));
     dirlisting = cellfun(@(x) x(1:end-4), dirlisting, 'UniformOutput', false);
     set(findobj('Tag','displaymfiles'),'string',dirlisting);
     
 elseif hObject==findobj('Tag','displayfbt_session')
     
-    if get(findobj('Tag','rigelselect'),'Value')
-        index = regexpi(fileNames,...              % Match a file name if it begins
-            '^R\d+','match');           % with the letter 'R' followed by a set of digits 1 or larger
-        inFiles = index(~cellfun(@isempty,index));  % Get the names of the matching files in a cell array
-        sessionNumbers = cellfun(@(x) strrep(x, 'R', ' '), inFiles, 'UniformOutput', false);
-    elseif get(findobj('Tag','sixxselect'),'Value')
-        index = regexpi(fileNames,...              % Match a file name if it begins
-            '^S\d+', 'match');           % with the letter 'S' followed by a set of digits 1 or larger
-        inFiles = index(~cellfun(@isempty,index));  % Get the names of the matching files in a cell array
-        sessionNumbers = cellfun(@(x) strrep(x, 'S', ' '), inFiles, 'UniformOutput', false);
-    elseif get(findobj('Tag','hildaselect'),'Value')
-        index = regexpi(fileNames,...              % Match a file name if it begins
-            '^H\d+', 'match');           % with the letter 'S' followed by a set of digits 1 or larger
-        inFiles = index(~cellfun(@isempty,index));  % Get the names of the matching files in a cell array
-        sessionNumbers = cellfun(@(x) strrep(x, 'H', ' '), inFiles, 'UniformOutput', false);
-    elseif get(findobj('Tag','shufflesselect'),'Value')
-        index = regexpi(fileNames,...              % Match a file name if it begins
-            '^S\d+', 'match');           % with the letter 'S' followed by a set of digits 1 or larger
-        inFiles = index(~cellfun(@isempty,index));  % Get the names of the matching files in a cell array
-        sessionNumbers = cellfun(@(x) strrep(x, 'S', ' '), inFiles, 'UniformOutput', false);
-    end
+    index = regexpi(fileNames,...              % Match a file name if it begins with the subject
+        ['^' sinitial '\d+'], 'match');           % initial letter  followed by a set of digits 1 or larger
+    inFiles = index(~cellfun(@isempty,index));  % Get the names of the matching files in a cell array
+    sessionNumbers = cellfun(@(x) strrep(x, sinitial, ' '), inFiles, 'UniformOutput', false);
+
     
     if ~isempty(sessionNumbers)
         dispsession = cat(1,sessionNumbers{:});
@@ -1681,4 +1670,23 @@ function sumplotsdfkernel_CreateFcn(hObject, eventdata, handles)
 %       See ISPC and COMPUTER.
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
+end
+
+
+% --------------------------------------------------------------------
+function optionmenu_Callback(hObject, eventdata, handles)
+% hObject    handle to optionmenu (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --------------------------------------------------------------------
+function rawsigoption_Callback(hObject, eventdata, handles)
+% hObject    handle to rawsigoption (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+if strcmp(get(gcbo, 'Checked'),'on')
+    set(gcbo, 'Checked', 'off');
+else 
+    set(gcbo, 'Checked', 'on');
 end
