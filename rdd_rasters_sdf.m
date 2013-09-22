@@ -110,12 +110,13 @@ alignseccodes=[];
 alignlabel=[];
 secalignlabel=[];
 collapsecode=0;
+getraw=0; %get raw traces in addition to rasters
 
 %define ecodes according to task
 %add last number for direction
 tasktype=get(findobj('Tag','taskdisplay'),'String');
-[fixcode fixoffcode tgtcode tgtoffcode saccode ...
-    stopcode rewcode tokcode errcode1 errcode2 errcode3 basecode] = taskfindecode(tasktype);
+[fixcode, fixoffcode, tgtcode, tgtoffcode, saccode, ...
+    stopcode, rewcode, tokcode, errcode1, errcode2, errcode3, basecode] = taskfindecode(tasktype);
 
 %% get align code from selected button in Align Time panel
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -375,6 +376,8 @@ elseif strfind(ATPSelectedButton,'ecodesalign')
         alignlabel='touchbell';
     elseif ecodealign==742
         alignlabel='retarget';
+    elseif ecodealign==507
+        alignlabel='ssd';
     else
         alignlabel='ecode';
     end
@@ -487,8 +490,8 @@ for cnc=1:numcodes
         numplots=numcodes;
     end
     [rasters,aidx, trialidx, trigtosacs, sactotrigs, trigtovis, vistotrigs, eyeh,eyev,eyevel,...
-        amplitudes,peakvels,peakaccs,allgreyareas,badidx,ssd] = rdd_rasters( rdd_filename, spikechannel, ...
-        allaligncodes(cnc,:), nonecodes, includebad, alignsacnum, aligntype, collapsecode, adjconditions);
+        amplitudes,peakvels,peakaccs,allgreyareas,badidx,ssd,rawsigs,alignrawidx] = rdd_rasters( rdd_filename, spikechannel, ...
+        allaligncodes(cnc,:), nonecodes, includebad, alignsacnum, aligntype, collapsecode, adjconditions, getraw);
     
     if isempty( rasters )
         disp( 'No raster could be generated (rex_rasters_trialtype returned empty raster)' );

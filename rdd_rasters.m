@@ -1,9 +1,9 @@
 function [alignedrasters, alignindex, trialindex, alltrigtosac, ...
     allsactotrig, alltrigtovis, allvistotrig,eyehoriz, eyevert, ....
     eyevelocity, amplitudes, peakvels,...
-    peakaccs, allonoffcodetime,badidx,allssd] = ...
+    peakaccs, allonoffcodetime,badidx,allssd,alignedrawsigs,alignrawidx] = ...
     rdd_rasters( name, selclus, aligntocode, noneofcodes,...
-    allowbadtrials, alignsacnum, aligntype, collapse, conditions)
+    allowbadtrials, alignsacnum, aligntype, collapse, conditions, getraw)
 
 % used to be: rdd_rasters( name, spikechannel, anyofcodes, allofcodes, noneofcodes, alignmentcode, allowbadtrials, alignsacnum, oncode, offcode)
 
@@ -142,6 +142,7 @@ alignmentfound = 0;
 nummatch = 0;
 alignindexlist = [];
 rasters = [];
+alignedrawsigs=[];
 eyeh = [];
 eyev = [];
 eyevel = [];
@@ -157,6 +158,30 @@ allvistotrig=[];
 badidx=[];
 allssd=[];
 % allcondtime = [];
+
+if getraw
+    if regexp(name,'Sp2') || regexp(name,'REX')
+        rawfname=name(1:end-4);
+    else
+        rawfname=name;
+    end
+    load([rawfname 'raw.mat']);
+    varlist=who; %list variables
+    eval(['rawdata = ' cell2mat(varlist(~cellfun(@isempty,strfind(varlist,rawfname))))]);
+    clear(cell2mat(varlist(~cellfun(@isempty,strfind(varlist,rawfname)))));
+    load([rawfname 't.mat']);
+    varlist=who; %re-list variables :)
+    rawtrialtimes = eval([cell2mat(varlist(~cellfun(@isempty,strfind(varlist,rawfname)))) '.times']);
+    clear(cell2mat(varlist(~cellfun(@isempty,strfind(varlist,rawfname)))));
+    load(name, 'alltrigin');
+    if alltrigin(2)-alltrigin(1)~=floor((rawtrialtimes(3)-rawtrialtimes(1))*1000)
+        disp('trial times do not match')
+    end
+    samplingrate=(find(rawdata.times>=rawtrialtimes(3),1) - find(rawdata.times>=rawtrialtimes(1),1))/(rawtrialtimes(3)-rawtrialtimes(1));
+    alignrawidx=nan(1,rexnumtrials); %preallocate
+else
+    alignrawidx=[];
+end
 
 %% Which Cluster?
 %%%%%%%%%%%%%%%%%
@@ -373,7 +398,7 @@ while ~islast
                         catch
                             goodsacnum=0;
                         end
-                        if ~logical(sum(goodsacnum)) && (~strcmp(aligntype,'stop') && ~strcmp(aligntype,'touchbell'))
+                        if ~logical(sum(goodsacnum)) && (~strcmp(aligntype,'stop') && ~strcmp(aligntype,'ssd') && ~strcmp(aligntype,'touchbell'))
                             s = sprintf('cannot display grey area for trial %d because saccade cannot be found. Removing erroneous trial',d);
                             disp(s);
                             alignmentfound = 0;
@@ -526,7 +551,14 @@ while ~islast
                             last=length(h);
                         end
                     end;
-                    rasters = cat_variable_size_row( rasters, train );
+                    rasters = cat_variable_size_row(rasters, train);
+                    
+                    if getraw
+                        alignedrawsigs=cat_variable_size_row(alignedrawsigs,rawdata.values(find(rawdata.times>=rawtrialtimes(d*2-1),1):...
+                            find(rawdata.times>=rawtrialtimes(d*2),1)));
+                        alignrawidx(nummatch) = aligntime*samplingrate/1000; %aligntime is in ms already
+                    end
+                    
                     %collect conditions (aka greycodes) times
                     %                     trialonofftime=zeros(1,length(h));
                     %                     for i=size(conditions,1):-1:1
@@ -624,6 +656,12 @@ alignindex = max( alignindexlist );
 eyehoriz = align_rows_on_indices( eyeh, alignindexlist );
 eyevert = align_rows_on_indices( eyev, alignindexlist );
 eyevelocity = align_rows_on_indices( eyevel, alignindexlist );
+
+%and the raw signal traces
+if getraw
+    alignrawidx=alignrawidx(~isnan(alignrawidx));
+    alignedrawsigs= align_rows_on_indices( alignedrawsigs, alignrawidx); 
+end
 
 %add shift to grey areas times
 for shifttm=1:size(shift,1)

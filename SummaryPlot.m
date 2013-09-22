@@ -88,6 +88,20 @@ end
 % get the arguments passed to the GUI
 global filename tasktype;
 
+if length(varargin)>3
+    plotstart=str2num(varargin{4});
+    plotstop=str2num(varargin{5});
+    fsigma=str2num(varargin{6});
+    chrono=varargin{7}; %for plotting rasters in chronological order
+    causker=varargin{8}; %kernel shape 
+else
+    plotstart=1000;
+    plotstop=500;
+    fsigma=10;
+    chrono=0; %for plotting rasters in chronological order
+    causker=0;
+end
+    
 if length(varargin)>2
     if iscell(varargin{3})
         if size(varargin{3},1)>1
@@ -106,6 +120,7 @@ if length(varargin)>1
 else
     filename=[];
 end
+%% for batch processing
 if ischar(varargin{1})
     if strfind(varargin{1},'allcx')
         batchplot_as(varargin,handles); %activity summary, without eye evelocity or rasters
@@ -114,30 +129,30 @@ if ischar(varargin{1})
     end
     return
 end
+%% for single file display
 if strcmp(tasktype,'optiloc')
     optilocplot(varargin,handles);
     return
 end
+
 set(findobj('tag','dispfilename'),'string',filename);
 set(findobj('tag','disptaskname'),'string',tasktype);
 
 alignedata=struct(varargin{1});
 alignment=cell2mat(unique({alignedata.alignlabel}));
 set(findobj('tag','dispalignment'),'string',alignment);
-chrono = 0; %for plotting rasters in chronological order
 
 %figdimension=get(findobj('tag','mainfig'),'Position');
 figdimension=get(gca,'Position');
 rasterdim=[figdimension(1)*1.1 (figdimension(4)*0.66)+figdimension(2)*1.1 figdimension(3)*0.9 figdimension(4)*0.3];
 
-plotstart=1000;
-plotstop=500;
-fsigma=20;
 cc=lines(length(alignedata));
 if size(cc,1)==8
     cc(8,:)=[0 0.75 0];
 end
-
+% if chrono
+%     cut_chrasters=zeros(length([alignedata.trials]),plotstart+plotstop+1);
+% end
 numsubplot=length(alignedata)*3; %dividing the panel in three compartments with wequal number of subplots
 if numsubplot==3
     numsubplot=6;
@@ -146,13 +161,15 @@ end
 %Plot rasters
 %rastersh = axes('Position', rasterdim, 'Layer','top','XTick',[],'YTick',[],'XColor','white','YColor','white');
 numrast=length(alignedata);
-for i=1:numrast
-    rasters=alignedata(i).rasters;
-    alignidx=alignedata(i).alignidx;
+for rastnum=1:numrast
+    rasters=alignedata(rastnum).rasters;
+    alignidx=alignedata(rastnum).alignidx;
     if chrono
-        trialidx=alignedata(i).trials;
+       cut_chrasters=zeros(length([alignedata.trials]),plotstart+plotstop+1);
+       %listing relevant trials in a continuous series with other rasters
+       chronoidx=ismember(sort([alignedata.trials]),alignedata(rastnum).trials); 
     end
-    greyareas=alignedata(i).allgreyareas;
+    greyareas=alignedata(rastnum).allgreyareas;
     start=alignidx - plotstart;
     stop=alignidx + plotstop;
     
@@ -171,10 +188,10 @@ for i=1:numrast
             'XTick',[],'YTick',[],'XColor','white','YColor','white', 'Parent', handles.mainfig);
     else
         if numrast==1
-            hrastplot(i)=subplot(numsubplot,1,1:2,'Layer','top', ...
+            hrastplot(rastnum)=subplot(numsubplot,1,1:2,'Layer','top', ...
                 'XTick',[],'YTick',[],'XColor','white','YColor','white', 'Parent', handles.mainfig);
         else
-            hrastplot(i)=subplot(numsubplot,1,i,'Layer','top', ...
+            hrastplot(rastnum)=subplot(numsubplot,1,rastnum,'Layer','top', ...
                 'XTick',[],'YTick',[],'XColor','white','YColor','white', 'Parent', handles.mainfig);
         end
     end
@@ -190,55 +207,49 @@ for i=1:numrast
     for grst=1:size(greyareas,2)
         viscuetimes(grst,:)=greyareas{grst}(1,:);
     end
-    cuestarts=viscuetimes(:,1);
+    
     if ~chrono
+        cuestarts=viscuetimes(:,1);
         [~,sortidx]=sort(cuestarts,'descend');
         viscuetimes=viscuetimes(sortidx,:);
         rasters=rasters(sortidx,:);
     end
     
-    %axis([0 stop-start+1 0 size(rasters,1)]);
     hold on
-    for rasternum=1:size(rasters,1) %plotting rasters trial by trial
-        if ~chrono
-            rastpos=rasternum;
+    
+        cut_rasters = rasters(:,start:stop); % Isolate rasters of interest
+        cut_rast_siz = size(cut_rasters);
+        isnantrial = isnan(sum(cut_rasters,2)); % Identify nantrials
+        cut_rasters(isnan(cut_rasters)) = 0; % take nans out so they don't get plotted
+        if chrono
+            cut_chrasters(chronoidx,:)=cut_rasters;
+            [indy, indx] = ind2sub(size(cut_chrasters),find(cut_chrasters)); %find row and column coordinates of spikes
         else
-            rastpos=trialidx(rasternum);
+            [indy, indx] = ind2sub(size(cut_rasters),find(cut_rasters)); %find row and column coordinates of spikes
         end
-        spiketimes=find(rasters(rasternum,start:stop)); %converting from a matrix representation to a time collection, within selected time range
-        if isnan(sum(rasters(rasternum,start:stop)))
-            isnantrial(rasternum)=1;
-            spiketimes(find(isnan(rasters(rasternum,start:stop))))=0; %#ok<FNDSB>
-        else
-            if ~chrono
-                plot([spiketimes;spiketimes],[ones(size(spiketimes))*rastpos;ones(size(spiketimes))*rastpos-1],'color',cc(i,:),'LineStyle','-');
+        
+        
+            if(size(rasters,1) == 1)
+                plot([indx;indx],[indy;indy+1],'color',cc(rastnum,:),'LineStyle','-'); % plot rasters
             else
-                plot([spiketimes;spiketimes],[ones(size(spiketimes))*rastpos;ones(size(spiketimes))*rastpos-1],'color',cc(i,:),'LineStyle','-');
+                plot([indx';indx'],[indy';indy'+1],'color',cc(rastnum,:),'LineStyle','-'); % plot rasters
             end
-        end
+            
         % drawing the grey areas
         try
-            greytimes=viscuetimes(rasternum,:)-start;
+            greytimes=viscuetimes-start;
             greytimes(greytimes<0)=0;
-            greytimes(greytimes>(stop-start))=stop-start;
-        catch %grey times out of designated period's limits
+            greytimes(greytimes>(stop-start+1))=stop-start+1;
+        catch
             greytimes=0;
         end
-        %         diffgrey = find(diff(greytimes)>1); % In case the two grey areas overlap, it doesn't discriminate.
-        %                                             % But that's not a problem
-        %         diffgreytimes = greytimes(diffgrey);
-        if ~sum(isnan(greytimes)) && logical(sum(greytimes)) && ~chrono
-            patch([greytimes(1) greytimes(end) greytimes(end) greytimes(1)],[rastpos rastpos rastpos-1 rastpos-1],...
-                [0 0 0], 'EdgeColor', 'none','FaceAlpha', 0.3);
+
+        if ~sum(sum(isnan(greytimes))) && logical(sum(sum(greytimes))) && ~chrono
+            grxlims=[greytimes';greytimes(:,2:-1:1)'];
+            grylims=[1:size(grxlims,2);1:size(grxlims,2);2:size(grxlims,2)+1;2:size(grxlims,2)+1];
+            patch(grxlims, grylims, [0 0 0], 'EdgeColor', 'none','FaceAlpha', 0.2)
         end
-        %         if diffgreytimes % multiple grey areas
-        %             %we'll see that later
-        %             diffgreytimes
-        %             pause
-        %         end
-        
-    end
-    
+
     set(gca,'xlim',[1 length(start:stop)]);
     axis(gca, 'off'); % axis tight sets the axis limits to the range of the data.
     
@@ -255,10 +266,10 @@ for i=1:numrast
         sumall=sum(rasters(~isnantrial,start-fsigma:stop+fsigma));
     end
     %     sdf=spike_density(sumall,fsigma)./length(find(~isnantrial)); %instead of number of trials
-    sdf=fullgauss_filtconv(sumall,fsigma,0)./length(find(~isnantrial)).*1000;
+    sdf=fullgauss_filtconv(sumall,fsigma,causker)./length(find(~isnantrial)).*1000;
     sdf=sdf(fsigma+1:end-fsigma);
     
-    plot(sdf,'Color',cc(i,:),'LineWidth',1.8);
+    plot(sdf,'Color',cc(rastnum,:),'LineWidth',1.8);
     % axis([0 stop-start 0 200])
     axis(gca,'tight');
     box off;
@@ -282,9 +293,9 @@ for i=1:numrast
     
     hold on;
     if ~isempty(rasters)
-        eyevel=alignedata(i).eyevel;
+        eyevel=alignedata(rastnum).eyevel;
         eyevel=mean(eyevel(:,start:stop));
-        heyevelline(i)=plot(eyevel,'Color',cc(i,:),'LineWidth',1);
+        heyevelline(rastnum)=plot(eyevel,'Color',cc(rastnum,:),'LineWidth',1);
         %axis(gca,'tight');
         eyevelymax=max(eyevel);
         if eyevelymax>0.8
@@ -300,11 +311,11 @@ for i=1:numrast
             [0 0 0 0],[1 0 0],'EdgeColor','none','FaceAlpha',0.5);
         
         % get directions for the legend
-        curdir{i}=alignedata(i).dir;
-        aligntype{i}=alignedata(i).alignlabel;
+        curdir{rastnum}=alignedata(rastnum).dir;
+        aligntype{rastnum}=alignedata(rastnum).alignlabel;
     else
-        curdir{i}='no';
-        aligntype{i}='data';
+        curdir{rastnum}='no';
+        aligntype{rastnum}='data';
     end
 end
 %moving up all rasters now
@@ -453,7 +464,7 @@ for algfile=1:length(filelist)
             sumall=sum(bdrasters(~isnantrial,start-fsigma:stop+fsigma));
         end
         %             bdsdf=spike_density(sumall,fsigma)./length(find(~isnantrial)); %instead of number of trials
-        bdsdf=fullgauss_filtconv(sumall,fsigma,0)./length(find(~isnantrial)).*1000;
+        bdsdf=fullgauss_filtconv(sumall,fsigma,causker)./length(find(~isnantrial)).*1000;
         bdsdf=bdsdf(fsigma+1:end-fsigma);
         
         bdsdfline=plot(bdsdf,'Color',[0.4389    0.1111    0.2581],'LineWidth',1.8);
@@ -990,7 +1001,7 @@ for algfile=1:length(filelist)
                 sumall(isnan(sumall))=0;
             end
             %             sdf=spike_density(sumall,fsigma)./length(find(~isnantrial)); %instead of number of trials
-            sdf=fullgauss_filtconv(sumall,fsigma,0)./length(find(~isnantrial)).*1000;
+            sdf=fullgauss_filtconv(sumall,fsigma,causker)./length(find(~isnantrial)).*1000;
             sdf=sdf(fsigma+1:end-fsigma);
             
             plot(sdf,'Color',cc(rstplt,:),'LineWidth',1.8);
@@ -1273,7 +1284,7 @@ for i=1:numrast
         sumall=sum(rasters(~isnantrial,start-fsigma:stop+fsigma));
     end
     %     sdf=spike_density(sumall,fsigma)./length(find(~isnantrial)); %instead of number of trials
-    sdf=fullgauss_filtconv(sumall,fsigma,0)./length(find(~isnantrial)).*1000;
+    sdf=fullgauss_filtconv(sumall,fsigma,causker)./length(find(~isnantrial)).*1000;
     sdf=sdf(1+fsigma:end-fsigma);
     
     plot(sdf,'Color',cc(i,:),'LineWidth',1.8);

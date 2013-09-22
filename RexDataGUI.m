@@ -23,7 +23,7 @@ function varargout = RexDataGUI(varargin)
 %
 % See also: GUIDE, GUIDATA, GUIHANDLES
 
-% Last Modified by GUIDE v2.5 07-Mar-2013 23:16:53
+% Last Modified by GUIDE v2.5 21-Sep-2013 20:27:17
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -1381,11 +1381,16 @@ function plotsummary_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 filename=get(findobj('Tag','filenamedisplay'),'String');
 tasktype=get(findobj('Tag','taskdisplay'),'String');
+prealtime=get(findobj('Tag','msbefore'),'String');
+postaltime=get(findobj('Tag','msafter'),'String');
+sigval=get(findobj('Tag','sigmaval'),'String');
+rastsort=get(findobj('Tag','sumplotrastsort'),'Value')-1; 
+kernel=get(findobj('Tag','sumplotsdfkernel'),'Value')-1; 
 dataaligned=guidata(findobj('Tag','exportdata'));
 if strcmp(tasktype,'optiloc')
     SummaryPlot_ol(dataaligned,filename,tasktype);
 else
-    SummaryPlot(dataaligned,filename,tasktype);
+    SummaryPlot(dataaligned,filename,tasktype,prealtime,postaltime,sigval,rastsort,kernel);
 end
 
 % --- Executes on button press in rastersandsdf_tab.
@@ -1631,3 +1636,49 @@ function chanelspanel_SelectionChangeFcn(hObject, eventdata, handles)
 %	OldValue: handle of the previously selected object or empty if none was selected
 %	NewValue: handle of the currently selected object
 % handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes on selection change in sumplotrastsort.
+function sumplotrastsort_Callback(hObject, eventdata, handles)
+% hObject    handle to sumplotrastsort (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns sumplotrastsort contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from sumplotrastsort
+
+
+% --- Executes during object creation, after setting all properties.
+function sumplotrastsort_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to sumplotrastsort (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on selection change in sumplotsdfkernel.
+function sumplotsdfkernel_Callback(hObject, eventdata, handles)
+% hObject    handle to sumplotsdfkernel (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns sumplotsdfkernel contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from sumplotsdfkernel
+
+
+% --- Executes during object creation, after setting all properties.
+function sumplotsdfkernel_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to sumplotsdfkernel (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
