@@ -63,11 +63,12 @@ set(hObject,'DefaultTextFontName','Calibri'); %'Color',[0.9 .9 .8]
 
 %only display selection box for appropriate subjects
 selboxh=get(findobj('tag','monkeyselect'),'Children');
-set(selboxh(strcmp(get(selboxh,'tag'),'shufflesselect')),'visible','off')
-set(selboxh(strcmp(get(selboxh,'tag'),'hildaselect')),'position',[0.1667 0.02 0.7083 0.3857]);
-set(selboxh(strcmp(get(selboxh,'tag'),'sixxselect')),'position',[0.1667 0.32 0.7083 0.3857]);
-set(selboxh(strcmp(get(selboxh,'tag'),'rigelselect')),'position',[0.1667 0.62 0.7083 0.3857]);
-
+if strcmp(user,'Vincent')
+    set(selboxh(strcmp(get(selboxh,'tag'),'shufflesselect')),'visible','off')
+    set(selboxh(strcmp(get(selboxh,'tag'),'hildaselect')),'position',[0.1667 0.02 0.7083 0.3857]);
+    set(selboxh(strcmp(get(selboxh,'tag'),'sixxselect')),'position',[0.1667 0.32 0.7083 0.3857]);
+    set(selboxh(strcmp(get(selboxh,'tag'),'rigelselect')),'position',[0.1667 0.62 0.7083 0.3857]);
+end
 % use varargin to allow for direct input of the name of the file to be analyzed.
 % see http://www.mathworks.com/help/techdoc/creating_guis/f10-998580.html
 
