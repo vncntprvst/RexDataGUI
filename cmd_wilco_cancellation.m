@@ -47,7 +47,7 @@ function [p_cancellation,h_cancellation,xctr] = cmd_wilco_cancellation(recname,d
     if length(prevssds)<2
         prevssds=sort(ssdvalues(ssdtotsidx(ssdtots>ceil(median(ssdtots)))));
     end
-    [~,~,mssrt]=findssrt(recname);
+    [mssrt]=findssrt(recname);
     
         try
         probaresp_diff=hist(nccssd,prevssds)'./(hist(nccssd,prevssds)'+hist(ccssd,prevssds)');

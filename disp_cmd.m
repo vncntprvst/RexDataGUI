@@ -3,26 +3,26 @@ global directory;
 % if latmach
     %% first get SSDs and SSRT, to later parse latency-matched trials and CSS according to SSDs
 
-    load(recname(1:end-6),'allbad','allcodes','alltimes','saccadeInfo'); % 
-    alllats=reshape({saccadeInfo.latency},size(saccadeInfo));
-    alllats=alllats';%needs to be transposed because the logical indexing below will be done column by column, not row by row
-    allgoodsacs=~cellfun('isempty',reshape({saccadeInfo.latency},size(saccadeInfo)));
-    %removing bad trials
-    allgoodsacs(logical(allbad),:)=0;
-    %removing stop trials that may be included
-    allgoodsacs(floor(allcodes(:,2)./1000)~=6,:)=0;
-    %indexing good sac trials
-    % if saccade detection corrected, there may two 'good' saccades
-    if max(sum(allgoodsacs,2))>1
-        twogoods=find(sum(allgoodsacs,2)>1);
-        for dblsac=1:length(twogoods)
-            allgoodsacs(twogoods(dblsac),find(allgoodsacs(twogoods(dblsac),:),1))=0;
-        end
-    end
-    sacdelay=(cell2mat(alllats(allgoodsacs')));
-    %get reward time for NSS trials
-    goodsactimes=alltimes(logical(sum(allgoodsacs,2)),:);
-    rewtimes=goodsactimes(allcodes(logical(sum(allgoodsacs,2)),:)==1030);
+%     load(recname(1:end-6),'allbad','allcodes','alltimes','saccadeInfo'); % 
+%     alllats=reshape({saccadeInfo.latency},size(saccadeInfo));
+%     alllats=alllats';%needs to be transposed because the logical indexing below will be done column by column, not row by row
+%     allgoodsacs=~cellfun('isempty',reshape({saccadeInfo.latency},size(saccadeInfo)));
+%     %removing bad trials
+%     allgoodsacs(logical(allbad),:)=0;
+%     %removing stop trials that may be included
+%     allgoodsacs(floor(allcodes(:,2)./1000)~=6,:)=0;
+%     %indexing good sac trials
+%     % if saccade detection corrected, there may two 'good' saccades
+%     if max(sum(allgoodsacs,2))>1
+%         twogoods=find(sum(allgoodsacs,2)>1);
+%         for dblsac=1:length(twogoods)
+%             allgoodsacs(twogoods(dblsac),find(allgoodsacs(twogoods(dblsac),:),1))=0;
+%         end
+%     end
+%     sacdelay=(cell2mat(alllats(allgoodsacs')));
+%     %get reward time for NSS trials
+%     goodsactimes=alltimes(logical(sum(allgoodsacs,2)),:);
+%     rewtimes=goodsactimes(allcodes(logical(sum(allgoodsacs,2)),:)==1030);
     
     % find Cmd protocol: fixed SSDs or staircase
     allssds=cat(find(size(datalign(1,2).ssd)==max(size(datalign(1,2).ssd))),datalign(1,2:3).ssd);
@@ -36,54 +36,30 @@ global directory;
     end
     
     %% get CSS SSDs
-    ccssd=datalign(2).ssd;
-    if size(ccssd,2)>size(ccssd,1)
-        ccssd=permute(ccssd,[2,1]);
-    end
-    nccssd=datalign(3).ssd;
-    if size(nccssd,2)>size(nccssd,1)
-        nccssd=permute(nccssd,[2,1]);
-    end
-        if size(ccssd,2)>1
-        ccssd=ccssd(:,1);
-        nccssd=nccssd(:,1);
-        end
-    ssdvalues=sort(unique([ccssd;nccssd]));
-    ssdvalues(find(diff(ssdvalues)==1)+1)=ssdvalues(diff(ssdvalues)==1);
-    ssdvalues=ssdvalues(diff(ssdvalues)>0);
-    if sum(diff(ssdvalues)==1) % second turn
-        ssdvalues(diff(ssdvalues)==1)=ssdvalues(diff(ssdvalues)==1)+1;
-        ssdvalues=ssdvalues(diff(ssdvalues)>0);
-    end
+%     ccssd=datalign(2).ssd;
+%     if size(ccssd,2)>size(ccssd,1)
+%         ccssd=permute(ccssd,[2,1]);
+%     end
+%     nccssd=datalign(3).ssd;
+%     if size(nccssd,2)>size(nccssd,1)
+%         nccssd=permute(nccssd,[2,1]);
+%     end
+%         if size(ccssd,2)>1
+%         ccssd=ccssd(:,1);
+%         nccssd=nccssd(:,1);
+%         end
+%     ssdvalues=sort(unique([ccssd;nccssd]));
+%     ssdvalues(find(diff(ssdvalues)==1)+1)=ssdvalues(diff(ssdvalues)==1);
+%     ssdvalues=ssdvalues(diff(ssdvalues)>0);
+%     if sum(diff(ssdvalues)==1) % second turn
+%         ssdvalues(diff(ssdvalues)==1)=ssdvalues(diff(ssdvalues)==1)+1;
+%         ssdvalues=ssdvalues(diff(ssdvalues)>0);
+%     end
 
     %% get SSRT used for alignement
     
-   [overallMeanSSRT,meanIntSSRT,meanSSRT,~,~,tachomc,tachowidth]=findssrt(recname(1:end-6),1); %1 is for plotting psychophysic curves
-    mssrt=[overallMeanSSRT,meanIntSSRT,meanSSRT];
-    mssrt=round(nanmean(mssrt(mssrt>40 & mssrt<150)));
-    if isnan(mssrt) || ~(mssrt>50 & mssrt<150) %get tachomc and lookup SSRT/tachomc fit. If fit missing, run SSRT_TachoMP
-        try
-            load([recname(1),'_tachoSSRTfit'],'fit');
-        catch
-            %SSRT_TachoMP
-        end
-        %get tacho curve midpoint
-            tachomc=mean(tachomc);
-        if tachomc<20 || isnan(tachomc)
-            tachomc=20;
-        end
-        % find reciprocal SSRT value
-        mssrt=max([round(tachomc*fit.coeff(1)+fit.coeff(2)) 75]);
-    end
-    if ~(mssrt>75 & mssrt<150)
-        load([recname(1),'_evolSSRT'],'evolSSRT','foSSRT');
-        session=regexp(recname,'\d+','match');
-        if min(abs(evolSSRT(2,:)-str2num(session{1})))<=5
-            mssrt=round(mssrt/3+(evolSSRT(1,find(abs(evolSSRT(2,:)-str2num(session{1}))==min(abs(evolSSRT(2,:)-str2num(session{1}))),1)))*2/3);
-        else
-            mssrt=round(mssrt/3+foSSRT*2/3);
-        end
-    end
+   [mssrt,inhibfun,ccssd,nccssd,ssdvalues,tachomc,tachowidth,sacdelay,rewtimes]=findssrt(recname(1:end-6),1); %1 is for plotting psychophysic curves
+
     
     %% find and keep most prevalent ssds
     [ssdtots,ssdtotsidx]=sort((arrayfun(@(x) sum(ccssd==x | ccssd==x-1 | ccssd==x+1),ssdvalues))); %+...
