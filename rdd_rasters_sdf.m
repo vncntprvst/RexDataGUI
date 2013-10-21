@@ -507,6 +507,11 @@ for cnc=1:numcodes
        % includebad=0;
         numplots=numcodes;
     end
+    if strcmp(tasktype, 'twoafc')
+        twoafc()
+        uiwait
+        % ZMA change allaligncodes in accordance with twoafc() GUI
+    end
     [rasters,aidx, trialidx, trigtosacs, sactotrigs, trigtovis, vistotrigs, eyeh,eyev,eyevel,...
         amplitudes,peakvels,peakaccs,allgreyareas,badidx,ssd,rawsigs,alignrawidx] = rdd_rasters( rdd_filename, spikechannel, ...
         allaligncodes(cnc,:), nonecodes, includebad, alignsacnum, aligntype, collapsecode, adjconditions, getraw);
@@ -652,8 +657,6 @@ if strcmp(aligntype,'stop') % make additional analysis
         plotrasts=0;
 
 elseif strcmp(tasktype, 'twoafc')
-    twoafc()
-    uiwait
     disp_2AFC(rdd_filename,datalign,spikechannel,ecodealign);
     plotrasts=0;
 end
