@@ -231,7 +231,7 @@ function listbox1_Callback(hObject, eventdata, handles)
 global aligncd
 contents = cellstr(get(hObject,'String'));
 align = find(ismember(contents, contents{get(hObject,'Value')}));
-codelist = [425 465 505 585 625 665 1030];
+codelist = [425 465 505 585 605 645 1030];
 aligncd = codelist(align);
 
 % --- Executes during object creation, after setting all properties.

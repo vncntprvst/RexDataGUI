@@ -121,7 +121,8 @@ end
 %add last number for direction
 tasktype=get(findobj('Tag','taskdisplay'),'String');
 [fixcode, fixoffcode, tgtcode, tgtoffcode, saccode, ...
-    stopcode, rewcode, tokcode, errcode1, errcode2, errcode3, basecode] = taskfindecode(tasktype);
+    stopcode, rewcode, tokcode, errcode1, errcode2, errcode3, basecode ...
+    dectgtcode dessaccode] = taskfindecode(tasktype);
 
 %% get align code from selected button in Align Time panel
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -331,7 +332,19 @@ if strcmp(tasktype,'gapstop') %otherwise CAT arguments dimensions are not consis
     stopcode=[stopcode stopcode];
 end
 
-conditions =[tgtcode tgtoffcode;saccode saccode;fixcode fixoffcode];
+switch tasktype
+    case 'twoafc'
+        conditions =[tgtcode tgtoffcode;...
+            saccode saccode;...
+            fixcode fixoffcode;...
+            rewcode rewcode;...
+            dectgtcode dectgtcode;...
+            dessaccode dessaccode];
+    otherwise
+        conditions =[tgtcode tgtoffcode;...
+            saccode saccode;...
+            fixcode fixoffcode];
+end
 
 if logical(sum(togrey))
     greycodes=conditions(togrey,:); %selecting out the codes
@@ -637,13 +650,11 @@ if strcmp(aligntype,'stop') % make additional analysis
         disp_cmd([rdd_filename,'_Clus',num2str(spikechannel)],datalign,1,0); % keep triplot off until fixed
      end
         plotrasts=0;
-% elseif strcmp(aligntype,'ecode') % may need task-specific analysis
-%    if adjconditions(1)==465 %2AFC rule target 
+
 elseif strcmp(tasktype, 'twoafc')
-        twoafc()
-        uiwait
-        disp_2AFC(rdd_filename,datalign,spikechannel,ecodealign);
-%    end
+    twoafc()
+    uiwait
+    disp_2AFC(rdd_filename,datalign,spikechannel,ecodealign);
     plotrasts=0;
 end
 
