@@ -349,14 +349,10 @@ while ~islast
                 % all, and just displaying the requested ones in
                 % rdd_rasters_sdf. VP 7/14/2012
                 %selectedgrey=find([get(findobj('Tag','greycue'),'Value'),get(findobj('Tag','greyemvt'),'Value'),get(findobj('Tag','greyfix'),'Value')]);
+                
+                
                 greytypes={'cue';'eyemvt';'fix'};
-                % Conditions are modified by 2AFC task, in said case,
-                % greytypes are appended w/ null entries. This is necessary
-                % for strcmp to eyemvt to function properly
-                if size(conditions,1)>3
-                    for ii=4:size(conditions,1), greytypes{ii}=''; end
-                end
-      
+                
                 %caveat: some conditions may be 4 or 5 digits long,
                 %such as user defined codes such as TOKSWCD (1501)
                 
