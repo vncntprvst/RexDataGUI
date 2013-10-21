@@ -38,6 +38,9 @@ persistent etimes;
 persistent trialstarttimes;
 persistent trialendtimes;
 persistent arecs;
+persistent clus_label;
+persistent ovlanl; %overlook first analog pointer in trial following aborted trial
+
 
 %% Radu: for spike2 cluster names
 persistent spike2aidx
@@ -81,16 +84,12 @@ if ~strcmp(currecodename, ecname) || reprocess
 	[ecodes, etimes] = rex_ecodes(name);
 		if replacespikes
             disp('I am about to replace ecodes.');
-            howmanyclus = max(clustercodes);
-            selclus = str2double(get(findobj('Tag','whichclus'),'String'));
-            if ~(selclus == round(selclus)) || selclus > howmanyclus || selclus < 1
-                fprintf('Invalis cluster selected. Maximum is %d Setting to cluster 1\n',howmanyclus);
-                set(findobj('Tag','whichclus'),'String','1');
-                selclus = 1;
-            end
-        [ecodes, etimes] = replaceecodes(ecodes,etimes,selclus);
-        %[ecodes, etimes] = replaceecodes(ecodes,etimes);
-        spike2aidx = find(ecodes == -112);
+            howmanyclus = double(max(clustercodes));
+            [ecodes, etimes,clus_label] = replaceecodes(ecodes,etimes,0);
+            %[ecodes, etimes] = replaceecodes(ecodes,etimes);
+            spike2aidx = find(ecodes == -112);
+        else
+            clus_label = 1;
         end
 	% trial start and ends
 	trialstart = find(ecodes == 1001);
@@ -127,7 +126,6 @@ if ~strcmp(currecodename, ecname) || reprocess
 	trialstarttimes = etimes(trialstart);
 	trialendtimes = etimes(trialend);
     
-	
 end;
 
 %% indices of start and end of this trial
@@ -174,16 +172,25 @@ end;
 % but rather look at all future -112s, and see if one fits the time frame.
 
     if replacespikes
+        % Radu: Replacing REX spikes with Spike2 spikes made rex_trial_raw unable to process the file.
+        % My solution to that was to collect all code -112 ecodes and and
+        % corresponding etimes at the end of the ecodes/etimes vector and
+        % delete them one by one as processing goes on. This means that the
+        % ovlanl indicator won't work in the same way.
         aidx = spike2aidx;
         aoffset = etimes(spike2aidx);
     else
         aidx = find( ecodes( idx1:end ) == -112 );
+        if ~isempty(ovlanl) && ovlanl==trial-1
+            aidx=aidx(2:end);
+        end
         temptimes = etimes( idx1:end );
         aoffset = temptimes( aidx );
     end
 
-
-
+nxtcentdouze=etimes( find(ecodes(idx2:end) == -112,1) + idx2 - 1);
+lastcentdouze=currtime(find( currcode == -112,1,'last')); % potentially bad news for the next trial if lastcentdouze is empty % might want to restrain trial
+                                                          
 % aidx = find( currcode == -112 );
 % aoffset = currtime( aidx );
 
@@ -235,6 +242,16 @@ if ~isempty(aidx)
 
         %%%%%%%%%%%%%%%%%%%%%%%%   Uncomment the first for processing mode 1
         %%%%%%%%%%%%%%%%%%%%%%%%   Reverse for mode 2.
+        
+        %Correction of early aborted trials, so that they don't mess up
+        %next trial's analog data - not working - misplaced analog pointer- VP 9/2013  
+        if isempty(lastcentdouze) && ~replacespikes   
+            outbound=find(ismember(aoffset,nxtcentdouze))+1;
+            ovlanl=trial;
+        else
+            outbound=length(aoffset)+1;
+            ovlanl=-1;
+        end
 
         while (cnt112 <= length( aoffset )) && keepgoing
             %%%while (cnt112 <= length( aoffset )) && (atm < endofthistrial) %-101 )
@@ -261,7 +278,7 @@ if ~isempty(aidx)
             % I guess means that there is no analog data for this trial.  To
             % handle that, I'm inserting a foundanalogdata flag.
             %  pause;
-            if (foundanalogdata && atm>0 && ~acont)
+            if (foundanalogdata && atm>0 && ~acont) || cnt112==outbound
                 keepgoing = 0;
             end;
             % RCA 01/30/09 - Ok, maybe not.  Assume that the -112s in this trial go to
@@ -269,8 +286,6 @@ if ~isempty(aidx)
             % some rex files had -112s in the next trial.  Until I solve this, I'm
             % leaving the possibility of two types of processing.
 
-            %%%%%%%%%%%%%%%  Uncomment the first for processing mode 1.
-            %%%%%%%%%%%%%%%  Reverse for mode 2.
             if (atm > 0 && ofst==0)
                 %%%if ((atm >= startofthistrial) && (atm < endofthistrial))
 
@@ -279,7 +294,7 @@ if ~isempty(aidx)
             else
                 timeok = 0;
             end;
-            if timeok || (ofst && acont && continuationdataok )
+            if (timeok || (ofst && acont && continuationdataok )) && cnt112<outbound
 
                 % s = sprintf( 'start of trial %d is time %d, end is %d, atm was %d, ofst is %d and acont is %d.', trial, startofthistrial, endofthistrial, atm, ofst, acont );
                 %  disp( s );
@@ -599,8 +614,15 @@ badtrial = badtt;
 %% spikes!
 sidx = find(currcode > 600 & currcode < 700);
 
-uspk = sort(unique(currcode(sidx)));
-numspkchan = length(uspk);
+present_clus = sort(unique(currcode(sidx))); % each different label
+
+if replacespikes
+    uspk = 600+[1:max(clus_label)];
+    numspkchan = max(clus_label); % how many cluster labels?
+else
+    uspk = 610;
+    numspkchan = 1;
+end
 
 %% each channels spikes are in a cell in array spk
 if numspkchan == 0
@@ -609,7 +631,15 @@ if numspkchan == 0
 else
     for s = 1:numspkchan
         spkchan(s) = uspk(s);
-        spk{s} = currtime(find(currcode == uspk(s))) - analog_time;
+        if ismember(uspk(s),present_clus)
+            if ~isempty(find(currcode == uspk(s)))
+                spk{s} = currtime(find(currcode == uspk(s))) - analog_time;
+            else
+                spk{s} = nan;
+            end
+        else
+            spk{s} = nan;
+        end
     end;  % looping through spike channels
 end;
 

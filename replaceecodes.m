@@ -1,15 +1,14 @@
-function [newecodes, newetimes] = replaceecodes(ecodes,etimes,whichclus,figs)
-if nargin < 3
-    whichclus = 1;
-    figs=0;
-elseif nargin <4
+function [newecodes, newetimes,clus_names] = replaceecodes(ecodes,etimes,figs)
+if nargin <3
     figs=0;
 end
 
 global triggertimes spike2times clustercodes
 whentrigs = round(triggertimes.*1e3);
-whenspikes = round(spike2times.*1e3);
-whatcodes = clustercodes;
+whenspikes = round(spike2times(clustercodes ~= 0).*1e3);
+whatcodes = double(clustercodes(clustercodes ~= 0));
+clus_names = unique(whatcodes);
+
 %% recast in terms of REX times
 starttrigs =  etimes(ecodes == 1001);
 
@@ -20,7 +19,7 @@ if length(whentrigs)/sum(ecodes == 1001) == 2 %expected ratio of triggers to tri
 else %either spurious codes in token task, or wrong recording sequence (e.g. Spike2 recording started after REX recording)
 
     disp('Warning! Inconsistent number of triggers. Will attempt to align via cross correlation.');
-    pause;
+    %pause;
     
 end
     
@@ -35,7 +34,8 @@ rast_starttrigs = double(ismember(rast_starttrigs, starttrigs));
 rast_whentrigs = double(ismember(rast_whentrigs, whentrigs));
 
 [corr_vec,lag_range] = xcorr(rast_starttrigs,rast_whentrigs);
-offset = keep_min_rex - keep_min_spk2 + lag_range(corr_vec == max(corr_vec));
+where_max = lag_range(corr_vec == max(corr_vec));
+offset = keep_min_rex - keep_min_spk2 + where_max(1);
 
 if figs
     fprintf('There are %d triggers\n',length(whentrigs));
@@ -47,7 +47,7 @@ if figs
     
     figure(99);clf;
 
-    whentrigs = whentrigs + lag_range(corr_vec == max(corr_vec)) + keep_min_rex - 1;
+    whentrigs = whentrigs + where_max(1) + keep_min_rex - 1;
     
     plot(whentrigs,whentrigs.^0,'rd','MarkerSize',20); % red diamonds: spike2 triggers
     hold on;
@@ -69,30 +69,37 @@ if figs
 
 end
 
-whenspikes = whenspikes+offset;
+whenspikes = whenspikes + offset;
 
-%% Isolate cluster
-whenspikes = whenspikes(whatcodes == whichclus);
+%% Remove old spikes
 
-%% Remove old spikes and references to analog
 newecodes = ecodes;
 newetimes = etimes;
 
 newetimes(newecodes == 610) = [];
 newecodes(newecodes == 610) = [];
- 
+
+%% Remove old references to analog
  atimes = newetimes(newecodes == -112);
  newetimes(newecodes == -112) = [];
  newecodes(newecodes == -112) = [];
+ 
+%% Label new clusters
+howmanyclus = length(clus_names);
+for a = 1:howmanyclus
+    clus_label = 600+clus_names(a);
+    thesespikes = whenspikes(whatcodes == clus_names(a)); % Isolate cluster
+    addecodes = clus_label.*ones(length(thesespikes),1);
+    newecodes = [ newecodes; addecodes];
+    newetimes = [ newetimes; thesespikes]; % Add new spikes
+end
 
-%% Add new spikes and sort
-addecodes = 610.*ones(length(whenspikes),1);
-newecodes = [ newecodes; addecodes];
-newetimes = [ newetimes; whenspikes];
+%% sort
 
 [newetimes,ind] = sort(newetimes);
 newecodes = newecodes(ind);
 
+%% add analog references
 addacodes = -112.*ones(length(atimes),1);
 newetimes = [newetimes; atimes];
 newecodes = [newecodes; addacodes];

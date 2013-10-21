@@ -180,7 +180,7 @@ exlSheet = exlFile.Sheets.Item(monknum);% e.g.: 2 = Sixx
 robj = exlSheet.Columns.End(4);
 numrows = robj.row;
 if numrows==1048576 %empty document
-    numrows=2;
+    numrows=1;
 end
 %exl.registerevent({'WorkbookBeforeClose',@close_event1})
 Quit(exl);

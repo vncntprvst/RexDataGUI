@@ -206,10 +206,10 @@ AccThreshold = 0.1;          %if acc > 100000 degrees/s^2, that is 0.1 deg/ms^2,
             end                     
             %start time of first saccade greater than 3 degrees (typical
             %restriction window) after relevant ecode (ecodesacstart-1)
-            if find(ampsacofint>3)
-            mainsacs=getfield(curtrialsacInfo, {find(ampsacofint>3,1,'first')}, 'starttime');
+            if find(ampsacofint>2.5)
+            mainsacs=getfield(curtrialsacInfo, {find(ampsacofint>2.5,1,'first')}, 'starttime');
             %end time of that saccade
-            mainsace=getfield(curtrialsacInfo, {find(ampsacofint>3,1,'first')}, 'endtime');
+            mainsace=getfield(curtrialsacInfo, {find(ampsacofint>2.5,1,'first')}, 'endtime');
                         
             %define boundaries for cropped display based on this saccade
             ssacbound=mainsacs-200;

@@ -1,9 +1,9 @@
 function [alignedrasters, alignindex, trialindex, alltrigtosac, ...
     allsactotrig, alltrigtovis, allvistotrig,eyehoriz, eyevert, ....
     eyevelocity, amplitudes, peakvels,...
-    peakaccs, allonoffcodetime,badidx,allssd] = ...
-    rdd_rasters( name, spikechannel, aligntocode, noneofcodes,...
-    allowbadtrials, alignsacnum, aligntype, collapse, conditions)
+    peakaccs, allonoffcodetime,badidx,allssd,alignedrawsigs,alignrawidx] = ...
+    rdd_rasters( name, selclus, aligntocode, noneofcodes,...
+    allowbadtrials, alignsacnum, aligntype, collapse, conditions, getraw)
 
 % used to be: rdd_rasters( name, spikechannel, anyofcodes, allofcodes, noneofcodes, alignmentcode, allowbadtrials, alignsacnum, oncode, offcode)
 
@@ -60,6 +60,7 @@ function [alignedrasters, alignindex, trialindex, alltrigtosac, ...
 global rexnumtrials;
 
 tasktype=get(findobj('Tag','taskdisplay'),'String');
+
 if strcmp(tasktype,'gapstop') || strcmp(tasktype,'base2rem50')
     multicodetask=1;
 else
@@ -67,7 +68,18 @@ else
 end
 
 if strcmp(aligntype,'stop') % get ssrt
-    [~,~,mssrt]=findssrt(name);
+    try
+        [mssrt,~,~,~,~,tachomc]=findssrt(name);
+    catch
+        mssrt=NaN;
+        tachomc=NaN;
+    end
+    
+    % get 1st align type (sac or tgt)
+    AlignTimePanelH=findobj('Tag','aligntimepanel');%align time panel handle
+    ATPSelectedButton= get(get(AlignTimePanelH,'SelectedObject'),'Tag');%selected button's tag
+    ATPbuttonnb=find(strcmp(ATPSelectedButton,get(findall(AlignTimePanelH),'Tag')));%converted to handle tag list's number
+    
 end
 
 [~, ~, tgtcode, tgtoffcode] = taskfindecode(tasktype);
@@ -104,6 +116,7 @@ alignmentfound = 0;
 nummatch = 0;
 alignindexlist = [];
 rasters = [];
+alignedrawsigs=[];
 eyeh = [];
 eyev = [];
 eyevel = [];
@@ -119,6 +132,35 @@ allvistotrig=[];
 badidx=[];
 allssd=[];
 % allcondtime = [];
+
+if getraw
+    if regexp(name,'Sp2') || regexp(name,'REX')
+        rawfname=name(1:end-4);
+    else
+        rawfname=name;
+    end
+    load([rawfname 'raw.mat']);
+    varlist=who; %list variables
+    eval(['rawdata = ' cell2mat(varlist(~cellfun(@isempty,strfind(varlist,rawfname))))]);
+    clear(cell2mat(varlist(~cellfun(@isempty,strfind(varlist,rawfname)))));
+    load([rawfname 't.mat']);
+    varlist=who; %re-list variables :)
+    rawtrialtimes = eval([cell2mat(varlist(~cellfun(@isempty,strfind(varlist,rawfname)))) '.times']);
+    clear(cell2mat(varlist(~cellfun(@isempty,strfind(varlist,rawfname)))));
+    load(name, 'alltrigin');
+    if alltrigin(2)-alltrigin(1)~=floor((rawtrialtimes(3)-rawtrialtimes(1))*1000)
+        disp('trial times do not match')
+    end
+    samplingrate=(find(rawdata.times>=rawtrialtimes(3),1) - find(rawdata.times>=rawtrialtimes(1),1))/(rawtrialtimes(3)-rawtrialtimes(1));
+    alignrawidx=nan(1,rexnumtrials); %preallocate
+else
+    alignrawidx=[];
+end
+
+%% Which Cluster?
+%%%%%%%%%%%%%%%%%
+% selclus = str2double(get(findobj('Tag','whichclus'),'String')); %
+% unnecessary now: spikechannel and selclus are now one and the same
 
 %  Loop through all of the trials using rex_first_trial and rex_next_trial.
 %  See if each trial has the right codes, and try to align the spike data
@@ -137,8 +179,7 @@ while ~islast
     % rex_first_trial and rex_next_trial).
     
     %[ecodeout, etimeout, spkchan, spk, arate, h, v, start_time, badtrial ] = rex_trial(name, d );
-    
-    [ecodeout, etimeout, spkchan, spk, arate, h, v, start_time, isbadtrial, curtrialsacInfo] = rdd_rex_trial(name, d);%, rdt_includeaborted);
+    [ecodeout, etimeout, spkchan, spk, arate, h, v, start_time, isbadtrial, curtrialsacInfo] = rdd_rex_trial(name, d, selclus);%, rdt_includeaborted);
     
     %if ~isbadtrial
     if logical(sum((ecodeout==2222)))  % had a weird case of a trial with ecode 2222. Don't know what that was. See file S110L4A5_12951
@@ -169,7 +210,7 @@ while ~islast
         if logical(sum(find(noneofcodes==alignto(1)))) ... %in case the purpose IS to align to a noneof code
                 || allowbadtrials % or if we want the bad trials too
             noneof = 1;
-            isbadtrial=~has_none_of(ecodeout, noneofcodes); %make sure trials with noneofcodes other than 17385 are tagged is bad
+            isbadtrial=~has_none_of(ecodeout, noneofcodes); %make sure trials with noneofcodes other than 17385 are tagged as bad
         else
             noneof = has_none_of( ecodeout, noneofcodes );
         end
@@ -242,14 +283,14 @@ while ~islast
                     %restriction window) after relevant ecode (ecodesacstart-1)
                     if ~logical(sum(ampsacofint))
                         alignmentfound = 0;
-                    elseif logical(sum(ampsacofint>3))
+                    elseif logical(sum(ampsacofint>2.5))
                         if strcmp(aligntype,'sac') || strcmp(aligntype,'error2')
-                            aligntime=getfield(curtrialsacInfo, {find(ampsacofint>3,1)}, 'starttime');
-                            sacamp=getfield(curtrialsacInfo, {find(ampsacofint>3,1)}, 'amplitude');
-                            sacpeakpeakvel=getfield(curtrialsacInfo, {find(ampsacofint>3,1)}, 'peakVelocity');
-                            sacpeakacc=getfield(curtrialsacInfo, {find(ampsacofint>3,1)}, 'peakAcceleration');
-                        elseif strcmp(aligntype,'corsac')  &&  find(ampsacofint>3,1)+1<=length(ampsacofint)% If we are looking for the n-th saccade after the main one
-                            nextgoodsac=find(ampsacofint>3,1)+1;
+                            aligntime=getfield(curtrialsacInfo, {find(ampsacofint>2.5,1)}, 'starttime');
+                            sacamp=getfield(curtrialsacInfo, {find(ampsacofint>2.5,1)}, 'amplitude');
+                            sacpeakpeakvel=getfield(curtrialsacInfo, {find(ampsacofint>2.5,1)}, 'peakVelocity');
+                            sacpeakacc=getfield(curtrialsacInfo, {find(ampsacofint>2.5,1)}, 'peakAcceleration');
+                        elseif strcmp(aligntype,'corsac')  &&  find(ampsacofint>2.5,1)+1<=length(ampsacofint)% If we are looking for the n-th saccade after the main one
+                            nextgoodsac=find(ampsacofint>2.5,1)+1;
                             aligntime=getfield(curtrialsacInfo, {nextgoodsac}, 'starttime');
                             if aligntime>etimeout(ecodeout==1030)
                                 alignmentfound = 0; % secondary saccade after reward. Not considered corrective saccade
@@ -266,27 +307,31 @@ while ~islast
                 
                 % If it's a stop alignement code, two different cases
                 if strcmp(aligntype,'stop')
-                        if find(ecodeout==1503)
-                            ncecode=10;
-                        else
-                            ncecode=9;
-                        end
+                    if find(ecodeout==1503)
+                        ncecode=10;
+                    else
+                        ncecode=9;
+                    end
                     if isbadtrial % non-canceled stop trial
-                        % for non-canceled stop trial, align to saccade
-                        % initiation
-                        if ecodeout(ncecode)==17385 || ecodeout(ncecode)==16386
-                            ampsacofint=[];
-                            nwsacstart=cat(1,curtrialsacInfo.starttime);
-                            sacofint=nwsacstart>etimeout(falign(1)-1);
-                            ampsacofint=zeros(1,length(sacofint));
-                            for k=find(sacofint,1):length(sacofint)
-                                ampsacofint(1,k)=abs(getfield(curtrialsacInfo, {k}, 'amplitude'));
+                        if ATPbuttonnb==6
+                            % for non-canceled stop trial, align to saccade
+                            % initiation
+                            if ecodeout(ncecode)==17385 || ecodeout(ncecode)==16386
+                                ampsacofint=[];
+                                nwsacstart=cat(1,curtrialsacInfo.starttime);
+                                sacofint=nwsacstart>etimeout(7);
+                                ampsacofint=zeros(1,length(sacofint));
+                                for k=find(sacofint,1):length(sacofint)
+                                    ampsacofint(1,k)=abs(getfield(curtrialsacInfo, {k}, 'amplitude'));
+                                end
+                                if sum(sacofint)
+                                    aligntime=getfield(curtrialsacInfo, {find(ampsacofint>2.5,1)}, 'starttime');
+                                else
+                                    alignmentfound = 0;
+                                end
                             end
-                            if sum(sacofint)
-                                aligntime=getfield(curtrialsacInfo, {find(ampsacofint>3,1)}, 'starttime');
-                            else
-                                alignmentfound = 0;
-                            end
+                        elseif ATPbuttonnb==7
+                            aligntime = etimeout(find(floor(ecodeout./10) == 487,1)) * (arate / 1000);
                         end
                     else
                         % for successfully canceled stop trials, align to stop
@@ -327,7 +372,7 @@ while ~islast
                         catch
                             goodsacnum=0;
                         end
-                        if ~logical(sum(goodsacnum)) && (~strcmp(aligntype,'stop') && ~strcmp(aligntype,'touchbell'))
+                        if ~logical(sum(goodsacnum)) && (~strcmp(aligntype,'stop') && ~strcmp(aligntype,'ssd') && ~strcmp(aligntype,'touchbell'))
                             s = sprintf('cannot display grey area for trial %d because saccade cannot be found. Removing erroneous trial',d);
                             disp(s);
                             alignmentfound = 0;
@@ -418,10 +463,10 @@ while ~islast
                     if find(ecodeout==1502) % Trigger code
                         %                         triggercode=1;
                         trigtosac=aligntime-etimeout(1)-1; %trigger code is 1ms before 1001
-                        trigtovis=max(visevents(visevents<trigtosac)); %the latest visual event occuring before alignment time
+                        trigtovis=max(visevents(visevents<=trigtosac)); %the latest visual event occuring before alignment time
                         if find(ecodeout==1030)
                             sactotrig=etimeout(find(ecodeout==1502,1))+1-aligntime; %the second trigger channel is actually the start of the next trial
-                            vistotrig=etimeout(find(ecodeout==1502,1))+1-max(visevents(visevents<trigtosac)+etimeout(1)+1);
+                            vistotrig=etimeout(find(ecodeout==1502,1))+1-max(visevents(visevents<=trigtosac)+etimeout(1)+1);
                         else
                             sactotrig=NaN;
                             vistotrig=NaN;
@@ -430,10 +475,10 @@ while ~islast
                     else %older recordings without trigger code
                         %                         triggercode=0;
                         trigtosac=aligntime-etimeout(1)-1; %in case there is a trigger channel available in the SH recording
-                        trigtovis=max(visevents(visevents<trigtosac)); %the latest visual event occuring before alignment time
+                        trigtovis=max(visevents(visevents<=trigtosac)); %the latest visual event occuring before alignment time
                         if find(ecodeout==1030) %good trial
                             sactotrig=etimeout(find(ecodeout==1030,1))+1-aligntime;%1ms between reward code and valve opening
-                            vistotrig=etimeout(find(ecodeout==1030,1))+1-max(visevents(visevents<trigtosac)+etimeout(1)+1);
+                            vistotrig=etimeout(find(ecodeout==1030,1))+1-max(visevents(visevents<=trigtosac)+etimeout(1)+1);
                         else %wrong trial
                             sactotrig=NaN;
                             vistotrig=NaN;
@@ -480,7 +525,14 @@ while ~islast
                             last=length(h);
                         end
                     end;
-                    rasters = cat_variable_size_row( rasters, train );
+                    rasters = cat_variable_size_row(rasters, train);
+                    
+                    if getraw
+                        alignedrawsigs=cat_variable_size_row(alignedrawsigs,rawdata.values(find(rawdata.times>=rawtrialtimes(d*2-1),1):...
+                            find(rawdata.times>=rawtrialtimes(d*2),1)));
+                        alignrawidx(nummatch) = aligntime*samplingrate/1000; %aligntime is in ms already
+                    end
+                    
                     %collect conditions (aka greycodes) times
                     %                     trialonofftime=zeros(1,length(h));
                     %                     for i=size(conditions,1):-1:1
@@ -491,6 +543,9 @@ while ~islast
                     %                     oldallonoffcodetime=cat_variable_size_row(oldallonoffcodetime, trialonofftime);
                     if  ~(size(onoffcodetime,2)==2 && codepairnb==1)
                         onoffkeepcode=[find(~isnan(onoffcodetime(1,:)),1) find(~isnan(onoffcodetime(1,:)),1)+codepairnb];
+                        if onoffkeepcode(end)>size(onoffcodetime,2)
+                            onoffkeepcode=[size(onoffcodetime,2)-(codepairnb+1) size(onoffcodetime,2)-1];
+                        end
                         onoffcodetime=onoffcodetime(:,onoffkeepcode);
                     end
                     allonoffcodetime=[allonoffcodetime {onoffcodetime}];
@@ -575,6 +630,12 @@ alignindex = max( alignindexlist );
 eyehoriz = align_rows_on_indices( eyeh, alignindexlist );
 eyevert = align_rows_on_indices( eyev, alignindexlist );
 eyevelocity = align_rows_on_indices( eyevel, alignindexlist );
+
+%and the raw signal traces
+if getraw
+    alignrawidx=alignrawidx(~isnan(alignrawidx));
+    alignedrawsigs= align_rows_on_indices( alignedrawsigs, alignrawidx); 
+end
 
 %add shift to grey areas times
 for shifttm=1:size(shift,1)
