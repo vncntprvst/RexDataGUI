@@ -1,5 +1,6 @@
 function [fixcode fixoffcode tgtcode tgtoffcode saccode...
-    stopcode rewcode tokcode errcode1 errcode2 errcode3 basecode] = taskfindecode(tasktype);
+    stopcode rewcode tokcode errcode1 errcode2 errcode3 basecode ...
+    dectgtcode decsaccode] = taskfindecode(tasktype);
 
 %define ecodes according to task (reverses taskdetect basically)
 %add last number for direction
@@ -17,6 +18,9 @@ errcode2=16386;
 errcode3=16387;
 tokcode=1501;
 basecode=[];
+% Two AFC Specific
+dectgtcode=605; % Decision target
+decsaccode=645; % Decision sac
 
 if strcmp(tasktype,'vg_saccades') || strcmp(tasktype,'optiloc')
     basecode=601;
