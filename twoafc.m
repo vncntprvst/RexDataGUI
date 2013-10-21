@@ -22,7 +22,7 @@ function varargout = twoafc(varargin)
 
 % Edit the above text to modify the response to help twoafc
 
-% Last Modified by GUIDE v2.5 20-Oct-2013 22:26:39
+% Last Modified by GUIDE v2.5 21-Oct-2013 13:36:51
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -42,7 +42,6 @@ else
     gui_mainfcn(gui_State, varargin{:});
 end
 % End initialization code - DO NOT EDIT
-
 
 % --- Executes just before twoafc is made visible.
 function twoafc_OpeningFcn(hObject, eventdata, handles, varargin)
@@ -72,7 +71,6 @@ function varargout = twoafc_OutputFcn(hObject, eventdata, handles)
 % Get default command line output from handles structure
 varargout{1} = handles.output;
 
-
 % --- Executes on selection change in whichdirs.
 function whichdirs_Callback(hObject, eventdata, handles)
 % hObject    handle to whichdirs (see GCBO)
@@ -81,6 +79,7 @@ function whichdirs_Callback(hObject, eventdata, handles)
 
 % Hints: contents = cellstr(get(hObject,'String')) returns whichdirs contents as cell array
 %        contents{get(hObject,'Value')} returns selected item from whichdirs
+global sides
 contents = cellstr(get(hObject,'String'));
 sides = find(ismember(contents, contents{get(hObject,'Value')}));
 
@@ -106,7 +105,6 @@ function savefig_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of savefig
-savfig = get(hObject, 'Value');
 
 % --- Executes on button press in savesdfs.
 function savesdfs_Callback(hObject, eventdata, handles)
@@ -115,14 +113,23 @@ function savesdfs_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of savesdfs
-savsdf = get(hObject, 'Value');
 
 % --- Executes on button press in run.
 function run_Callback(hObject, eventdata, handles)
 % hObject    handle to run (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-
+global output
+global plots
+global sides
+global aligncd
+output.savfig = get(findobj('Tag','savefig'),'Value');
+output.savsdf = get(findobj('Tag','savesdfs'), 'Value');
+output.plots = plots;
+output.sides = sides;
+output.aligncode = aligncd;
+uiresume
+close(handles.figure1);
 
 % --- Executes on button press in ssall.
 function ssall_Callback(hObject, eventdata, handles)
@@ -211,3 +218,30 @@ function uipanel1_CreateFcn(hObject, eventdata, handles)
 % handles    empty - handles not created until after all CreateFcns called
 global plots
 plots = zeros(8,1);
+
+
+% --- Executes on selection change in listbox1.
+function listbox1_Callback(hObject, eventdata, handles)
+% hObject    handle to listbox1 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns listbox1 contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from listbox1
+global aligncd
+contents = cellstr(get(hObject,'String'));
+align = find(ismember(contents, contents{get(hObject,'Value')}));
+codelist = [425 465 505 585 625 665 1030];
+aligncd = codelist(align);
+
+% --- Executes during object creation, after setting all properties.
+function listbox1_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to listbox1 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: listbox controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end

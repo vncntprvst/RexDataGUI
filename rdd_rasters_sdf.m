@@ -641,6 +641,7 @@ if strcmp(aligntype,'stop') % make additional analysis
 %    if adjconditions(1)==465 %2AFC rule target 
 elseif strcmp(tasktype, 'twoafc')
         twoafc()
+        uiwait
         disp_2AFC(rdd_filename,datalign,spikechannel,ecodealign);
 %    end
     plotrasts=0;

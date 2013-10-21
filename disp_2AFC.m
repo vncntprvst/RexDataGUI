@@ -9,15 +9,21 @@ function disp_2AFC(recname,datalign,selclus,aligncode)
 %  line 45 or so)
 % 8/22/2013 - VP
 
-global directory;
+global directory output;
 load(recname,'allbad','allcodes','alltimes');  % saccadeInfo probably not needed
 
-pool = 0; % set to 0 for contralateral only, 1 for ipsi + contra
+pool = output.sides; % set to 1 for all saccades, 2 for leftward saccades, 3 for rightward saccades (rule selecting)
 poolstr1 = [];
 poolstr2 = [];
-if pool
+if (pool==1)
     poolstr1 = ', pooled';
     poolstr2 = '_pooled';
+elseif (pool==2)
+    poolstr1 = ', leftward';
+    poolstr2 = '_leftward';
+else
+    poolstr1 = ', rightward';
+    poolstr2 = '_rightward';
 end
 
 %% preallocs and definitions
@@ -58,14 +64,18 @@ allgoodcodes=allcodes(~logical(allbad),:); %#ok<NODEF>
 allgoodtimes=alltimes(~logical(allbad),:); %#ok<NODEF>
 
 %% keeping trials with contralateral rule-selecting saccade
-crsrasts=datalign.rasters(allgoodcodes(:,17)==1901,:); % rasters
-crscodes=allgoodcodes(allgoodcodes(:,17)==1901,:); % ecodes
-crsaddevents=addevents(allgoodcodes(:,17)==1901); % additional events
-
-if pool
+if (pool==1)
     crsrasts=datalign.rasters;
     crscodes=allgoodcodes;
     crsaddevents=addevents;
+elseif (pool==2) % leftward rule selecting saccades
+    crsrasts=datalign.rasters(allgoodcodes(:,17)==1901,:); % rasters
+    crscodes=allgoodcodes(allgoodcodes(:,17)==1901,:); % ecodes
+    crsaddevents=addevents(allgoodcodes(:,17)==1901); % additional events
+else % rightward rule selecting saccades
+    crsrasts=datalign.rasters(allgoodcodes(:,17)==1900,:); % rasters
+    crscodes=allgoodcodes(allgoodcodes(:,17)==1900,:); % ecodes
+    crsaddevents=addevents(allgoodcodes(:,17)==1900); % additional events
 end
 
 %% sort trials: SS vs INS
@@ -257,6 +267,7 @@ for fignum=1:2
     %% save figure
     % to check if file already exists and open it:
     % eval(['!' exportfigname '.pdf']);
+if output.savfig
     comp=fnaligntype{fignum};
     exportfigname=[directory,'figures\2AFC\',recname,'_',comp,'_Clus',num2str(selclus), '_', alignname, poolstr2];
     %basic png fig:
@@ -267,7 +278,10 @@ for fignum=1:2
     %     plot2svg([exportfigname,'.svg'],AFCplots(fignum), 'png');
     delete(AFCplots(fignum)); %if needed
 end
+end
 
 sdfsave = [directory, 'SDFs/',recname,'_Clus', num2str(selclus), '_',alignname, poolstr2, '_SDFs'];
-save(sdfsave, 'allsdf');
+if output.savsdf
+    save(sdfsave, 'allsdf');
+end
 end
