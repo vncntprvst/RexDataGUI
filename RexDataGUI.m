@@ -634,6 +634,7 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
             alignbh=get( findobj('Tag','aligntimepanel'),'children');
             for alignmt=1:3
                 set(findobj('Tag','aligntimepanel'),'SelectedObject',alignbh(strcmp(get(alignbh,'tag'),alignmtname{alignmt})))
+                keyboard
                 getaligndata{alignmt} = rdd_rasters_sdf(procname, trialdirs, 0); % align data, don't plot rasters
                 
                 %% statistics on rasters: do stats on collapsed data and individual direction, if > 7 trials
@@ -795,7 +796,8 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
         rdd_trialdata(rdd_filename, trialnumber); % add 1 to make sure it reloads file
         try
             dataaligned=rdd_rasters_sdf(rdd_filename, trialdirs,1); %align data, plot rasters
-        catch
+        catch err
+            fprintf([err.message '\n']); % Print error message as well
             disp('rdd_rasters_sdf failed on line 785.');
             return;
         end
@@ -844,7 +846,8 @@ rdd_filename=get(findobj('Tag','filenamedisplay'),'String');
 [rdd_nt, trialdirs] = data_info( rdd_filename );
 try
     dataaligned=rdd_rasters_sdf(rdd_filename, trialdirs,1);
-catch
+catch err
+    fprintf(['Error: ' err.message '\n']); % Print error message as well
     disp('rdd_rasters_sdf failed on line 834.');
     return;
 end

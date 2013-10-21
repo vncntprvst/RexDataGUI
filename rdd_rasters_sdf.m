@@ -121,7 +121,8 @@ end
 %add last number for direction
 tasktype=get(findobj('Tag','taskdisplay'),'String');
 [fixcode, fixoffcode, tgtcode, tgtoffcode, saccode, ...
-    stopcode, rewcode, tokcode, errcode1, errcode2, errcode3, basecode] = taskfindecode(tasktype);
+    stopcode, rewcode, tokcode, errcode1, errcode2, errcode3, basecode ...
+    dectgtcode dessaccode] = taskfindecode(tasktype);
 
 %% get align code from selected button in Align Time panel
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -331,7 +332,22 @@ if strcmp(tasktype,'gapstop') %otherwise CAT arguments dimensions are not consis
     stopcode=[stopcode stopcode];
 end
 
-conditions =[tgtcode tgtoffcode;saccode saccode;fixcode fixoffcode];
+% Modified conditions for twoafc - utlized by disp_2AFC. Would likely work
+% fine with other code, as condition is only appended, but specificity of
+% change to ensure other functionality.
+switch tasktype
+    case 'twoafc'
+        conditions =[tgtcode tgtoffcode;...
+            saccode saccode;...
+            fixcode fixoffcode;...
+            rewcode rewcode;...
+            dectgtcode dectgtcode;...
+            dessaccode dessaccode];
+    otherwise
+        conditions =[tgtcode tgtoffcode;...
+            saccode saccode;...
+            fixcode fixoffcode];
+end
 
 if logical(sum(togrey))
     greycodes=conditions(togrey,:); %selecting out the codes
