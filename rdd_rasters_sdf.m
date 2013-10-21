@@ -637,10 +637,12 @@ if strcmp(aligntype,'stop') % make additional analysis
         disp_cmd([rdd_filename,'_Clus',num2str(spikechannel)],datalign,1,0); % keep triplot off until fixed
      end
         plotrasts=0;
-elseif strcmp(aligntype,'ecode') % may need task-specific analysis
-    if adjconditions(1)==465 %2AFC rule target 
+% elseif strcmp(aligntype,'ecode') % may need task-specific analysis
+%    if adjconditions(1)==465 %2AFC rule target 
+elseif strcmp(tasktype, 'twoafc')
+        twoafc()
         disp_2AFC(rdd_filename,datalign,spikechannel,ecodealign);
-    end
+%    end
     plotrasts=0;
 end
 
