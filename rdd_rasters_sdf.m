@@ -111,11 +111,17 @@ alignlabel=[];
 secalignlabel=[];
 collapsecode=0;
 
+if strcmp(get(findobj('Tag','rawsigoption'),'Checked'),'off'); %get raw traces in addition to rasters
+    getraw=0;
+else
+    getraw=1;
+end
+
 %define ecodes according to task
 %add last number for direction
 tasktype=get(findobj('Tag','taskdisplay'),'String');
-[fixcode fixoffcode tgtcode tgtoffcode saccode ...
-    stopcode rewcode tokcode errcode1 errcode2 errcode3 basecode] = taskfindecode(tasktype);
+[fixcode, fixoffcode, tgtcode, tgtoffcode, saccode, ...
+    stopcode, rewcode, tokcode, errcode1, errcode2, errcode3, basecode] = taskfindecode(tasktype);
 
 %% get align code from selected button in Align Time panel
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -203,9 +209,13 @@ else
     spikechannel = 1;
 end
 
+if strcmp(rdd_filename(end-2:end),'Sp2'); % using data from Spike2 processing
+ spikechannel = str2double(get(findobj('Tag','whichclus'),'String'));
+end
+
 %% Fusing task type and direction into ecode
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if (ecodealign(1))<1000 % if only three numbers
+if ecodealign<1000 % if only three numbers
     for i=1:length(trialdirs)
         aligncodes(i,:)=ecodealign*10+trialdirs(i);
     end
@@ -213,7 +223,7 @@ else
     aligncodes=ecodealign;
 end
 if logical(secondcode)
-    if (secondcode(1))<1000
+    if secondcode<1000
         for i=1:length(trialdirs)
             alignseccodes(i,:)=secondcode*10+trialdirs(i);
         end
@@ -371,6 +381,8 @@ elseif strfind(ATPSelectedButton,'ecodesalign')
         alignlabel='touchbell';
     elseif ecodealign==742
         alignlabel='retarget';
+    elseif ecodealign==507
+        alignlabel='ssd';
     else
         alignlabel='ecode';
     end
@@ -483,8 +495,8 @@ for cnc=1:numcodes
         numplots=numcodes;
     end
     [rasters,aidx, trialidx, trigtosacs, sactotrigs, trigtovis, vistotrigs, eyeh,eyev,eyevel,...
-        amplitudes,peakvels,peakaccs,allgreyareas,badidx,ssd] = rdd_rasters( rdd_filename, spikechannel, ...
-        allaligncodes(cnc,:), nonecodes, includebad, alignsacnum, aligntype, collapsecode, adjconditions);
+        amplitudes,peakvels,peakaccs,allgreyareas,badidx,ssd,rawsigs,alignrawidx] = rdd_rasters( rdd_filename, spikechannel, ...
+        allaligncodes(cnc,:), nonecodes, includebad, alignsacnum, aligntype, collapsecode, adjconditions, getraw);
     
     if isempty( rasters )
         disp( 'No raster could be generated (rex_rasters_trialtype returned empty raster)' );
@@ -619,17 +631,23 @@ end
 if strcmp(aligntype,'stop') % make additional analysis
      if ATPbuttonnb==6 % saccade
 %     [p_cancellation,h_cancellation] = cmd_wilco_cancellation(rdd_filename,datalign);
-        disp_cmd(rdd_filename,datalign,0);
+        disp_cmd([rdd_filename,'_Clus',num2str(spikechannel)],datalign,0,0); %0, 0: latmatch, no; triplot, no
 %     disp_cmd(rdd_filename,datalign,1);
     elseif ATPbuttonnb==7 % target
-        disp_cmd(rdd_filename,datalign,1);
+        disp_cmd([rdd_filename,'_Clus',num2str(spikechannel)],datalign,1,0); % keep triplot off until fixed
      end
         plotrasts=0;
+elseif strcmp(aligntype,'ecode') % may need task-specific analysis
+    if adjconditions(1)==465 %2AFC rule target 
+        disp_2AFC(rdd_filename,datalign,spikechannel,ecodealign);
+    end
+    plotrasts=0;
 end
 
 %% Now plotting rasters
 %%%%%%%%%%%%%%%%%%%%%%
 if plotrasts
+    %tic;
     figure(gcf);
     %some housekeeping: removing previous uigridcontainers
     childlist=get(findobj('Tag','rasterspanel'),'children');    
@@ -679,6 +697,7 @@ if plotrasts
         rasters=datalign(cnp).rasters;
         
         if isempty(rasters)
+            disp('rdd_rasters_sdf: empty rasters, skipping direction.');
             continue
         end
         
@@ -701,13 +720,19 @@ if plotrasts
         % adjust temporal axis
         start = aidx - mstart;
         stop = aidx + mstop;
+        
+        if stop > size( rasters ,2)
+            stop = size( rasters, 2);
+        end
+        
         if start < 1
             start = 1;
         end
-        if stop > length( rasters )
-            stop = length( rasters );
-        end
         
+        if start > stop
+            disp('rdd_rasters_sdf: all rasters shorter than stop-start, skipping direction.');
+            continue
+        end
         %get the current axes
         axes(rasterh(cnp));
         %plot the rasters
@@ -719,8 +744,8 @@ if plotrasts
         %                     testbin=testbin-1;
         %                     end
         trials = size(rasters,1);
-        isnantrial(cnp)={zeros(1,size(rasters,1))};
-        axis([0 stop-start+1 0 size(rasters,1)]);
+        %isnantrial(cnp)={zeros(1,trials)};
+        axis([0 stop-start+1 1 trials+1]);
         hold on
         
         %% grey patches for multiple plots
@@ -761,16 +786,23 @@ if plotrasts
             end
         end
         
-        %% plotting rasters trial by trial
-        for j=1:size(rasters,1)
-            spiketimes=find(rasters(j,start:stop)); %converting from a matrix representation to a time collection, within selected time range
-            if isnan(sum(rasters(j,start:stop)))
-                isnantrial{cnp}(j)=1;
-                 spiketimes(find(isnan(rasters(j,start:stop))))=0; %#ok<FNDSB>
+        %% plotting rasters for this subplot
+        cut_rasters = rasters(:,start:stop); % Isolate rasters of interest
+        cut_rast_siz = size(cut_rasters);
+        nancheck = sum(cut_rasters,2);
+        isnantrial{cnp} = isnan(nancheck); % Identify nantrials
+        
+        cut_rasters(isnan(cut_rasters)) = 0; % take nans out so they don't get plotted
+        
+        [indy, indx] = ind2sub(cut_rast_siz,find(cut_rasters)); %find row and column coordinates of spikes
+        %indy = -indy+size(cut_rasters,1); % flip so that the top raster plots on the top
+        
+            if(cut_rast_siz(1) == 1)
+                plot([indx;indx],[indy;indy+1],'k-'); % plot rasters
+            else
+                plot([indx';indx'],[indy';indy'+1],'k-'); % plot rasters
             end
-            rastploth=plot([spiketimes;spiketimes],[ones(size(spiketimes))*j;ones(size(spiketimes))*j-1],'k-');
-            uistack(rastploth,'down');
-        end
+
         
         if exist('greylim1')
             uistack(greylim1,'top');
@@ -842,10 +874,17 @@ if plotrasts
         
         %% sdf plot
         % for kernel optimization, see : http://176.32.89.45/~hideaki/res/ppt/histogram-kernel_optimization.pdf
-        sumall=sum(rasters(~isnantrial{cnp},start:stop));
-        sdf=spike_density(sumall,fsigma)./length(find(~isnantrial{cnp})); %instead of number of trials
+        sumall=sum(rasters(~isnantrial{cnp},start-fsigma:stop+fsigma));
+        %sdf=spike_density(sumall,fsigma)./length(find(~isnantrial{cnp})); %instead of number of trials
+        sdf=fullgauss_filtconv(sumall,fsigma,0)./length(find(~isnantrial{cnp})).*1000; %instead of number of trials
+        sdf=sdf(fsigma+1:end-fsigma);
         %pdf = probability_density( sumall, fsigma ) ./ trials;
-        maxes(cnp) = max(sdf);
+        
+        if cut_rast_siz(1) == 1 || length(sdf) <= 1
+            maxes(cnp) = 0;
+        else
+            maxes(cnp) = max(sdf);
+        end
         axes(sdfploth(cnp));
         %         sdfaxh = axes('Position',get(rasterh(cnp),'Position'),...
         %            'XAxisLocation','top',...
@@ -863,9 +902,16 @@ if plotrasts
         
     end
     for yind = 1:numplots;
-        axes(sdfploth(yind));
-        ylim([0 1.5*max(maxes)])
+        set(sdfploth(yind),'YLim',[0 1.5*max(maxes)]);
+        %axes(sdfploth(yind));
+        %ylim([0 1.5*max(maxes)])
     end
+    
+    %toc;
+end
+
+if getraw
+    PlotRawSigRasters(rawsigs,alignrawidx);
 end
 
 %% last item: save name
@@ -874,8 +920,8 @@ if strcmp(tasktype,'optiloc')
 else
     parsename=unique({datalign.alignlabel});
 end
-selclus = get(findobj('Tag','whichclus'),'String');
-datalign(1).savealignname = cat( 2, directory, 'processed',slash, 'aligned',slash, rdd_filename, '_', cell2mat(parsename),'_c',selclus);
+
+datalign(1).savealignname = cat( 2, directory, 'processed',slash, 'aligned',slash, rdd_filename, '_', cell2mat(parsename),'_c',num2str(spikechannel));
 
 % comparison of raster from different methods
 %    figure(21);

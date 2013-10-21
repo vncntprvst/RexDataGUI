@@ -23,7 +23,7 @@ function varargout = RexDataGUI(varargin)
 %
 % See also: GUIDE, GUIDATA, GUIHANDLES
 
-% Last Modified by GUIDE v2.5 07-Mar-2013 23:16:53
+% Last Modified by GUIDE v2.5 22-Sep-2013 13:12:46
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -54,14 +54,21 @@ function RexDataGUI_OpeningFcn(hObject, eventdata, handles, varargin)
 
 % Choose default command line output for RexDataGUI
 handles.output = hObject;
-global replacespikes;
+global replacespikes user;
 replacespikes = 0;
 % tiny design changes
 set(hObject,'DefaultTextFontName','Calibri'); %'Color',[0.9 .9 .8]
 % unprocfilebtxt=sprintf('Unprocessed\rfiles');
 % uibutton(findobj('tag','unprocfilebutton'),'string',unprocfilebtxt);
 
-
+%only display selection box for appropriate subjects
+selboxh=get(findobj('tag','monkeyselect'),'Children');
+if strcmp(user,'Vincent')
+    set(selboxh(strcmp(get(selboxh,'tag'),'shufflesselect')),'visible','off')
+    set(selboxh(strcmp(get(selboxh,'tag'),'hildaselect')),'position',[0.1667 0.02 0.7083 0.3857]);
+    set(selboxh(strcmp(get(selboxh,'tag'),'sixxselect')),'position',[0.1667 0.32 0.7083 0.3857]);
+    set(selboxh(strcmp(get(selboxh,'tag'),'rigelselect')),'position',[0.1667 0.62 0.7083 0.3857]);
+end
 % use varargin to allow for direct input of the name of the file to be analyzed.
 % see http://www.mathworks.com/help/techdoc/creating_guis/f10-998580.html
 
@@ -313,49 +320,56 @@ end
 
 % determines computer type
 archst  = computer('arch');
-if strcmp(archst, 'maci64')
-    [rfname, rfpathname]=uigetfile({'*.*','All Files';'*A','A Files'},'raw files directory',...
-        monkeydir);
-else
-    [rfname, rfpathname]=uigetfile({'*A','A Files';'*.*','All Files'},'raw files directory',...
-        monkeydir);
-end
 
-%check if file exists already
-rfname=rfname(1:length(rfname)-1);
-overwrite = 1;
-if strcmp(monkeydirselected,'rigelselect')
-    if ~strcmp(rfname(1),'R')
-        procname=cat(2,'R', rfname);
-        set(findobj('Tag','filenamedisplay'),'String',procname);
+try
+    if strcmp(archst, 'maci64')
+        [rfname, rfpathname]=uigetfile({'*.*','All Files';'*A','A Files'},'raw files directory',...
+            monkeydir);
     else
-        procname=rfname;
-        set(findobj('Tag','filenamedisplay'),'String',rfname);
+        [rfname, rfpathname]=uigetfile({'*A','A Files';'*.*','All Files'},'raw files directory',...
+            monkeydir);
     end
-elseif strcmp(monkeydirselected,'sixxselect')
-    if ~strcmp(rfname(1),'S')
-        procname=cat(2,'S', rfname);
-        set(findobj('Tag','filenamedisplay'),'String',procname);
-    else
-        procname=rfname;
-        set(findobj('Tag','filenamedisplay'),'String',rfname);
+    %check if file exists already
+    rfname=rfname(1:length(rfname)-1);
+    overwrite = 1;
+    
+    if strcmp(monkeydirselected,'rigelselect')
+        if ~strcmp(rfname(1),'R')
+            procname=cat(2,'R', rfname);
+            set(findobj('Tag','filenamedisplay'),'String',procname);
+        else
+            procname=rfname;
+            set(findobj('Tag','filenamedisplay'),'String',rfname);
+        end
+    elseif strcmp(monkeydirselected,'sixxselect')
+        if ~strcmp(rfname(1),'S')
+            procname=cat(2,'S', rfname);
+            set(findobj('Tag','filenamedisplay'),'String',procname);
+        else
+            procname=rfname;
+            set(findobj('Tag','filenamedisplay'),'String',rfname);
+        end
+    elseif strcmp(monkeydirselected,'hildaselect')
+        if ~strcmp(rfname(1),'H')
+            procname=cat(2,'H', rfname);
+            set(findobj('Tag','filenamedisplay'),'String',procname);
+        else
+            procname=rfname;
+            set(findobj('Tag','filenamedisplay'),'String',rfname);
+        end
+    elseif strcmp(monkeydirselected,'shufflesselect')
+        if ~strcmp(rfname(1),'S')
+            procname=cat(2,'S', rfname);
+            set(findobj('Tag','filenamedisplay'),'String',procname);
+        else
+            procname=rfname;
+            set(findobj('Tag','filenamedisplay'),'String',rfname);
+        end
     end
-elseif strcmp(monkeydirselected,'hildaselect')
-    if ~strcmp(rfname(1),'H')
-        procname=cat(2,'H', rfname);
-        set(findobj('Tag','filenamedisplay'),'String',procname);
-    else
-        procname=rfname;
-        set(findobj('Tag','filenamedisplay'),'String',rfname);
-    end
-elseif strcmp(monkeydirselected,'shufflesselect')
-    if ~strcmp(rfname(1),'S')
-        procname=cat(2,'S', rfname);
-        set(findobj('Tag','filenamedisplay'),'String',procname);
-    else
-        procname=rfname;
-        set(findobj('Tag','filenamedisplay'),'String',rfname);
-    end
+
+catch
+    disp('Aborted raw import.');
+    return;
 end
 if exist(cat(2,procdir, procname,'.mat'), 'file')==2 %'B:\data\Recordings\processed\',
     % Construct question dialog
@@ -779,8 +793,13 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
         %set(trialdatapanelH,'UserData',whatever might be needed);
         
         rdd_trialdata(rdd_filename, trialnumber); % add 1 to make sure it reloads file
-        dataaligned=rdd_rasters_sdf(rdd_filename, trialdirs,1); %align data, plot rasters
-        dataaligned=dataaligned(~cellfun('isempty',{dataaligned.alignidx}));
+        try
+            dataaligned=rdd_rasters_sdf(rdd_filename, trialdirs,1); %align data, plot rasters
+        catch
+            disp('rdd_rasters_sdf failed on line 785.');
+            return;
+        end
+            dataaligned=dataaligned(~cellfun('isempty',{dataaligned.alignidx}));
         %% do stats
         [p_sac,h_sac,p_rmanov,mcstats]=raststats(dataaligned);
         for psda=1:length(dataaligned)
@@ -823,8 +842,13 @@ load('myBreakpoints.mat');
 dbstop(s);
 rdd_filename=get(findobj('Tag','filenamedisplay'),'String');
 [rdd_nt, trialdirs] = data_info( rdd_filename );
-dataaligned=rdd_rasters_sdf(rdd_filename, trialdirs,1);
-guidata(findobj('Tag','exportdata'),dataaligned);
+try
+    dataaligned=rdd_rasters_sdf(rdd_filename, trialdirs,1);
+catch
+    disp('rdd_rasters_sdf failed on line 834.');
+    return;
+end
+    guidata(findobj('Tag','exportdata'),dataaligned);
 
 % --- Executes on button press in exportdata.
 function exportdata_Callback(hObject, eventdata, handles)
@@ -905,41 +929,50 @@ function displaymfiles_CreateFcn(hObject, eventdata, handles)
 % hObject    handle to displaymfiles (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
-global directory slash unprocfiles;
+global directory slash unprocfiles user;
 
 % Hint: listbox controls usually have a white background on Windows.
 %       See ISPC and COMPUTER.
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+% get list of subject select boxes
+selboxh=get(findobj('tag','monkeyselect'),'Children');
 
 % determines computer type
 archst  = computer('arch');
 
 if strcmp(archst, 'maci64')
     name = getenv('USER');
-    if strcmp(name, 'nick')
-        directory = '/Users/nick/Dropbox/filesforNick/';
-    elseif strcmp(name, 'Frank')
-        directory = '/Users/Frank/Desktop/monkeylab/data/';
-    elseif strcmp(name, 'zacharyabzug')
-        directory = '/Users/zacharyabzug/Desktop/zackdata/';    
+    if strcmp(name, 'zacharyabzug')
+        directory = '/Users/zacharyabzug/Desktop/zackdata/';
+        user='Zach';
     elseif strcmp(name, 'zmabzug')
         directory = '/Users/zmabzug/Desktop/zackdata/';
+        user='Zach';
     end
     slash = '/';
 elseif strcmp(archst, 'win32') || strcmp(archst, 'win64')
     if strcmp(getenv('username'),'SommerVD') || ...
             strcmp(getenv('username'),'LabV') || ...
             strcmp(getenv('username'),'Purkinje') || ...
+            strcmp(getenv('username'),'JuanandKimi') || ...
             strcmp(getenv('username'),'vp35')
         directory = 'C:\Data\Recordings\';
+        user='generic';
     elseif strcmp(getenv('username'),'DangerZone')
         directory = 'E:\data\Recordings\';
+        user='Vincent';
+        set(selboxh(strcmp(get(selboxh,'tag'),'sixxselect')),'value',1)
     elseif strcmp(getenv('username'),'Radu')
         directory = 'E:\Spike_Sorting\';
+        user='Radu';
+    elseif strcmp(getenv('username'),'The Doctor')
+        directory = 'C:\Users\The Doctor\Data\';
+        user='generic';
     else
         directory = 'B:\data\Recordings\';
+        user='generic';
     end
     slash = '\';
 end
@@ -1361,11 +1394,16 @@ function plotsummary_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 filename=get(findobj('Tag','filenamedisplay'),'String');
 tasktype=get(findobj('Tag','taskdisplay'),'String');
+prealtime=get(findobj('Tag','msbefore'),'String');
+postaltime=get(findobj('Tag','msafter'),'String');
+sigval=get(findobj('Tag','sigmaval'),'String');
+rastsort=get(findobj('Tag','sumplotrastsort'),'Value')-1; 
+kernel=get(findobj('Tag','sumplotsdfkernel'),'Value')-1; 
 dataaligned=guidata(findobj('Tag','exportdata'));
 if strcmp(tasktype,'optiloc')
     SummaryPlot_ol(dataaligned,filename,tasktype);
 else
-    SummaryPlot(dataaligned,filename,tasktype);
+    SummaryPlot(dataaligned,filename,tasktype,prealtime,postaltime,sigval,rastsort,kernel);
 end
 
 % --- Executes on button press in rastersandsdf_tab.
@@ -1464,12 +1502,16 @@ global directory slash;
 
 if get(findobj('Tag','rigelselect'),'Value')
     dirlisting = dir([directory,'processed',slash,'Rigel',slash]); %('B:\data\Recordings\processed\Rigel');
+    sinitial='R';
 elseif get(findobj('Tag','sixxselect'),'Value')
     dirlisting = dir([directory,'processed',slash,'Sixx',slash]); %('B:\data\Recordings\processed\Sixx');\
+    sinitial='S';
 elseif get(findobj('Tag','hildaselect'),'Value')
     dirlisting = dir([directory,'processed',slash,'Hilda',slash]); %('B:\data\Recordings\processed\Sixx');
+    sinitial='H';
 elseif get(findobj('Tag','shufflesselect'),'Value')
     dirlisting = dir([directory,'processed',slash,'Shuffles',slash]); %('B:\data\Recordings\processed\Sixx');
+    sinitial='S';
 end
 fileNames = {dirlisting.name};  % Put the file names in a cell array
 
@@ -1477,37 +1519,22 @@ if hObject==findobj('Tag','displayfbt_files')
     
     % Order by date
     filedates=cell2mat({dirlisting(:).datenum});
-    [filedates,fdateidx] = sort(filedates,'descend');
+    [~,fdateidx] = sort(filedates,'descend');
     dirlisting = {dirlisting(:).name};
     dirlisting = dirlisting(fdateidx);
     dirlisting = dirlisting(~cellfun('isempty',strfind(dirlisting,'mat')));
+%     dirlisting = dirlisting(~cellfun('isempty',strfind(dirlisting,'REX')));
     dirlisting = dirlisting(cellfun('isempty',strfind(dirlisting,'myBreakpoints')));
     dirlisting = cellfun(@(x) x(1:end-4), dirlisting, 'UniformOutput', false);
     set(findobj('Tag','displaymfiles'),'string',dirlisting);
     
 elseif hObject==findobj('Tag','displayfbt_session')
     
-    if get(findobj('Tag','rigelselect'),'Value')
-        index = regexpi(fileNames,...              % Match a file name if it begins
-            '^R\d+','match');           % with the letter 'R' followed by a set of digits 1 or larger
-        inFiles = index(~cellfun(@isempty,index));  % Get the names of the matching files in a cell array
-        sessionNumbers = cellfun(@(x) strrep(x, 'R', ' '), inFiles, 'UniformOutput', false);
-    elseif get(findobj('Tag','sixxselect'),'Value')
-        index = regexpi(fileNames,...              % Match a file name if it begins
-            '^S\d+', 'match');           % with the letter 'S' followed by a set of digits 1 or larger
-        inFiles = index(~cellfun(@isempty,index));  % Get the names of the matching files in a cell array
-        sessionNumbers = cellfun(@(x) strrep(x, 'S', ' '), inFiles, 'UniformOutput', false);
-    elseif get(findobj('Tag','hildaselect'),'Value')
-        index = regexpi(fileNames,...              % Match a file name if it begins
-            '^H\d+', 'match');           % with the letter 'S' followed by a set of digits 1 or larger
-        inFiles = index(~cellfun(@isempty,index));  % Get the names of the matching files in a cell array
-        sessionNumbers = cellfun(@(x) strrep(x, 'H', ' '), inFiles, 'UniformOutput', false);
-    elseif get(findobj('Tag','shufflesselect'),'Value')
-        index = regexpi(fileNames,...              % Match a file name if it begins
-            '^S\d+', 'match');           % with the letter 'S' followed by a set of digits 1 or larger
-        inFiles = index(~cellfun(@isempty,index));  % Get the names of the matching files in a cell array
-        sessionNumbers = cellfun(@(x) strrep(x, 'S', ' '), inFiles, 'UniformOutput', false);
-    end
+    index = regexpi(fileNames,...              % Match a file name if it begins with the subject
+        ['^' sinitial '\d+'], 'match');           % initial letter  followed by a set of digits 1 or larger
+    inFiles = index(~cellfun(@isempty,index));  % Get the names of the matching files in a cell array
+    sessionNumbers = cellfun(@(x) strrep(x, sinitial, ' '), inFiles, 'UniformOutput', false);
+
     
     if ~isempty(sessionNumbers)
         dispsession = cat(1,sessionNumbers{:});
@@ -1611,3 +1638,68 @@ function chanelspanel_SelectionChangeFcn(hObject, eventdata, handles)
 %	OldValue: handle of the previously selected object or empty if none was selected
 %	NewValue: handle of the currently selected object
 % handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes on selection change in sumplotrastsort.
+function sumplotrastsort_Callback(hObject, eventdata, handles)
+% hObject    handle to sumplotrastsort (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns sumplotrastsort contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from sumplotrastsort
+
+
+% --- Executes during object creation, after setting all properties.
+function sumplotrastsort_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to sumplotrastsort (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on selection change in sumplotsdfkernel.
+function sumplotsdfkernel_Callback(hObject, eventdata, handles)
+% hObject    handle to sumplotsdfkernel (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns sumplotsdfkernel contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from sumplotsdfkernel
+
+
+% --- Executes during object creation, after setting all properties.
+function sumplotsdfkernel_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to sumplotsdfkernel (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --------------------------------------------------------------------
+function optionmenu_Callback(hObject, eventdata, handles)
+% hObject    handle to optionmenu (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --------------------------------------------------------------------
+function rawsigoption_Callback(hObject, eventdata, handles)
+% hObject    handle to rawsigoption (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+if strcmp(get(gcbo, 'Checked'),'on')
+    set(gcbo, 'Checked', 'off');
+else 
+    set(gcbo, 'Checked', 'on');
+end

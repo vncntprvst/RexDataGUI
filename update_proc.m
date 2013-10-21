@@ -1,24 +1,7 @@
-function [success,outliers,curtasktype] = rex_process_inGUI( rexname, rawdir, reprocess )
+function [ output_args ] = update_proc( directory )
 
-% [success] = rex_process_inGUI( rexname, monkeydir )
-%
-% Given the name of some Rex data files (the A and E files,
-% without the ‘A’ or ‘E’ on the end), attempts a conversion of this data
-% into a Matlab file that contains all spike, code, saccade, and other
-% data.  Allows the optional import of a Dex D file for saccade times.
-% Data is written to a ‘.mat’ file using the name of the Rex files
-% given.  (Thus ‘mineA’ and ‘mineE’ become ‘mine.mat’.)  This function
-% can be called explicitly, but it is also called by rex_load_processed
-% if that function cannot find an already converted Rex/Matlab file of
-% the given name.  Returns 1 if successful, 0 if not.
-% See also rex_load_processed and rex_save.
-%
-% global rexloadedname rexnumtrials alloriginaltrialnums allnewtrialnums ...
-%     allcodes alltimes allspkchan allspk allrates ...
-%     allh allv allstart allbad alldeleted allsacstart allsacend...
-%     allcodelen allspklen alleyelen allsaclen allrexnotes;
 clearvars -global -except directory slash unprocfiles tasktype replacespikes triggertimes spike2times clustercodes;
-global saccadeInfo tasktype slash replacespikes directory;
+global saccadeInfo tasktype slash replacespikes;
 saccadeInfo=struct('status',[],'starttime',[],'endtime',[],'duration',[],'amplitude',[],...
     'direction',[],'peakVelocity',[],'peakAcceleration',[],'latency',[]);
 
@@ -583,128 +566,6 @@ outlandmismtch(2)={outliers};
 %% saving data
 %archst  = computer('arch');
 
-if logical(regexpi(rawdir(1:end-1),'Rigel$'))
-    if strcmp(getenv('username'),'nick')
-        procdir='/Users/nick/Dropbox/filesforNick/processed/Rigel/';
-    elseif strcmp(getenv('username'),'SommerVD') ||...
-            strcmp(getenv('username'),'LabV')||...
-            strcmp(getenv('username'),'Purkinje')||...
-            strcmp(getenv('username'),'JuanandKimi') || ...
-            strcmp(getenv('username'),'vp35')
-        procdir='C:\Data\Recordings\processed\Rigel\';
-    elseif strcmp(getenv('username'),'DangerZone')
-        procdir='E:\Data\Recordings\processed\Rigel\';
-    elseif strcmp(getenv('username'),'Radu')
-        procdir = 'E:\Spike_Sorting\processed\Rigel\';
-    elseif strcmp(getenv('USER'),'zacharyabzug')
-        procdir = '/Users/zacharyabzug/Desktop/zackdata/processed/Rigel/';
-    elseif strcmp(getenv('USER'),'zmabzug')
-        procdir = '/Users/zmabzug/Desktop/zackdata/processed/Rigel/';
-    elseif strcmp(getenv('username'),'The Doctor')
-        procdir = 'C:\Users\The Doctor\Data\processed\Rigel\';
-    else
-        procdir='B:\data\Recordings\processed\Rigel\';
-    end
-    if ~strcmp(rexname(1),'R')
-        rexname=cat(2,'R',rexname);
-    end
-    if replacespikes
-        rexname=cat(2,rexname,'_Sp2');
-    else
-        rexname=cat(2,rexname,'_REX');
-    end  
-elseif logical(regexpi(rawdir(1:end-1),'Sixx$'))
-    if strcmp(getenv('username'),'nick')
-        procdir='/Users/nick/Dropbox/filesforNick/processed/Sixx/';
-    elseif strcmp(getenv('username'),'SommerVD') ||....
-            strcmp(getenv('username'),'LabV')||...
-            strcmp(getenv('username'),'Purkinje')||...
-            strcmp(getenv('username'),'JuanandKimi') || ...
-            strcmp(getenv('username'),'vp35')
-        procdir='C:\Data\Recordings\processed\Sixx\';
-    elseif strcmp(getenv('username'),'DangerZone')
-        procdir='E:\Data\Recordings\processed\Sixx\';
-    elseif strcmp(getenv('username'),'Radu')
-        procdir = 'E:\Spike_Sorting\processed\Sixx\';
-    elseif strcmp(getenv('USER'),'zacharyabzug')
-        procdir = '/Users/zacharyabzug/Desktop/zackdata/processed/Sixx/';  
-    elseif strcmp(getenv('USER'),'zmabzug')
-        procdir = '/Users/zmabzug/Desktop/zackdata/processed/Sixx/'; 
-    elseif strcmp(getenv('username'),'The Doctor')
-        procdir = 'C:\Users\The Doctor\Data\processed\Sixx\';
-    else
-        procdir='B:\data\Recordings\processed\Sixx\';
-    end
-    if ~strcmp(rexname(1),'S')
-        rexname=cat(2,'S',rexname);
-    end
-    if replacespikes
-        rexname=cat(2,rexname,'_Sp2');
-    else
-        rexname=cat(2,rexname,'_REX');
-    end  
-elseif logical(regexpi(rawdir(1:end-1),'Hilda$'))
-    if strcmp(getenv('username'),'nick')
-        procdir='/Users/nick/Dropbox/filesforNick/processed/Hilda/';
-    elseif strcmp(getenv('username'),'SommerVD') ||...
-            strcmp(getenv('username'),'LabV')||...
-            strcmp(getenv('username'),'Purkinje')||...
-            strcmp(getenv('username'),'JuanandKimi') || ...
-            strcmp(getenv('username'),'vp35')
-        procdir='C:\Data\Recordings\processed\Hilda\';
-    elseif strcmp(getenv('username'),'DangerZone')
-        procdir='E:\Data\Recordings\processed\Hilda\';
-    elseif strcmp(getenv('username'),'Radu')
-        procdir = 'E:\Spike_Sorting\processed\Hilda\';
-    elseif strcmp(getenv('USER'),'zacharyabzug')
-        procdir = '/Users/zacharyabzug/Desktop/zackdata/processed/Hilda/'; 
-    elseif strcmp(getenv('USER'),'zmabzug')
-        procdir = '/Users/zmabzug/Desktop/zackdata/processed/Hilda/'; 
-    elseif strcmp(getenv('username'),'The Doctor')
-        procdir = 'C:\Users\The Doctor\Data\processed\Hilda\';
-    else
-        procdir='B:\data\Recordings\processed\Hilda\';
-    end
-    if ~strcmp(rexname(1),'H')
-        rexname=cat(2,'H',rexname);
-    end
-    if replacespikes
-        rexname=cat(2,rexname,'_Sp2');
-    else
-        rexname=cat(2,rexname,'_REX');
-    end
-elseif logical(regexpi(rawdir(1:end-1),'Shuffles$'))
-    if strcmp(getenv('username'),'nick')
-        procdir='/Users/nick/Dropbox/filesforNick/processed/Shuffles/';
-    elseif strcmp(getenv('username'),'SommerVD') ||...
-            strcmp(getenv('username'),'LabV')||...
-            strcmp(getenv('username'),'Purkinje')||...
-            strcmp(getenv('username'),'JuanandKimi') || ...
-            strcmp(getenv('username'),'vp35')
-        procdir='C:\Data\Recordings\processed\Shuffles\';
-    elseif strcmp(getenv('username'),'DangerZone')
-        procdir='E:\Data\Recordings\processed\Shuffles\';
-    elseif strcmp(getenv('username'),'Radu')
-        procdir = 'E:\Spike_Sorting\processed\Shuffles\';
-    elseif strcmp(getenv('USER'),'zacharyabzug')
-        procdir = '/Users/zacharyabzug/Desktop/zackdata/processed/Shuffles/';  
-    elseif strcmp(getenv('USER'),'zmabzug')
-        procdir = '/Users/zmabzug/Desktop/zackdata/processed/Shuffles/'; 
-    elseif strcmp(getenv('username'),'The Doctor')
-        procdir = 'C:\Users\The Doctor\Data\processed\Shuffles\'; 
-    else
-        procdir='B:\data\Recordings\processed\Shuffles\';
-    end
-    if ~strcmp(rexname(1),'S')
-        rexname=cat(2,'S',rexname);
-    end
-    if replacespikes
-        rexname=cat(2,rexname,'_Sp2');
-    else
-        rexname=cat(2,rexname,'_REX');
-    end      
-end
-
 newname = cat( 2, procdir, rexname, '.mat' );
 s = sprintf('Writing converted Rex data to %s.', cat(2,rexname,'.mat'));
 waitbar( 0.9, wb, s );
@@ -726,30 +587,6 @@ success = 1;
 clearvars -global -except directory slash unprocfiles replacespikes spike2times clustercodes triggertimes;
 close( wb );
 
-%% graphic verif if any bug:
-% sacfound=zeros(size(saccadeInfo));
-% for i=1:length(saccadeInfo)
-% thattrial=char(saccadeInfo(i,:).status);%=cat(1,saccadeInfo(i,:).starttime);
-% for j=1:min(size(saccadeInfo))
-%     sacfound(i,j)=~isempty(deblank(thattrial(j,:)));
-%     if strcmp('saccade',deblank(thattrial(j,:)))
-%         sacfound(i,j)=2*(strcmp('saccade',deblank(thattrial(j,:))));
-%     end
-%     %sacfound(i,1:length(thattrial))=thattrial;
-% end
-% end
-% % Create figure
-% figure21 = figure('Color',...
-%     [0.800000011920929 0.800000011920929 0.800000011920929]);
-% colormap('copper');
-%
-% % Create axes
-% axes21 = axes('Parent',figure21,'PlotBoxAspectRatio',[1 1 1],...
-%     'DataAspectRatio',[12.5 60 1],...
-%     'CameraViewAngle',5.33243073393796);
-% view(axes21,[0.5 -90]);
-% grid(axes21,'on');
-% hold(axes21,'all');
-%
-% % Create surf
-% surf(sacfound,'Parent',axes21,'DisplayName','sacfound');
+
+end
+

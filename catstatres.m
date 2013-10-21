@@ -22,7 +22,8 @@ for lustat=1:length(alignt_q)
         conddir=cell(1, size(getaligndata{alignt_q(lustat)},2)-1);
         for condnb=1:size(getaligndata{alignt_q(lustat)},2)-1
             sumall=nansum(getaligndata{alignt_q(lustat)}(condnb).rasters);
-            sdf=spike_density(sumall,15)./size(getaligndata{alignt_q(lustat)}(condnb).rasters,1);
+%             sdf=spike_density(sumall,15)./size(getaligndata{alignt_q(lustat)}(condnb).rasters,1);
+              sdf=fullgauss_filtconv(sumall,15,0)./size(getaligndata{alignt_q(lustat)}(condnb).rasters,1).*1000;
             if ~isnan(getaligndata{alignt_q(lustat)}(condnb).peakramp.peaksdft)
                 maxfr{condnb}=round(sdf(getaligndata{alignt_q(lustat)}(condnb).alignidx+getaligndata{alignt_q(lustat)}(condnb).peakramp.peaksdft));
                 if ~isnan(getaligndata{alignt_q(lustat)}(condnb).peakramp.nadirsdft)

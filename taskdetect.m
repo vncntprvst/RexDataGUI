@@ -169,7 +169,8 @@ if ~sum(curtasktype) || strcmp(curtasktype,'Task') %then find task!
     end
 end
 %%
-if ~isempty(curtasktype) && ~sum(find(codes==17385))
+% if ~isempty(curtasktype) && strcmp(curtasktype,'gapstop') && find(codes==17385,1)>8
+if ~isempty(curtasktype) %&& ~sum(find(codes==17385))
     if iscell(curtasktype)
         curtasktype=cell2mat(curtasktype);
     end
@@ -235,8 +236,8 @@ if ~isempty(curtasktype) && ~sum(find(codes==17385))
             ecodesacstart=8;
             ecodesacend=9;
          case 'twoafc'
-            ecodecueon=9;
-            ecodesacstart=11;
-            ecodesacend=13;
+            ecodecueon=8;
+            ecodesacstart=10;
+            ecodesacend=12;
     end
 end

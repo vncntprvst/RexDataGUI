@@ -43,7 +43,7 @@ global clustercodes
 %%%%%%%%%%%%%%%%%
 selclus = str2double(get(findobj('Tag','whichclus'),'String'));
 
-[ecodeout, etimeout, spkchan, spk, arate, h, v, start_time, badtrial, curtrialsacInfo] = rdd_rex_trial(rdd_filename, trialnumber, selclus, reload);%, rdt_includeaborted);
+[ecodeout, etimeout, ~, ~, ~, h, v, ~, badtrial, curtrialsacInfo] = rdd_rex_trial(rdd_filename, trialnumber, selclus, reload);%, rdt_includeaborted);
 
     clear noiseIdx ssacbound esacbound last; %newsacstartposition newsacendposition
     
@@ -238,7 +238,7 @@ AccThreshold = 0.1;          %if acc > 100000 degrees/s^2, that is 0.1 deg/ms^2,
             if strcmp(tasktype,'vg_saccades') %to replace with optiloc when changes have been made
                 winlim=1.5;
             else
-                winlim=3;
+                winlim=2.5;
             end
             %start time of first saccade greater than 3 degrees (typical
             %restriction window) after relevant ecode (ecodesacstart-1)
@@ -341,7 +341,7 @@ AccThreshold = 0.1;          %if acc > 100000 degrees/s^2, that is 0.1 deg/ms^2,
         scatter(nwsacend,5.*ones(1,length(nwsacend)),'r','d');
         
         %plot visual cue epoch(s)as shaded areas
-        if ecodecueon
+        if ecodecueon && ~badtrial
         for cuenb = 1:length(ecodecueon)
             cueontime=etimeout(ecodecueon(cuenb));
             cueofftime=cueontime+10;

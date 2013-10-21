@@ -322,8 +322,8 @@ AccThreshold = 0.1;          %if acc > 100000 degrees/s^2, that is 0.1 deg/ms^2,
                 ampsacofint(1,k)=abs(getfield(saccadeInfo, {next,k}, 'amplitude'));
             end
             if exist('ampsacofint')
-            goodsac(next)=find(ampsacofint>2,1);
-            saccadeInfo(next,find(ampsacofint>2,1)).latency=saccadeInfo(next,find(ampsacofint>2,1)).starttime-etimeout(ecodecueon);
+            goodsac(next)=find(ampsacofint>2.5,1);
+            saccadeInfo(next,find(ampsacofint>2.5,1)).latency=saccadeInfo(next,find(ampsacofint>2.5,1)).starttime-etimeout(ecodecueon);
             end
             
             if length(etimeout)<ecodesacstart+2
