@@ -1,4 +1,4 @@
-function disp_2AFC(recname,datalign,selclus,aligncode)
+function disp_2AFC(recname,datalign,selclus)
 % Called from Rex Data GUI when using Ecodes 465 as alignement (collapse
 % all directions together when doing that)
 % This function will sort data to compare either:
@@ -10,7 +10,7 @@ function disp_2AFC(recname,datalign,selclus,aligncode)
 % 8/22/2013 - VP
 
 global directory output;
-load(recname,'allbad','allcodes','alltimes');  % saccadeInfo probably not needed
+load(recname,'allbad','allcodes','alltimes');
 
 InterAxn='Interaction';
 % InterAxn controls what is plotted ->
@@ -34,12 +34,12 @@ else
 end
 
 %% preallocs and definitions
-if aligncode == 465;
-    alignname = 'RuleStim';
-end
-if aligncode == 585;
-    alignname = 'Refix';
-end
+aligncode = output.aligncode;
+codelist = [425 465 505 585 605 645 103];
+alignnum = find(codelist == aligncode);
+codenames = {'Fix1'; 'RuleStim'; 'RuleSac'; 'Refix'; 'PDStim'; 'PDSac'; 'Reward'};
+alignname = codenames{alignnum};
+
 AFCplots=nan(2,1);
 
 allsdf=cell(4,1);
@@ -310,7 +310,7 @@ for dataset=1:numrast
     
     %% keep sdf
     allsdf{dataset}=sdf;
-    clear TimeInd; % Just in case    
+    clear TimeInd; % Just in case 
 end
 
 %% last adjustments and save - routine for multiple figures produced

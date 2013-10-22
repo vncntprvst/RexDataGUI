@@ -80,8 +80,8 @@ function whichdirs_Callback(hObject, eventdata, handles)
 % Hints: contents = cellstr(get(hObject,'String')) returns whichdirs contents as cell array
 %        contents{get(hObject,'Value')} returns selected item from whichdirs
 global sides
-contents = cellstr(get(hObject,'String'));
-sides = find(ismember(contents, contents{get(hObject,'Value')}));
+contents1 = cellstr(get(hObject,'String'));
+sides = find(ismember(contents1, contents1{get(hObject,'Value')}));
 
 
 % --- Executes during object creation, after setting all properties.
@@ -95,6 +95,7 @@ function whichdirs_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+global sides
 sides = 1;
 
 
@@ -123,11 +124,13 @@ global output
 global plots
 global sides
 global aligncd
+global contents2
 output.savfig = get(findobj('Tag','savefig'),'Value');
 output.savsdf = get(findobj('Tag','savesdfs'), 'Value');
 output.plots = plots;
 output.sides = sides;
 output.aligncode = aligncd;
+output.allalign = contents2;
 uiresume
 close(handles.figure1);
 
@@ -229,9 +232,10 @@ function listbox1_Callback(hObject, eventdata, handles)
 % Hints: contents = cellstr(get(hObject,'String')) returns listbox1 contents as cell array
 %        contents{get(hObject,'Value')} returns selected item from listbox1
 global aligncd
-contents = cellstr(get(hObject,'String'));
-align = find(ismember(contents, contents{get(hObject,'Value')}));
-codelist = [425 465 505 585 605 645 1030];
+global contents2
+contents2 = cellstr(get(hObject,'String'));
+align = find(ismember(contents2, contents2{get(hObject,'Value')}));
+codelist = [425 465 505 585 605 645 103];
 aligncd = codelist(align);
 
 % --- Executes during object creation, after setting all properties.

@@ -244,8 +244,15 @@ end
 % default option: will display all directions separately
 % strcmp(get(get(findobj('Tag','showdirpanel'),'SelectedObject'),'Tag'),'selecalldir');
 % (no need to change alignment codes)
-
-if strcmp(get(get(findobj('Tag','showdirpanel'),'SelectedObject'),'Tag'),'selecdir');
+if strcmp(tasktype, 'twoafc') % for twoafc plots, we always use "collapse all"
+    collapsecode=1;
+    %compile all trial directions into a single raster
+    aligncodes=aligncodes'; % previously: ecodealign,  so that when
+    % aligncodes was only three numbers long,
+    % rdd_rasters would know it had to collapse all
+    % directions together
+    alignseccodes= alignseccodes'; %secondcode;
+elseif strcmp(get(get(findobj('Tag','showdirpanel'),'SelectedObject'),'Tag'),'selecdir');
     %get the selected direction
     dirmenulist=get(findobj('Tag','SacDirToDisplay'),'String');
     dirmenuselection=get(findobj('Tag','SacDirToDisplay'),'Value');
@@ -373,6 +380,8 @@ datalign=struct('dir',{},'rasters',{},'trials',{},'trigtosac',{},'sactotrig',{},
     'amplitudes',{},'peakvels',{},'peakaccs',{},'allgreyareas',{},'stats',{},...
     'alignlabel',{},'savealignname',{},'bad',{});
 if strcmp(get(get(findobj('Tag','showdirpanel'),'SelectedObject'),'Tag'),'seleccompall') && sum(secondcode)==0
+    singlerastplot=1;
+elseif strcmp(tasktype, 'twoafc') && sum(secondcode)==0
     singlerastplot=1;
 else
     singlerastplot=0;
@@ -510,7 +519,9 @@ for cnc=1:numcodes
     if strcmp(tasktype, 'twoafc')
         twoafc()
         uiwait
-        % ZMA change allaligncodes in accordance with twoafc() GUI
+        numcodes = 1;
+        global output
+        allaligncodes = output.aligncode*10*ones(1,8) + [0:7];
     end
     [rasters,aidx, trialidx, trigtosacs, sactotrigs, trigtovis, vistotrigs, eyeh,eyev,eyevel,...
         amplitudes,peakvels,peakaccs,allgreyareas,badidx,ssd,rawsigs,alignrawidx] = rdd_rasters( rdd_filename, spikechannel, ...
@@ -657,7 +668,7 @@ if strcmp(aligntype,'stop') % make additional analysis
         plotrasts=0;
 
 elseif strcmp(tasktype, 'twoafc')
-    disp_2AFC(rdd_filename,datalign,spikechannel,ecodealign);
+    disp_2AFC(rdd_filename,datalign,spikechannel);
     plotrasts=0;
 end
 
