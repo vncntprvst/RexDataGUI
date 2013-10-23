@@ -371,7 +371,7 @@ nonecodes=[17385 16386];
 datalign=struct('dir',{},'rasters',{},'trials',{},'trigtosac',{},'sactotrig',{},...
     'trigtovis',{},'vistotrig',{},'alignidx',{},'eyeh',{},'eyev',{},'eyevel',{},...
     'amplitudes',{},'peakvels',{},'peakaccs',{},'allgreyareas',{},'stats',{},...
-    'alignlabel',{},'savealignname',{},'bad',{});
+    'alignlabel',{},'savealignname',{},'bad',{},'rawsigs',{},'alignrawidx',{});  
 if strcmp(get(get(findobj('Tag','showdirpanel'),'SelectedObject'),'Tag'),'seleccompall') && sum(secondcode)==0
     singlerastplot=1;
 else
@@ -637,25 +637,29 @@ for cnc=1:numcodes
         datalign(cnc).peakaccs=peakaccs;
         datalign(cnc).bad=badidx;
         %             datalign(cnc).condtimes=condtimes;
+        if ~isempty(rawsigs)
+            datalign(cnc).rawsigs=rawsigs;
+            datalign(cnc).alignrawidx=alignrawidx;
+        end
     end
     
 end
 
 if strcmp(aligntype,'stop') % make additional analysis
-     if ATPbuttonnb==6 % saccade
+     if ATPbuttonnb==6 || ATPbuttonnb==9 % saccade or corrective saccade
 %     [p_cancellation,h_cancellation] = cmd_wilco_cancellation(rdd_filename,datalign);
-        disp_cmd([rdd_filename,'_Clus',num2str(spikechannel)],datalign,0,0); %0, 0: latmatch, no; triplot, no
+        disp_cmd([rdd_filename,'_Clus',num2str(spikechannel)],datalign,'sac',0); %0, 0: latmatch, no; triplot, no
 %     disp_cmd(rdd_filename,datalign,1);
     elseif ATPbuttonnb==7 % target
-        disp_cmd([rdd_filename,'_Clus',num2str(spikechannel)],datalign,1,0); % keep triplot off until fixed
+        disp_cmd([rdd_filename,'_Clus',num2str(spikechannel)],datalign,'tgt',0); % keep triplot off until fixed
      end
         plotrasts=0;
-
 elseif strcmp(tasktype, 'twoafc')
     twoafc()
     uiwait
     disp_2AFC(rdd_filename,datalign,spikechannel,ecodealign);
     plotrasts=0;
+elseif strcmp(aligntype,'ecode') % other task-specific analysis
 end
 
 %% Now plotting rasters
@@ -925,7 +929,7 @@ if plotrasts
 end
 
 if getraw
-    PlotRawSigRasters(rawsigs,alignrawidx);
+%     PlotRawSigRasters(rawsigs,alignrawidx);
 end
 
 %% last item: save name

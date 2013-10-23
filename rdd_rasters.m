@@ -117,6 +117,7 @@ nummatch = 0;
 alignindexlist = [];
 rasters = [];
 alignedrawsigs=[];
+sktg=0;
 eyeh = [];
 eyev = [];
 eyevel = [];
@@ -139,7 +140,11 @@ if getraw
     else
         rawfname=name;
     end
-    load([rawfname 'raw.mat']);
+    try
+        load([rawfname 'f.mat']); %LFP recording
+    catch
+        load([rawfname 'raw.mat']); % try simply orginal voltage trace
+    end
     varlist=who; %list variables
     eval(['rawdata = ' cell2mat(varlist(~cellfun(@isempty,strfind(varlist,rawfname))))]);
     clear(cell2mat(varlist(~cellfun(@isempty,strfind(varlist,rawfname)))));
@@ -313,7 +318,7 @@ while ~islast
                         ncecode=9;
                     end
                     if isbadtrial % non-canceled stop trial
-                        if ATPbuttonnb==6
+                        if ATPbuttonnb==6 ||  ATPbuttonnb==9 % corrective saccade
                             % for non-canceled stop trial, align to saccade
                             % initiation
                             if ecodeout(ncecode)==17385 || ecodeout(ncecode)==16386
@@ -324,12 +329,24 @@ while ~islast
                                 for k=find(sacofint,1):length(sacofint)
                                     ampsacofint(1,k)=abs(getfield(curtrialsacInfo, {k}, 'amplitude'));
                                 end
-                                if sum(sacofint)
-                                    aligntime=getfield(curtrialsacInfo, {find(ampsacofint>2.5,1)}, 'starttime');
-                                else
-                                    alignmentfound = 0;
+                                if ATPbuttonnb==6
+                                    if sum(sacofint)
+                                        aligntime=getfield(curtrialsacInfo, {find(ampsacofint>2.5,1)}, 'starttime');
+                                    else
+                                        alignmentfound = 0;
+                                    end
+                                elseif ATPbuttonnb==9  &&  find(ampsacofint>2.5,1)+1<=length(ampsacofint)% If we are looking for the n-th saccade after the main one
+                                nextgoodsac=find(ampsacofint>2.5,1)+1;
+                                aligntime=getfield(curtrialsacInfo, {nextgoodsac}, 'starttime');
+                                    if aligntime>getfield(curtrialsacInfo, {find(ampsacofint>2.5,1)}, 'starttime')+500
+                                        alignmentfound = 0; % secondary saccade 500ms after erroneous one. Not considered corrective saccade
+                                    else
+                                        sacamp=getfield(curtrialsacInfo, {nextgoodsac}, 'amplitude');
+                                        sacpeakpeakvel=getfield(curtrialsacInfo, {nextgoodsac}, 'peakVelocity');
+                                        sacpeakacc=getfield(curtrialsacInfo, {nextgoodsac}, 'peakAcceleration');
+                                    end
                                 end
-                            end
+                            end  
                         elseif ATPbuttonnb==7
                             aligntime = etimeout(find(floor(ecodeout./10) == 487,1)) * (arate / 1000);
                         end
@@ -534,8 +551,11 @@ while ~islast
                     rasters = cat_variable_size_row(rasters, train);
                     
                     if getraw
-                        alignedrawsigs=cat_variable_size_row(alignedrawsigs,rawdata.values(find(rawdata.times>=rawtrialtimes(d*2-1),1):...
-                            find(rawdata.times>=rawtrialtimes(d*2),1)));
+                        if rawtrialtimes(d*2+sktg)-rawtrialtimes(d*2-1+sktg)<1 %synch issue, trial too short
+                            sktg=sktg+1;
+                        end
+                        alignedrawsigs=cat_variable_size_row(alignedrawsigs,rawdata.values(find(rawdata.times>=rawtrialtimes(d*2-1+sktg),1):...
+                            find(rawdata.times>=rawtrialtimes(d*2+sktg),1)));
                         alignrawidx(nummatch) = aligntime*samplingrate/1000; %aligntime is in ms already
                     end
                     

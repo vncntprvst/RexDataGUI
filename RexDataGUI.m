@@ -797,9 +797,10 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
             dataaligned=rdd_rasters_sdf(rdd_filename, trialdirs,1); %align data, plot rasters
         catch err
             fprintf([err.message '\n']); % Print error message as well
-            disp('rdd_rasters_sdf failed on line 785.');
+            disp('rdd_rasters_sdf call from RexDataGui failed');
             return;
         end
+
             dataaligned=dataaligned(~cellfun('isempty',{dataaligned.alignidx}));
         %% do stats
         [p_sac,h_sac,p_rmanov,mcstats]=raststats(dataaligned);
@@ -847,7 +848,7 @@ try
     dataaligned=rdd_rasters_sdf(rdd_filename, trialdirs,1);
 catch err
     fprintf(['Error: ' err.message '\n']); % Print error message as well
-    disp('rdd_rasters_sdf failed on line 834.');
+    disp('rdd_rasters_sdf call from RexDataGui replot failed');
     return;
 end
     guidata(findobj('Tag','exportdata'),dataaligned);

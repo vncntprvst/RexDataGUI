@@ -341,7 +341,7 @@ AccThreshold = 0.1;          %if acc > 100000 degrees/s^2, that is 0.1 deg/ms^2,
         scatter(nwsacend,5.*ones(1,length(nwsacend)),'r','d');
         
         %plot visual cue epoch(s)as shaded areas
-        if ecodecueon && ~badtrial
+        if sum(ecodecueon) && ~badtrial
         for cuenb = 1:length(ecodecueon)
             cueontime=etimeout(ecodecueon(cuenb));
             cueofftime=cueontime+10;

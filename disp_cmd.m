@@ -84,7 +84,7 @@ else % aligned to sac  NSS Vs NCSS
     latmach=0;
     datalign=datalign([1 3]);
     plotstart=1000;
-    plotstop=400;
+    plotstop=500;
 end
 
 for plotnum=1:numplots
@@ -104,7 +104,7 @@ for plotnum=1:numplots
     else
         numrast=2;
     end
-    fsigma=40;
+    fsigma=20;
     cc=lines(numrast);
     numsubplot=numrast*3; %dividing the panel in three compartments with wequal number of subplots
     
@@ -253,7 +253,7 @@ for plotnum=1:numplots
             sumall=sum(rasters(~isnantrial,start-fsigma:stop+fsigma));
         end
         %     sdf=spike_density(sumall,fsigma)./length(find(~isnantrial)); %instead of number of trials
-        sdf=fullgauss_filtconv(sumall,fsigma,1)./length(find(~isnantrial)).*1000;
+        sdf=fullgauss_filtconv(sumall,fsigma,0)./length(find(~isnantrial)).*1000;
         sdf=sdf(fsigma+1:end-fsigma);
         
         plot(sdf,'Color',cc(trialtype,:),'LineWidth',1.8);
@@ -417,7 +417,7 @@ for plotnum=1:numplots
                     sumall=sum(rasters(:,allalignidx{rasts}-(600+fsigma):size(fullsdf{rasts-1},2)+fsigma+(allalignidx{rasts}-601)));
                 end
             else
-                if strcmp('sac',datalign(rasts).alignlabel) %the NSS trials
+                if strcmp('sac',datalign(rasts).alignlabel) || strcmp('corsac',datalign(rasts).alignlabel) %the NSS trials
                     sumall=sum(rasters(:,allalignidx{rasts}-(1000+fsigma):max(rewtimes)+fsigma));
                 else
                     sumall=sum(rasters(:,allalignidx{rasts}-(1000+fsigma):size(fullsdf{rasts-1},2)+fsigma+(allalignidx{rasts}-1001)));
@@ -527,10 +527,18 @@ for plotnum=1:numplots
     
     if strcmp('tgt',datalign(1).alignlabel) && latmach
         comp=['NSSvsCSS_tgt_ssd' num2str(resssdvalues(plotnum))];
-    elseif strcmp('sac',datalign(1).alignlabel) && latmach
-        comp='NSSvsCSS_sac';
-    elseif strcmp('sac',datalign(1).alignlabel) && ~latmach
-        comp='NSSvsNCSS_sac';
+    elseif (strcmp('sac',datalign(1).alignlabel) || strcmp('corsac',datalign(1).alignlabel)) && latmach
+        if strcmp('sac',datalign(1).alignlabel)
+            comp='NSSvsCSS_sac';
+        else
+            comp='NSSvsCSS_corsac';
+        end
+    elseif (strcmp('sac',datalign(1).alignlabel) || strcmp('corsac',datalign(1).alignlabel)) && ~latmach
+        if strcmp('sac',datalign(1).alignlabel)
+            comp='NSSvsNCSS_sac';
+        else
+            comp='NSSvsNCSS_corsac';  
+        end
     end
     exportfigname=[cell2mat(regexp(directory,'\w+:\\\w+\\','match')),'Analysis\Countermanding\',recname,'_',comp];
     %basic png fig:
@@ -538,7 +546,7 @@ for plotnum=1:numplots
     set(gcf,'PaperUnits','inches','PaperPosition',newpos);
     print(gcf, '-dpng', '-noui', '-opengl','-r600', exportfigname);
     
-%     plot2svg([exportfigname,'.svg'],gcf, 'png');
+    plot2svg([exportfigname,'.svg'],gcf, 'png');
     delete(gcf);
 end
 end

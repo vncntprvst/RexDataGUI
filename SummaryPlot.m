@@ -269,7 +269,59 @@ for rastnum=1:numrast
     sdf=fullgauss_filtconv(sumall,fsigma,causker)./length(find(~isnantrial)).*1000;
     sdf=sdf(fsigma+1:end-fsigma);
     
+    %calculate confidence intervals
+    lcut_rasters=rasters(~isnantrial,start-fsigma:stop+fsigma);
+    smoothtrial=zeros(size(lcut_rasters));
+    for crsem=1:size(rasters,1)
+        smoothtrial(crsem,:)=fullgauss_filtconv(lcut_rasters(crsem,:),fsigma,causker).*1000; 
+    end
+    smoothtrial=smoothtrial(:,fsigma+1:end-fsigma);
+    if numrast==2 && rastnum==1  %collect old trials
+          first_smtrials=smoothtrial;
+    end
+    rastsem=std(smoothtrial)/ sqrt(size(smoothtrial,1)); %standard error of the mean
+    %norminv([.025 .975], mean(smoothtrial), std(smoothtrial));
+    rastsem = rastsem * 1.96; % 95% of the data will fall within 1.96 standard deviations of a normal distribution
+    
+    % testif significant diff
+    %         differential spike density
+%  function exceeded by 2 SD the mean difference in activity
+%  during the 600-ms interval before target presentation, pro
+% vided the difference reached 6 SD and remained >2 SD
+% threshold for 50 ms.
+
+        if numrast==2 && rastnum==numrast
+        diff_trials=mean(first_smtrials)-mean(smoothtrial);
+        diff_preal_epoch=diff_trials(alignidx-start-200:alignidx-start);
+        difftime_preal=find(abs(diff_preal_epoch)>2*(std(diff_preal_epoch)),1);
+        diff_postal_epoch=diff_trials(alignidx-start:alignidx-start+200);
+        difftime_postal=find(abs(diff_postal_epoch)>2*(std(diff_postal_epoch)),1);
+            if ~isempty(difftime_preal)
+                %recursive time search
+                difftime_preal=difftime_preal-find(abs(diff_trials(alignidx-start-200+difftime_preal+1:-1:1))<=2*(std(diff_preal_epoch)),1);
+                difftime_preal=alignidx-start-200+1+difftime_preal;
+            end
+            if ~isempty(difftime_postal)
+                %recursive time search
+                difftime_postal=difftime_postal-find(abs(diff_trials(alignidx-start+difftime_postal+1:-1:1))<=2*(std(diff_preal_epoch)),1);
+                difftime_postal=alignidx-start+1+difftime_postal;
+            end
+        else
+            difftime_preal=[];
+            difftime_postal=[];
+        end
+        
+    %plot sdf
     plot(sdf,'Color',cc(rastnum,:),'LineWidth',1.8);
+    %    plot confidence intervals
+    plot(sdf+rastsem, 'r--', 'LineWidth', 1);
+    plot(sdf-rastsem, 'r--', 'LineWidth', 1);
+     if ~isempty(difftime_preal)
+         plot(difftime_preal,max([sdf(difftime_preal)-40 1]),'r*')
+     end
+     if ~isempty(difftime_postal)
+         plot(difftime_postal,max([sdf(difftime_postal)-40 1]),'r*')
+     end
     % axis([0 stop-start 0 200])
     axis(gca,'tight');
     box off;
