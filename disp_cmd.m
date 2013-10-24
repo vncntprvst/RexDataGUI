@@ -58,7 +58,7 @@ end
 
 %% get SSRT used for alignement
 
-[mssrt,inhibfun,ccssd,nccssd,ssdvalues,tachomc,tachowidth,sacdelay,rewtimes]=findssrt(recname(1:end-6),0); %1 is for plotting psychophysic curves
+[mssrt,inhibfun,ccssd,nccssd,ssdvalues,tachomc,tachowidth,sacdelay,rewtimes]=findssrt(recname(1:end-6),1); %1 is for plotting psychophysic curves
 
 if strcmp(aligntype,'tgt')
     %% find and keep most prevalent ssds
@@ -546,7 +546,7 @@ for plotnum=1:numplots
     set(gcf,'PaperUnits','inches','PaperPosition',newpos);
     print(gcf, '-dpng', '-noui', '-opengl','-r600', exportfigname);
     
-    plot2svg([exportfigname,'.svg'],gcf, 'png');
+%     plot2svg([exportfigname,'.svg'],gcf, 'png');
     delete(gcf);
 end
 end

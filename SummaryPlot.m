@@ -310,18 +310,20 @@ for rastnum=1:numrast
             difftime_preal=[];
             difftime_postal=[];
         end
-        
+  if size(rasters(~isnantrial,:),1)>=5      
+     %    plot confidence intervals
+    patch([1:length(sdf),fliplr(1:length(sdf))],[sdf-rastsem,fliplr(sdf+rastsem)],cc(rastnum,:),'EdgeColor','none','FaceAlpha',0.1);
     %plot sdf
     plot(sdf,'Color',cc(rastnum,:),'LineWidth',1.8);
-    %    plot confidence intervals
-    plot(sdf+rastsem, 'r--', 'LineWidth', 1);
-    plot(sdf-rastsem, 'r--', 'LineWidth', 1);
+    
      if ~isempty(difftime_preal)
          plot(difftime_preal,max([sdf(difftime_preal)-40 1]),'r*')
      end
      if ~isempty(difftime_postal)
          plot(difftime_postal,max([sdf(difftime_postal)-40 1]),'r*')
      end
+  end
+  
     % axis([0 stop-start 0 200])
     axis(gca,'tight');
     box off;
