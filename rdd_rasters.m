@@ -135,7 +135,7 @@ allssd=[];
 % allcondtime = [];
 
 if getraw
-    if regexp(name,'Sp2') || regexp(name,'REX')
+    if sum(regexp(name,'Sp2'))>0 || sum(regexp(name,'REX'))>0
         rawfname=name(1:end-4);
     else
         rawfname=name;
