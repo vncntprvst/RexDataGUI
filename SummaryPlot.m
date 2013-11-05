@@ -272,7 +272,7 @@ for rastnum=1:numrast
     %calculate confidence intervals
     lcut_rasters=rasters(~isnantrial,start-fsigma:stop+fsigma);
     smoothtrial=zeros(size(lcut_rasters));
-    for crsem=1:size(rasters,1)
+    for crsem=1:size(rasters(~isnantrial),1)
         smoothtrial(crsem,:)=fullgauss_filtconv(lcut_rasters(crsem,:),fsigma,causker).*1000; 
     end
     smoothtrial=smoothtrial(:,fsigma+1:end-fsigma);
