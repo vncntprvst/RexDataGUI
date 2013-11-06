@@ -554,6 +554,14 @@ while ~islast
                         if rawtrialtimes(d*2+sktg)-rawtrialtimes(d*2-1+sktg)<1 %synch issue, trial too short
                             sktg=sktg+1;
                         end
+                        % can re-sync if spikes. Big ones. But otherwise? 
+%                         trrawsig=rawdata.values(find(rawdata.times>=rawtrialtimes(d*2-1+sktg),1):...
+%                             find(rawdata.times>=rawtrialtimes(d*2+sktg),1));
+%                         getspkt= @(x) find(bwlabel(trrawsig>0.7)==x,1)/50;
+%                         if std((find(train,6)-[getspkt(1) getspkt(2) getspkt(3) getspkt(4) getspkt(5) getspkt(6)])) <1
+%                             mean((find(train,6)-[getspkt(1) getspkt(2) getspkt(3) getspkt(4) getspkt(5) getspkt(6)])) %>1? 
+%                         end
+             
                         alignedrawsigs=cat_variable_size_row(alignedrawsigs,rawdata.values(find(rawdata.times>=rawtrialtimes(d*2-1+sktg),1):...
                             find(rawdata.times>=rawtrialtimes(d*2+sktg),1)));
                         alignrawidx(nummatch) = aligntime*samplingrate/1000; %aligntime is in ms already
