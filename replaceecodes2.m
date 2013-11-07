@@ -38,33 +38,35 @@ else %either spurious codes in token task, or wrong recording sequence (e.g. Spi
     
 end
     
+    % offset so that start codes and TTL pulses are approximately aligned
     offset = keep_min_rex + where_max(1) - 1;
     
-    alltrigs = whentrigs+offset;
+    alltrigs = whentrigs+offset; % temporary array to hold all TTL pulses
+                                 % recast in rex times, plus xcorr shift
     whenspikes = whenspikes +offset;
     
-    starttrigs =  etimes(ecodes == 1001);
+    starttrigs =  etimes(ecodes == 1001); % bring start trigs back to rex time
     newwhentrigs = zeros(size(starttrigs));
     
     for ctrig = 1:length(starttrigs)
-        curr_trig = starttrigs(ctrig);
+        curr_trig = starttrigs(ctrig); % For every start time
         errors = abs(alltrigs-curr_trig);
-        ind = find(errors == min(errors),1);
-        newwhentrigs(ctrig) = alltrigs(ind);
-        alltrigs(ind) = [];
+        ind = find(errors == min(errors),1); % find the closest TTL pulse
+        newwhentrigs(ctrig) = alltrigs(ind); % save it
+        alltrigs(ind) = []; % remove it from the list of pulses to avoid double counting
     end
     
-    whentrigs = newwhentrigs;
+    whentrigs = newwhentrigs; % should have only TTL pulses corresponding to code 1001
 
 for wtrig = 1:length(whentrigs)
-    slight_offset = whentrigs(wtrig)-starttrigs(wtrig);
+    slight_offset = whentrigs(wtrig)-starttrigs(wtrig); % offset between a 1001 code and its TTL pulse
     if (wtrig == 1)
         lowmask = whenspikes < whentrigs(wtrig);
-        thesespikes = whenspikes(lowmask);
+        thesespikes = whenspikes(lowmask); % are there spikes in this trial?
         if ~isempty(thesespikes)
-        whenspikes(lowmask) = thesespikes-slight_offset;
+        whenspikes(lowmask) = thesespikes-slight_offset; % apply the micro-corection
         end
-    else
+    else % same as above
         lowmask = whenspikes < whentrigs(wtrig);
         highmask = whenspikes > whentrigs(wtrig-1);
         thesespikes = whenspikes(lowmask & highmask);
@@ -74,7 +76,7 @@ for wtrig = 1:length(whentrigs)
     end
 end
 
-for whtrig = 1:length(whentrigs)
+for whtrig = 1:length(whentrigs) % apply the correction to the pulse times themselves
     slight_offset = whentrigs(whtrig)-starttrigs(whtrig);
     whentrigs(whtrig) = whentrigs(whtrig)-slight_offset;
 end
