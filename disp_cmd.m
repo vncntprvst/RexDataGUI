@@ -58,7 +58,7 @@ end
 
 %% get SSRT used for alignement
 
-[mssrt,inhibfun,ccssd,nccssd,ssdvalues,tachomc,tachowidth,sacdelay,rewtimes]=findssrt(recname(1:end-6),1); %1 is for plotting psychophysic curves
+[mssrt,inhibfun,ccssd,nccssd,ssdvalues,tachomc,tachowidth,sacdelay,rewtimes]=findssrt(recname(1:end-6),0); %1 is for plotting psychophysic curves
 
 if strcmp(aligntype,'tgt')
     %% find and keep most prevalent ssds
@@ -100,19 +100,19 @@ for plotnum=1:numplots
     end
     
     %% preallocs and definitions
-    allsdf=cell(2,1);
-    allrast=cell(2,1);
-    allviscuetimes=cell(2,1);
-    allalignidx=cell(2,1);
+    allsdf=cell(size(datalign,2),1);
+    allrast=cell(size(datalign,2),1);
+    allviscuetimes=cell(size(datalign,2),1);
+    allalignidx=cell(size(datalign,2),1);
     
-    if triplot
-        numrast=3;
-    else
-        numrast=2;
-    end
+%     if triplot
+        numrast=size(datalign,2);
+%     else
+%         numrast=2;
+%     end
     fsigma=20;
     cc=lines(numrast);
-    numsubplot=numrast*3; %dividing the panel in three compartments with wequal number of subplots
+    numsubplot=numrast*3; %dividing the panel in three compartments with equal number of subplots
     
     %% plotting main figure
     cmdplots(plotnum)=figure('color','white','position',[826    49   524   636]);
@@ -142,7 +142,7 @@ for plotnum=1:numplots
                 end
             end
         end
-        
+        if ~isempty(rasters)
         start=alignidx - plotstart;
         stop=alignidx + plotstop;
         
@@ -214,11 +214,13 @@ for plotnum=1:numplots
                 patch([greytimes(1) greytimes(end) greytimes(end) greytimes(1)],[j j j-1 j-1],...
                     [0 0 0], 'EdgeColor', 'none','FaceAlpha', 0.3);
                 % if NCSS, plot diamong at SSD
-                if strcmp(datalign(trialtype).alignlabel,'stop_non_cancel')
-                    plot(greytimes(1)+datalign(trialtype).ssd(j,1),j-0.5,'gd','MarkerSize', 3,'LineWidth', 1.2)
-                elseif strcmp(datalign(trialtype).alignlabel,'tgt') && latmach
+                if strcmp(datalign(trialtype).alignlabel,'stop_non_cancel') && strcmp(aligntype,'sac')
+                    plot(greytimes(1)+datalign(trialtype).ssd(1,j),j-0.5,'kd','MarkerSize', 3,'LineWidth', 1.2)
+                elseif strcmp(datalign(trialtype).alignlabel,'stop_non_cancel') && strcmp(aligntype,'tgt')
+                    
+                elseif strcmp(datalign(trialtype).alignlabel,'tgt') && strcmp(aligntype,'tgt')
                     plot(sactimes(j),j-0.5,'kd','MarkerSize', 3,'LineWidth', 1.5)
-                elseif strcmp(datalign(trialtype).alignlabel,'stop_cancel') && latmach
+                elseif strcmp(datalign(trialtype).alignlabel,'stop_cancel') && strcmp(aligntype,'tgt')
                     plot(alignidx+resssdvalues(plotnum)-start,j-0.5,'k^','MarkerSize', 2,'LineWidth', 1) % SSD
                     plot(alignidx+resssdvalues(plotnum)+round(mssrt)-start,j-0.5,'kv','MarkerSize', 2,'LineWidth', 1) % SSD +SSRT
                 end
@@ -279,9 +281,9 @@ for plotnum=1:numplots
         hylabel=ylabel(gca,'Firing rate (spikes/s)','FontName','calibri','FontSize',8);
         currylim=get(gca,'YLim');
         
-        if ~isempty(rasters)
+        if ~isempty(rasters) && ~exist('alignbarh')
             % drawing the alignment bar
-            patch([repmat((alignidx-start)-2,1,2) repmat((alignidx-start)+2,1,2)], ...
+            alignbarh=patch([repmat((alignidx-start)-2,1,2) repmat((alignidx-start)+2,1,2)], ...
                 [[0 currylim(2)] fliplr([0 currylim(2)])], ...
                 [0 0 0 0],[1 0 0],'EdgeColor','none','FaceAlpha',0.5);
         end
@@ -325,11 +327,11 @@ for plotnum=1:numplots
         allalignidx{trialtype}=alignidx;
         % get pre-cue 200ms activity
         allviscuetimes{trialtype}=viscuetimes(:,1);
-        
+        end
     end
     
     %% moving up all rasters now
-    if numrast==1
+    if size(hrastplot,2)==1
         allrastpos=(get(hrastplot,'position'));
     else
         allrastpos=cell2mat(get(hrastplot,'position'));
@@ -339,7 +341,7 @@ for plotnum=1:numplots
     if disttotop<0.99 %if not already close to top of container
         allrastpos(:,2)=allrastpos(:,2)+(1-disttotop)/1.5;
     end
-    if numrast>1
+    if size(hrastplot,2)>1
         allrastpos=mat2cell(allrastpos,ones(1,size(allrastpos,1))); %reconversion to cell .. un brin penible
         set(hrastplot,{'position'},allrastpos);
     else
@@ -356,7 +358,7 @@ for plotnum=1:numplots
     
     % plot a legend in this last graph
     clear spacer
-    spacer(1:numrast,1)={' '};
+    spacer(1:size(hrastplot,2),1)={' '};
     %cellfun('isempty',{datalign(:).dir})
     if  logical(sum(cell2mat(strfind(rastaligntype,'error1'))) || sum(cell2mat(strfind(rastaligntype,'error2'))))
         rastaligntype{~cellfun(@(x) (strcmp(x,'error1') || strcmp(x,'error2')), rastaligntype)}=...
@@ -400,9 +402,9 @@ for plotnum=1:numplots
     
     %% quantify differential activity
     
-    fullsdf=cell(2,1);
+    fullsdf=cell(numrast,1);
     
-    for rasts=1:2
+    for rasts=1:size(hrastplot,2)
         rasters=allrast{rasts};
         viscuetimes=allviscuetimes{rasts};
         
@@ -436,13 +438,13 @@ for plotnum=1:numplots
     end
     
     if plotstart==200 %aligned to target
-        precuelevel=floor(mean((floor(fullsdf{1}(401:600))-floor(fullsdf{2}(401:600)))));
-        sigthreshold=floor(2*(floor(std(floor(fullsdf{1}(401:600))-floor(fullsdf{2}(401:600)))))+precuelevel);
-        diffsdf=ceil(abs([fullsdf{1}]-[fullsdf{2}]));
+        precuelevel=floor(mean((floor(fullsdf{1}(401:600))-floor(fullsdf{rasts}(401:600)))));
+        sigthreshold=floor(2*(floor(std(floor(fullsdf{1}(401:600))-floor(fullsdf{rasts}(401:600)))))+precuelevel);
+        diffsdf=ceil(abs([fullsdf{1}]-[fullsdf{rasts}]));
     else
-        precuelevel=floor(mean(abs(floor(precuesdf{2})-floor(precuesdf{1}))));
-        sigthreshold=floor(2*(floor(std(floor(precuesdf{2})-floor(precuesdf{1}))))+precuelevel);
-        diffsdf=ceil(abs([fullsdf{2}]-[fullsdf{1}]));
+        precuelevel=floor(mean(abs(floor(precuesdf{rasts})-floor(precuesdf{1}))));
+        sigthreshold=floor(2*(floor(std(floor(precuesdf{rasts})-floor(precuesdf{1}))))+precuelevel);
+        diffsdf=ceil(abs([fullsdf{rasts}]-[fullsdf{1}]));
     end
     
     sigdiff=diffsdf>=sigthreshold;
@@ -452,7 +454,7 @@ for plotnum=1:numplots
     % figure
     % plot(fullsdf{1})
     % hold on
-    % plot(fullsdf{2},'r')
+    % plot(fullsdf{rasts},'r')
     % plot(diffsdf,'g')
     % plot(ones(size(diffsdf))*sigthreshold,'m')
     % foo=6*(std(diffsdf(401:600)))+precuelevel;
@@ -463,11 +465,11 @@ for plotnum=1:numplots
             maxdiff=max(diffsdf(sigdiffepochs==sdenum));
             sigdiffdur=sum(sigdiffepochs==sdenum);
             if plotstart==200 %aligned to target
-                if maxdiff>=floor(6*(std(floor(fullsdf{1}(401:600))-floor(fullsdf{2}(401:600))))) && sigdiffdur>=30
+                if maxdiff>=floor(6*(std(floor(fullsdf{1}(401:600))-floor(fullsdf{rasts}(401:600))))) && sigdiffdur>=30
                     confsigdiffepochs(find(sigdiffepochs==sdenum,1))=1;
                 end
             else
-                if maxdiff>=floor(6*(floor(std(floor(precuesdf{2})-floor(precuesdf{1}))))+precuelevel) && sigdiffdur>=30
+                if maxdiff>=floor(6*(floor(std(floor(precuesdf{rasts})-floor(precuesdf{1}))))+precuelevel) && sigdiffdur>=30
                     confsigdiffepochs(find(sigdiffepochs==sdenum,1))=1;
                 end
             end
@@ -499,7 +501,7 @@ for plotnum=1:numplots
     %  set(subplots,'Units','pixels')
     axespos=cell2mat(get(subplots,'Position'));
     figtitleh = title(subplots(find(axespos(:,2)==max(axespos(:,2)),1)),...
-        ['File: ',recname,' - Task: Countermanding - Alignment:',datalign(1).alignlabel,'_Vs_',datalign(2).alignlabel ]);
+        ['File: ',recname,' - Task: Countermanding - Alignment:',[datalign(1:numrast).alignlabel]]);
     set(figtitleh,'Interpreter','none');
     % tpos=get(figtitleh,'position');
     set(figtitleh,'position',[700 130 1]);
@@ -550,7 +552,7 @@ for plotnum=1:numplots
     %basic png fig:
     newpos =  get(gcf,'Position')/60;
     set(gcf,'PaperUnits','inches','PaperPosition',newpos);
-    print(gcf, '-dpng', '-noui', '-opengl','-r600', exportfigname);
+%     print(gcf, '-dpng', '-noui', '-opengl','-r600', exportfigname);
     
 %     plot2svg([exportfigname,'.svg'],gcf, 'png');
     delete(gcf);
