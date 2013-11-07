@@ -44,29 +44,29 @@ end
     whenspikes = whenspikes +offset;
     
     starttrigs =  etimes(ecodes == 1001);
-    newwhentrigs = zeros(size(starttrigs,1),size(starttrigs,2));
+    newwhentrigs = zeros(size(starttrigs));
     
-    for a = 1:length(starttrigs)
-        curr_trig = starttrigs(a);
+    for ctrig = 1:length(starttrigs)
+        curr_trig = starttrigs(ctrig);
         errors = abs(alltrigs-curr_trig);
         ind = find(errors == min(errors),1);
-        newwhentrigs(a) = alltrigs(ind);
+        newwhentrigs(ctrig) = alltrigs(ind);
         alltrigs(ind) = [];
     end
     
     whentrigs = newwhentrigs;
 
-for a = 1:length(whentrigs)
-    slight_offset = whentrigs(a)-starttrigs(a);
-    if (a == 1)
-        lowmask = whenspikes < whentrigs(a);
+for wtrig = 1:length(whentrigs)
+    slight_offset = whentrigs(wtrig)-starttrigs(wtrig);
+    if (wtrig == 1)
+        lowmask = whenspikes < whentrigs(wtrig);
         thesespikes = whenspikes(lowmask);
         if ~isempty(thesespikes)
         whenspikes(lowmask) = thesespikes-slight_offset;
         end
     else
-        lowmask = whenspikes < whentrigs(a);
-        highmask = whenspikes > whentrigs(a-1);
+        lowmask = whenspikes < whentrigs(wtrig);
+        highmask = whenspikes > whentrigs(wtrig-1);
         thesespikes = whenspikes(lowmask & highmask);
         if ~isempty(thesespikes)
         whenspikes(lowmask & highmask) = thesespikes-slight_offset;
@@ -74,9 +74,9 @@ for a = 1:length(whentrigs)
     end
 end
 
-for a = 1:length(whentrigs)
-    slight_offset = whentrigs(a)-starttrigs(a);
-    whentrigs(a) = whentrigs(a)-slight_offset;
+for whtrig = 1:length(whentrigs)
+    slight_offset = whentrigs(whtrig)-starttrigs(whtrig);
+    whentrigs(whtrig) = whentrigs(whtrig)-slight_offset;
 end
 
     
@@ -84,12 +84,12 @@ if figs
     fprintf('There are %d triggers\n',length(whentrigs));
     fprintf('There are %d start times\n',sum(ecodes == 1001));
     
-    figure(101);
-    plot(lag_range,corr_vec,'ko');
-    title('Cross correlation of trigger times and trial start times');
+%     figure(101);
+% %     plot(lag_range,corr_vec,'ko');
+%     title('Cross correlation of trigger times and trial start times');
     
     figure(99);clf;
-    
+
     plot(whentrigs,whentrigs.^0,'rd','MarkerSize',20); % red diamonds: spike2 triggers
     hold on;
     plot(etimes(ecodes == 1001),(etimes(ecodes==1001)).^0,'ko','MarkerSize',20); % black circles rex start codes
@@ -100,10 +100,10 @@ if figs
     
     align_error = zeros(length(starttrigs),1);
     
-    for a = 1:length(starttrigs)
-        curr_trig = starttrigs(a);
+    for sttrig = 1:length(starttrigs)
+        curr_trig = starttrigs(sttrig);
         errors = abs(whentrigs-curr_trig);
-        align_error(a) = min(errors);
+        align_error(sttrig) = min(errors);
     end
     error_bar = mean(align_error);
     fprintf('The alignment is %5.2f miliseconds off on average',error_bar);
@@ -127,9 +127,9 @@ newecodes(newecodes == 610) = [];
  
 %% Label new clusters
 howmanyclus = length(clus_names);
-for a = 1:howmanyclus
-    clus_label = 600+clus_names(a);
-    thesespikes = whenspikes(whatcodes == clus_names(a)); % Isolate cluster
+for hmclus = 1:howmanyclus
+    clus_label = 600+clus_names(hmclus);
+    thesespikes = whenspikes(whatcodes == clus_names(hmclus)); % Isolate cluster
     addecodes = clus_label.*ones(length(thesespikes),1);
     newecodes = [ newecodes; addecodes];
     newetimes = [ newetimes; thesespikes]; % Add new spikes
