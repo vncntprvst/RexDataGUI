@@ -69,7 +69,7 @@ for wtrig = 1:length(whentrigs)
         end
     else % there is no next 1001 code for the last trial
         highmask = whenspikes > whentrigs(wtrig);
-        thesespikes = whenspikes(lowmask & highmask);
+        thesespikes = whenspikes(highmask);
         if ~isempty(thesespikes)
         whenspikes(highmask) = thesespikes-slight_offset;
         end
