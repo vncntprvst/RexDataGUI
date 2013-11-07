@@ -105,11 +105,6 @@ varlist=varlist(~cellfun(@isempty,strfind(varlist,rexname))); %restrict to the o
 A = [cellfun(@(x) eval([x '.title']), varlist,'UniformOutput',false)];
 A(strcmp(A, 'trig')) = cellstr('trigger'); % rename trigs to triggers
 eval(['data = ' cell2mat(varlist(cellfun(@isempty,strfind(A,'trigger'))))]); 
-eval(['spk2trig = ' cell2mat(varlist(~cellfun(@isempty,strfind(A,'trigger'))))]);
-global triggertimes
-triggertimes = spk2trig.times;
-global spike2times
-spike2times = data.times;
 global clustercodes
 clustercodes = data.codes(:,1);
 clus_names = unique((clustercodes(clustercodes ~= 0)));
@@ -118,6 +113,10 @@ allspk_clus = cell(howmanyclus,1);
 for a = 1:howmanyclus
     allspk_clus{a} = [];
 end
+
+global save_rexname % replaceecodes2 needs to call it
+save_rexname = rexname;
+
 else
     howmanyclus = 1;
     clus_names = 1;

@@ -3,7 +3,37 @@ if nargin <3
     figs=0;
 end
 
-global triggertimes spike2times clustercodes
+global slash directory clustercodes save_rexname
+rexname = save_rexname;
+
+monkeydirselected=get(get(findobj('Tag','monkeyselect'),'SelectedObject'),'Tag');
+if strcmp(monkeydirselected,'sixxselect')
+load([directory 'Sixx' slash 'Spike2Exports' slash rexname 's.mat']);
+load([directory 'Sixx' slash 'Spike2Exports' slash rexname 't.mat']);
+savetname = [directory 'Sixx' slash 'Spike2Exports' slash rexname 't.mat'];
+elseif strcmp(monkeydirselected,'rigelselect')
+load([directory 'Rigel' slash 'Spike2Exports' slash rexname 's.mat']);
+load([directory 'Rigel' slash 'Spike2Exports' slash rexname 't.mat']);
+savetname = [directory 'Rigel' slash 'Spike2Exports' slash rexname 't.mat'];
+elseif strcmp(monkeydirselected,'hildaselect')
+load([directory 'Hilda' slash 'Spike2Exports' slash rexname 's.mat']);
+load([directory 'Hilda' slash 'Spike2Exports' slash rexname 't.mat']); 
+savetname = [directory 'Hilda' slash 'Spike2Exports' slash rexname 't.mat'];
+elseif strcmp(monkeydirselected,'shufflesselect')
+load([directory 'Shuffles' slash 'Spike2Exports' slash rexname 's.mat']);
+load([directory 'Shuffles' slash 'Spike2Exports' slash rexname 't.mat']);
+savetname = [directory 'Shuffles' slash 'Spike2Exports' slash rexname 't.mat'];
+end
+% find which channel contains the data ( H53L5A5_20901_Ch7.title = nw-801)
+varlist=who; %list variables
+varlist=varlist(~cellfun(@isempty,strfind(varlist,rexname))); %restrict to the ones that start with the file name (the ones just loaded)
+A = [cellfun(@(x) eval([x '.title']), varlist,'UniformOutput',false)];
+A(strcmp(A, 'trig')) = cellstr('trigger'); % rename trigs to triggers
+eval(['data = ' cell2mat(varlist(cellfun(@isempty,strfind(A,'trigger'))))]); 
+eval(['spk2trig = ' cell2mat(varlist(~cellfun(@isempty,strfind(A,'trigger'))))]);
+triggertimes = spk2trig.times;
+spike2times = data.times;
+
 whentrigs = round(triggertimes.*1e3);
 whenspikes = round(spike2times(clustercodes ~= 0).*1e3);
 whatcodes = double(clustercodes(clustercodes ~= 0));
@@ -81,6 +111,10 @@ for whtrig = 1:length(whentrigs) % apply the correction to the pulse times thems
     slight_offset = whentrigs(whtrig)-starttrigs(whtrig);
     whentrigs(whtrig) = whentrigs(whtrig)-slight_offset;
 end
+
+spk2trig.times = whentrigs.*1e-3; % save the aligned TTL times to the t file.
+eval([cell2mat(varlist(~cellfun(@isempty,strfind(A,'trigger')))) '= spk2trig;'])
+save(savetname, cell2mat(varlist(~cellfun(@isempty,strfind(A,'trigger')))));
 
 if figs
     fprintf('There are %d triggers\n',length(whentrigs));
