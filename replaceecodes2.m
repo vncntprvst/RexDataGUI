@@ -1,4 +1,4 @@
-function [newecodes, newetimes,clus_names] = replaceecodes(ecodes,etimes,figs)
+function [newecodes, newetimes,clus_names] = replaceecodes2(ecodes,etimes,figs)
 if nargin <3
     figs=0;
 end
@@ -10,12 +10,14 @@ whatcodes = double(clustercodes(clustercodes ~= 0));
 clus_names = unique(whatcodes);
 
 %% recast in terms of REX times
+
 starttrigs =  etimes(ecodes == 1001);
     
 keep_min_rex = min(starttrigs);
 keep_min_spk2 = min(whentrigs);
 starttrigs = starttrigs - keep_min_rex + 1;
 whentrigs = whentrigs - keep_min_spk2 + 1;
+whenspikes = whenspikes - keep_min_spk2 + 1;
 
 rast_starttrigs = 1:max(starttrigs);
 rast_whentrigs = 1:max(whentrigs);
@@ -24,7 +26,6 @@ rast_whentrigs = double(ismember(rast_whentrigs, whentrigs));
 
 if length(whentrigs)/sum(ecodes == 1001) == 2 %expected ratio of triggers to trials (2 triggers per trial
 
-    whentrigs=whentrigs(1:2:end); %keep only start trigger times and remove end triggers. Makes for better correlation
     where_max = 0;
 
 else %either spurious codes in token task, or wrong recording sequence (e.g. Spike2 recording started after REX recording)
@@ -36,8 +37,48 @@ else %either spurious codes in token task, or wrong recording sequence (e.g. Spi
     %pause;
     
 end
+    
+    offset = keep_min_rex + where_max(1) - 1;
+    
+    alltrigs = whentrigs+offset;
+    whenspikes = whenspikes +offset;
+    
+    starttrigs =  etimes(ecodes == 1001);
+    newwhentrigs = zeros(size(starttrigs,1),size(starttrigs,2));
+    
+    for a = 1:length(starttrigs)
+        curr_trig = starttrigs(a);
+        errors = abs(alltrigs-curr_trig);
+        ind = find(errors == min(errors),1);
+        newwhentrigs(a) = alltrigs(ind);
+        alltrigs(ind) = [];
+    end
+    
+    whentrigs = newwhentrigs;
 
-    offset = keep_min_rex - keep_min_spk2 + where_max(1);
+for a = 1:length(whentrigs)
+    slight_offset = whentrigs(a)-starttrigs(a);
+    if (a == 1)
+        lowmask = whenspikes < whentrigs(a);
+        thesespikes = whenspikes(lowmask);
+        if ~isempty(thesespikes)
+        whenspikes(lowmask) = thesespikes-slight_offset;
+        end
+    else
+        lowmask = whenspikes < whentrigs(a);
+        highmask = whenspikes > whentrigs(a-1);
+        thesespikes = whenspikes(lowmask & highmask);
+        if ~isempty(thesespikes)
+        whenspikes(lowmask & highmask) = thesespikes-slight_offset;
+        end
+    end
+end
+
+for a = 1:length(whentrigs)
+    slight_offset = whentrigs(a)-starttrigs(a);
+    whentrigs(a) = whentrigs(a)-slight_offset;
+end
+
     
 if figs
     fprintf('There are %d triggers\n',length(whentrigs));
@@ -48,8 +89,6 @@ if figs
     title('Cross correlation of trigger times and trial start times');
     
     figure(99);clf;
-
-    whentrigs = whentrigs + where_max(1) + keep_min_rex - 1;
     
     plot(whentrigs,whentrigs.^0,'rd','MarkerSize',20); % red diamonds: spike2 triggers
     hold on;
@@ -58,9 +97,9 @@ if figs
     set(gca,'XTick',ticks)
     set(gca,'XTickLabel',sprintf('%3.0f|',ticks))
     legend('Spk2 trigs','REX start codes');
-
-    starttrigs = etimes(ecodes == 1001);
+    
     align_error = zeros(length(starttrigs),1);
+    
     for a = 1:length(starttrigs)
         curr_trig = starttrigs(a);
         errors = abs(whentrigs-curr_trig);
@@ -71,7 +110,7 @@ if figs
 
 end
 
-whenspikes = whenspikes + offset;
+
 
 %% Remove old spikes
 

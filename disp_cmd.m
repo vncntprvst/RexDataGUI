@@ -65,8 +65,8 @@ if strcmp(aligntype,'tgt')
     [ssdtots,ssdtotsidx]=sort((arrayfun(@(x) sum(ccssd<=x+3 & ccssd>=x-3),ssdvalues)));
     
     % will iterate through matched sac delays while not removing too many CSS trials
-    numplots=sum(ssdtots>=5);
-    resssdvalues=sort(ssdvalues(ssdtotsidx(ssdtots>=5)));
+    numplots=sum(ssdtots>=3);
+    resssdvalues=sort(ssdvalues(ssdtotsidx(ssdtots>=3)));
 else
     numplots=1;
 end
@@ -84,13 +84,19 @@ else % aligned to sac  NSS Vs NCSS
     latmach=0;
     datalign=datalign([1 3]);
     plotstart=1000;
-    plotstop=500;
+    plotstop=1000;
 end
 
 for plotnum=1:numplots
     
     if strcmp(aligntype,'tgt')
         matchlatidx=sacdelay>resssdvalues(plotnum)+round(mssrt);
+        adjmssrt=round(mssrt)-1;
+        while sum(matchlatidx)<7 && adjmssrt>=max([70 tachomc])
+            matchlatidx=sacdelay>resssdvalues(plotnum)+adjmssrt;
+            adjmssrt=adjmssrt-1;
+        end
+        mssrt=adjmssrt+1;
     end
     
     %% preallocs and definitions
@@ -245,7 +251,7 @@ for plotnum=1:numplots
         %sdfh = axes('Position', [.15 .65 .2 .2], 'Layer','top');
         title('Spike Density Function','FontName','calibri','FontSize',11);
         hold on;
-        if size(rasters,1)<5 %if only one good trial
+        if size(rasters,1)<3 %if only few good trials
             %sumall=rasters(~isnantrial,start-fsigma:stop+fsigma);
             %useless plotting this
             sumall=NaN;
