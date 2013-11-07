@@ -25,8 +25,14 @@ global directory;
 %     rewtimes=goodsactimes(allcodes(logical(sum(allgoodsacs,2)),:)==1030);
 
 % find Cmd protocol: fixed SSDs or staircase
-allssds=cat(find(size(datalign(1,2).ssd)==max(size(datalign(1,2).ssd))),datalign(1,2:3).ssd);
-[~,ordersstrials]=sort([datalign(1,2:3).trials]);
+if strcmp(aligntype,'ssd')
+    allssds=cat(find(size(datalign(1,3).ssd)==max(size(datalign(1,3).ssd))),datalign(1,3:4).ssd);
+    [~,ordersstrials]=sort([datalign(1,3:4).trials]);
+else
+    allssds=cat(find(size(datalign(1,2).ssd)==max(size(datalign(1,2).ssd))),datalign(1,2:3).ssd);
+    [~,ordersstrials]=sort([datalign(1,2:3).trials]);
+end
+
 allssds=allssds(ordersstrials); %put ssds in the order they occured
 sddsteps=diff(allssds);
 if std(sddsteps(sddsteps>0))>20
@@ -58,38 +64,64 @@ end
 
 %% get SSRT used for alignement
 
-[mssrt,inhibfun,ccssd,nccssd,ssdvalues,tachomc,tachowidth,sacdelay,rewtimes]=findssrt(recname(1:end-6),0); %1 is for plotting psychophysic curves
-
-if strcmp(aligntype,'tgt')
-    %% find and keep most prevalent ssds
-    [ssdtots,ssdtotsidx]=sort((arrayfun(@(x) sum(ccssd<=x+3 & ccssd>=x-3),ssdvalues)));
+[mssrt,~,ccssd,nccssd,ssdvalues,tachomc,tachowidth,sacdelay,rewtimes]=findssrt(recname(1:end-6),0); %1 is for plotting psychophysic curves
+   
+%% find and keep most prevalent ssds
+    ccssdval=unique(ccssd);
+    while sum(diff(ccssdval)==1)
+        ccssdval(diff(ccssdval)==1)=ccssdval(diff(ccssdval)==1)+1;
+    end
+    ccssdval=unique(ccssdval);
     
+    nccssdval=unique(nccssd);
+    while sum(diff(nccssdval)==1)
+        nccssdval(diff(nccssdval)==1)=nccssdval(diff(nccssdval)==1)+1;
+    end
+    nccssdval=unique(nccssdval);
+    
+if strcmp(aligntype,'correct_slow')
+
+    [ssdtots,ssdtotsidx]=sort((arrayfun(@(x) sum(ccssd<=x+3 & ccssd>=x-3),unique(ccssd))));
     % will iterate through matched sac delays while not removing too many CSS trials
     numplots=sum(ssdtots>=3);
-    resssdvalues=sort(ssdvalues(ssdtotsidx(ssdtots>=3)));
+    resssdvalues=sort(ccssdval(ssdtotsidx(ssdtots>=3)));
+elseif strcmp(aligntype,'failed_fast')
+
+    [ssdtots,ssdtotsidx]=sort((arrayfun(@(x) sum(nccssd<=x+3 & nccssd>=x-3),unique(nccssdval))));
+    % will iterate through matched sac delays while not removing too many CSS trials
+    numplots=sum(ssdtots>=3);
+    resssdvalues=sort(nccssdval(ssdtotsidx(ssdtots>=3)));
+elseif strcmp(aligntype,'ssd')
+    numplots=2;
 else
     numplots=1;
 end
 
-
-% end
-if strcmp(aligntype,'tgt') %ie, aligned to target
+%% presets
+% need to match latencies in all cases
+if strcmp(aligntype,'correct_slow') %ie, aligned to target
     latmach=1;
     if ~triplot % only two conditions: NSS Vs CSS
         datalign=datalign(1:2);
     end
     plotstart=200;
     plotstop=600;
-else % aligned to sac  NSS Vs NCSS
-    latmach=0;
+elseif strcmp(aligntype,'failed_fast')% aligned to sac  NSS Vs NCSS
+    latmach=1;
     datalign=datalign([1 3]);
     plotstart=1000;
     plotstop=1000;
+elseif strcmp(aligntype,'ssd') % aligned to ssd, split into two figure: CSS vs slow NSS abd NCSS vs fast CSS
+    latmach=1; 
+    plotstart=800;
+    plotstop=600;
+    org_datalign=datalign;
 end
 
+%% plots
 for plotnum=1:numplots
     
-    if strcmp(aligntype,'tgt')
+    if strcmp(aligntype,'correct_slow')
         matchlatidx=sacdelay>resssdvalues(plotnum)+round(mssrt);
         adjmssrt=round(mssrt)-1;
         while sum(matchlatidx)<7 && adjmssrt>=max([70 tachomc])
@@ -97,6 +129,27 @@ for plotnum=1:numplots
             adjmssrt=adjmssrt-1;
         end
         mssrt=adjmssrt+1;
+    elseif strcmp(aligntype,'failed_fast')  
+        matchlatidx=sacdelay>resssdvalues(plotnum)+50 & sacdelay<resssdvalues(plotnum)+round(mssrt);  
+%         adjmssrt=round(mssrt)-1;
+%         while sum(matchlatidx)<7 && adjmssrt>=max([70 tachomc])
+%             matchlatidx=sacdelay>resssdvalues(plotnum)+adjmssrt;
+%             adjmssrt=adjmssrt-1;
+%         end
+%         mssrt=adjmssrt+1;
+    elseif strcmp(aligntype,'ssd')
+        datalign=org_datalign([plotnum plotnum+2]);
+%         if plotnum==1 % correct vs slow
+%             matchlatidx=sacdelay>min(ccssdval)+round(mssrt);
+%             adjmssrt=round(mssrt)-1;
+%             while sum(matchlatidx)<7 && adjmssrt>=max([70 tachomc])
+%                 matchlatidx=sacdelay>ccssdval(plotnum)+adjmssrt;
+%                 adjmssrt=adjmssrt-1;
+%             end
+%             mssrt=adjmssrt+1;
+%         elseif plotnum==2
+%              matchlatidx=sacdelay>nccssdval+50 && sacdelay<nccssdval+round(mssrt);  
+%         end
     end
     
     %% preallocs and definitions
@@ -117,12 +170,12 @@ for plotnum=1:numplots
     %% plotting main figure
     cmdplots(plotnum)=figure('color','white','position',[826    49   524   636]);
     for trialtype=1:numrast
-        if strcmp('tgt',datalign(trialtype).alignlabel) && latmach
+        if (strcmp('tgt',datalign(trialtype).alignlabel) || strcmp('sac',datalign(trialtype).alignlabel)) && ~strcmp(aligntype,'ssd') && latmach
             rasters=datalign(trialtype).rasters(matchlatidx,:);
             alignidx=datalign(trialtype).alignidx;
             greyareas=datalign(trialtype).allgreyareas(matchlatidx);
-            matchrewtimes=rewtimes(matchlatidx);
-        elseif (strcmp('stop_cancel',datalign(trialtype).alignlabel) || strcmp('stop_non_cancel',datalign(trialtype).alignlabel)) && latmach
+            matchrewtimes=rewtimes(matchlatidx);            
+        elseif (strcmp('stop_cancel',datalign(trialtype).alignlabel) || strcmp('stop_non_cancel',datalign(trialtype).alignlabel)) && ~strcmp(aligntype,'ssd') && latmach
             ssdidx=datalign(trialtype).ssd>=resssdvalues(plotnum)-3 & datalign(trialtype).ssd<=resssdvalues(plotnum)+3;
             rasters=datalign(trialtype).rasters(ssdidx,:);
             if strcmp('stop_non_cancel',datalign(trialtype).alignlabel)
@@ -177,7 +230,7 @@ for plotnum=1:numplots
             %         end
             sactimes(grst)=greyareas{grst}(2,1)-start;
         end
-        if strcmp(datalign(trialtype).alignlabel,'tgt') && latmach
+        if strcmp(datalign(trialtype).alignlabel,'tgt') && ~strcmp(aligntype,'ssd') && latmach 
             [sactimes,sortidx]=sort(sactimes,'ascend');
             viscuetimes=viscuetimes(sortidx,:);
             rasters=rasters(sortidx,:);
@@ -214,13 +267,13 @@ for plotnum=1:numplots
                 patch([greytimes(1) greytimes(end) greytimes(end) greytimes(1)],[j j j-1 j-1],...
                     [0 0 0], 'EdgeColor', 'none','FaceAlpha', 0.3);
                 % if NCSS, plot diamong at SSD
-                if strcmp(datalign(trialtype).alignlabel,'stop_non_cancel') && strcmp(aligntype,'sac')
-                    plot(greytimes(1)+datalign(trialtype).ssd(1,j),j-0.5,'kd','MarkerSize', 3,'LineWidth', 1.2)
-                elseif strcmp(datalign(trialtype).alignlabel,'stop_non_cancel') && strcmp(aligntype,'tgt')
+                if strcmp(datalign(trialtype).alignlabel,'stop_non_cancel') && strcmp(aligntype,'failed_fast')
+                    plot(greytimes(1)+datalign(trialtype).ssd(j,1),j-0.5,'kd','MarkerSize', 3,'LineWidth', 1.2)
+                elseif strcmp(datalign(trialtype).alignlabel,'stop_non_cancel') && strcmp(aligntype,'correct_slow')
                     
-                elseif strcmp(datalign(trialtype).alignlabel,'tgt') && strcmp(aligntype,'tgt')
+                elseif strcmp(datalign(trialtype).alignlabel,'tgt') && strcmp(aligntype,'correct_slow')
                     plot(sactimes(j),j-0.5,'kd','MarkerSize', 3,'LineWidth', 1.5)
-                elseif strcmp(datalign(trialtype).alignlabel,'stop_cancel') && strcmp(aligntype,'tgt')
+                elseif strcmp(datalign(trialtype).alignlabel,'stop_cancel') && strcmp(aligntype,'correct_slow')
                     plot(alignidx+resssdvalues(plotnum)-start,j-0.5,'k^','MarkerSize', 2,'LineWidth', 1) % SSD
                     plot(alignidx+resssdvalues(plotnum)+round(mssrt)-start,j-0.5,'kv','MarkerSize', 2,'LineWidth', 1) % SSD +SSRT
                 end
@@ -238,7 +291,7 @@ for plotnum=1:numplots
         %     end
         
         set(hrastplot(trialtype),'xlim',[1 length(start:stop)]);
-        if strcmp(datalign(trialtype).alignlabel,'stop_cancel') && latmach
+        if strcmp(datalign(trialtype).alignlabel,'stop_cancel') && ~strcmp(aligntype,'ssd') && latmach
             axes(hrastplot(trialtype));
             patch([repmat((alignidx+resssdvalues(plotnum)+round(mssrt)-start)-tachowidth/2,1,2)...
                 repmat((alignidx+resssdvalues(plotnum)+round(mssrt)-start)+tachowidth/2,1,2)], ...
@@ -266,7 +319,7 @@ for plotnum=1:numplots
         
         plot(sdf,'Color',cc(trialtype,:),'LineWidth',1.8);
         
-        if strcmp(datalign(trialtype).alignlabel,'stop_cancel') && latmach
+        if strcmp(datalign(trialtype).alignlabel,'stop_cancel') && ~strcmp(aligntype,'ssd') && latmach
             patch([repmat((alignidx+resssdvalues(plotnum)-start)-1,1,2) repmat((alignidx+resssdvalues(plotnum)-start)+1,1,2)], ...
                 [[0 currylim(2)] fliplr([0 currylim(2)])],[0 0 0 0],'k^','EdgeColor','none','FaceAlpha',0.5);
             patch([repmat((alignidx+resssdvalues(plotnum)+round(mssrt)-start)-1,1,2) repmat((alignidx+resssdvalues(plotnum)+round(mssrt)-start)+1,1,2)], ...
@@ -400,98 +453,98 @@ for plotnum=1:numplots
     set(sdfplot,'XTick',[0:100:(stop-start)]);
     set(sdfplot,'XTickLabel',[-plotstart:100:plotstop]);
     
-    %% quantify differential activity
-    
-    fullsdf=cell(numrast,1);
-    
-    for rasts=1:size(hrastplot,2)
-        rasters=allrast{rasts};
-        viscuetimes=allviscuetimes{rasts};
-        
-        allbaseline=zeros(size(rasters,1),200+2*fsigma);
-        for rastunit=1:size(rasters,1) %plotting rasters trial by trial
-            rasters(rastunit,isnan(rasters(rastunit,:)))=0;
-            allbaseline(rastunit,:)=rasters(rastunit, viscuetimes(rastunit)-200-fsigma:viscuetimes(rastunit)-1+fsigma);
-        end
-        %     precuesdf{rasts}=spike_density(nansum(allbaseline),fsigma)./size(rasters,1);
-        precuesdf{rasts}=fullgauss_filtconv(nansum(allbaseline),fsigma,0)./size(rasters,1).*1000;
-        precuesdf{rasts}=precuesdf{rasts}(fsigma+1:end-fsigma);
-        
-        if size(allrast{rasts},1)>1 %if more than one good trial
-            if plotstart==200 %aligned to target
-                if strcmp('tgt',datalign(rasts).alignlabel) %the NSS trials
-                    sumall=sum(rasters(:,allalignidx{rasts}-(600+fsigma):max(matchrewtimes)+fsigma));
-                else % base end limit on NSS trial limit
-                    sumall=sum(rasters(:,allalignidx{rasts}-(600+fsigma):size(fullsdf{rasts-1},2)+fsigma+(allalignidx{rasts}-601)));
-                end
-            else
-                if strcmp('sac',datalign(rasts).alignlabel) || strcmp('corsac',datalign(rasts).alignlabel) %the NSS trials
-                    sumall=sum(rasters(:,allalignidx{rasts}-(1000+fsigma):max(rewtimes)+fsigma));
-                else
-                    sumall=sum(rasters(:,allalignidx{rasts}-(1000+fsigma):size(fullsdf{rasts-1},2)+fsigma+(allalignidx{rasts}-1001)));
-                end
-            end
-        end
-        %     fullsdf{rasts}=spike_density(sumall,fsigma)./size(rasters,1);
-        fullsdf{rasts}=fullgauss_filtconv(sumall,fsigma,0)./size(rasters,1).*1000;
-        fullsdf{rasts}=fullsdf{rasts}(fsigma+1:end-fsigma);
-    end
-    
-    if plotstart==200 %aligned to target
-        precuelevel=floor(mean((floor(fullsdf{1}(401:600))-floor(fullsdf{rasts}(401:600)))));
-        sigthreshold=floor(2*(floor(std(floor(fullsdf{1}(401:600))-floor(fullsdf{rasts}(401:600)))))+precuelevel);
-        diffsdf=ceil(abs([fullsdf{1}]-[fullsdf{rasts}]));
-    else
-        precuelevel=floor(mean(abs(floor(precuesdf{rasts})-floor(precuesdf{1}))));
-        sigthreshold=floor(2*(floor(std(floor(precuesdf{rasts})-floor(precuesdf{1}))))+precuelevel);
-        diffsdf=ceil(abs([fullsdf{rasts}]-[fullsdf{1}]));
-    end
-    
-    sigdiff=diffsdf>=sigthreshold;
-    sigdiffepochs=bwlabel(sigdiff);
-    confsigdiffepochs=zeros(size(sigdiffepochs));
-    % separate plot
-    % figure
-    % plot(fullsdf{1})
-    % hold on
-    % plot(fullsdf{rasts},'r')
-    % plot(diffsdf,'g')
-    % plot(ones(size(diffsdf))*sigthreshold,'m')
-    % foo=6*(std(diffsdf(401:600)))+precuelevel;
-    % plot(ones(size(diffsdf))*foo,'m');
-    
-    if max(sigdiffepochs)
-        for sdenum=1:max(sigdiffepochs)
-            maxdiff=max(diffsdf(sigdiffepochs==sdenum));
-            sigdiffdur=sum(sigdiffepochs==sdenum);
-            if plotstart==200 %aligned to target
-                if maxdiff>=floor(6*(std(floor(fullsdf{1}(401:600))-floor(fullsdf{rasts}(401:600))))) && sigdiffdur>=30
-                    confsigdiffepochs(find(sigdiffepochs==sdenum,1))=1;
-                end
-            else
-                if maxdiff>=floor(6*(floor(std(floor(precuesdf{rasts})-floor(precuesdf{1}))))+precuelevel) && sigdiffdur>=30
-                    confsigdiffepochs(find(sigdiffepochs==sdenum,1))=1;
-                end
-            end
-        end
-        if max(confsigdiffepochs)
-            figure(cmdplots(plotnum))
-            if plotstart==200 %aligned to target
-                plot(sdfplot,find(confsigdiffepochs)-400,ones(1,sum(confsigdiffepochs))*10,'xr','markersize',12);
-                if sum(find(confsigdiffepochs)-400>alignidx+resssdvalues(plotnum)-start &...
-                        find(confsigdiffepochs)-400<alignidx+resssdvalues(plotnum)+round(mssrt)-start)
-                    cancellation_time=alignidx+resssdvalues(plotnum)+round(mssrt)-start-(find(confsigdiffepochs,1)-400);
-                    cancellation_strengh=max(diffsdf(sigdiffepochs==sigdiffepochs(find(confsigdiffepochs,1))));
-                end
-            else
-                plot(sdfplot,find(confsigdiffepochs),ones(1,sum(confsigdiffepochs))*10,'xr','markersize',12);
-                if sum(find(confsigdiffepochs)>alignidx-start)
-                    error_time=find(confsigdiffepochs(alignidx-start:end),1)-1;
-                    %                     cancellation_strengh
-                end
-            end
-        end
-    end
+%     %% quantify differential activity
+%     
+%     fullsdf=cell(numrast,1);
+%     
+%     for rasts=1:size(hrastplot,2)
+%         rasters=allrast{rasts};
+%         viscuetimes=allviscuetimes{rasts};
+%         
+%         allbaseline=zeros(size(rasters,1),200+2*fsigma);
+%         for rastunit=1:size(rasters,1) %plotting rasters trial by trial
+%             rasters(rastunit,isnan(rasters(rastunit,:)))=0;
+%             allbaseline(rastunit,:)=rasters(rastunit, viscuetimes(rastunit)-200-fsigma:viscuetimes(rastunit)-1+fsigma);
+%         end
+%         %     precuesdf{rasts}=spike_density(nansum(allbaseline),fsigma)./size(rasters,1);
+%         precuesdf{rasts}=fullgauss_filtconv(nansum(allbaseline),fsigma,0)./size(rasters,1).*1000;
+%         precuesdf{rasts}=precuesdf{rasts}(fsigma+1:end-fsigma);
+%         
+%         if size(allrast{rasts},1)>1 %if more than one good trial
+%             if plotstart==200 %aligned to target
+%                 if strcmp('tgt',datalign(rasts).alignlabel) %the NSS trials
+%                     sumall=sum(rasters(:,allalignidx{rasts}-(600+fsigma):max(matchrewtimes)+fsigma));
+%                 else % base end limit on NSS trial limit
+%                     sumall=sum(rasters(:,allalignidx{rasts}-(600+fsigma):size(fullsdf{rasts-1},2)+fsigma+(allalignidx{rasts}-601)));
+%                 end
+%             else
+%                 if strcmp('sac',datalign(rasts).alignlabel) || strcmp('corsac',datalign(rasts).alignlabel) %the NSS trials
+%                     sumall=sum(rasters(:,allalignidx{rasts}-(1000+fsigma):max(rewtimes)+fsigma));
+%                 else
+%                     sumall=sum(rasters(:,allalignidx{rasts}-(1000+fsigma):size(fullsdf{rasts-1},2)+fsigma+(allalignidx{rasts}-1001)));
+%                 end
+%             end
+%         end
+%         %     fullsdf{rasts}=spike_density(sumall,fsigma)./size(rasters,1);
+%         fullsdf{rasts}=fullgauss_filtconv(sumall,fsigma,0)./size(rasters,1).*1000;
+%         fullsdf{rasts}=fullsdf{rasts}(fsigma+1:end-fsigma);
+%     end
+%     
+%     if plotstart==200 %aligned to target
+%         precuelevel=floor(mean((floor(fullsdf{1}(401:600))-floor(fullsdf{rasts}(401:600)))));
+%         sigthreshold=floor(2*(floor(std(floor(fullsdf{1}(401:600))-floor(fullsdf{rasts}(401:600)))))+precuelevel);
+%         diffsdf=ceil(abs([fullsdf{1}]-[fullsdf{rasts}]));
+%     else
+%         precuelevel=floor(mean(abs(floor(precuesdf{rasts})-floor(precuesdf{1}))));
+%         sigthreshold=floor(2*(floor(std(floor(precuesdf{rasts})-floor(precuesdf{1}))))+precuelevel);
+%         diffsdf=ceil(abs([fullsdf{rasts}]-[fullsdf{1}]));
+%     end
+%     
+%     sigdiff=diffsdf>=sigthreshold;
+%     sigdiffepochs=bwlabel(sigdiff);
+%     confsigdiffepochs=zeros(size(sigdiffepochs));
+%     % separate plot
+%     % figure
+%     % plot(fullsdf{1})
+%     % hold on
+%     % plot(fullsdf{rasts},'r')
+%     % plot(diffsdf,'g')
+%     % plot(ones(size(diffsdf))*sigthreshold,'m')
+%     % foo=6*(std(diffsdf(401:600)))+precuelevel;
+%     % plot(ones(size(diffsdf))*foo,'m');
+%     
+%     if max(sigdiffepochs)
+%         for sdenum=1:max(sigdiffepochs)
+%             maxdiff=max(diffsdf(sigdiffepochs==sdenum));
+%             sigdiffdur=sum(sigdiffepochs==sdenum);
+%             if plotstart==200 %aligned to target
+%                 if maxdiff>=floor(6*(std(floor(fullsdf{1}(401:600))-floor(fullsdf{rasts}(401:600))))) && sigdiffdur>=30
+%                     confsigdiffepochs(find(sigdiffepochs==sdenum,1))=1;
+%                 end
+%             else
+%                 if maxdiff>=floor(6*(floor(std(floor(precuesdf{rasts})-floor(precuesdf{1}))))+precuelevel) && sigdiffdur>=30
+%                     confsigdiffepochs(find(sigdiffepochs==sdenum,1))=1;
+%                 end
+%             end
+%         end
+%         if max(confsigdiffepochs)
+%             figure(cmdplots(plotnum))
+%             if plotstart==200 %aligned to target
+%                 plot(sdfplot,find(confsigdiffepochs)-400,ones(1,sum(confsigdiffepochs))*10,'xr','markersize',12);
+%                 if sum(find(confsigdiffepochs)-400>alignidx+resssdvalues(plotnum)-start &...
+%                         find(confsigdiffepochs)-400<alignidx+resssdvalues(plotnum)+round(mssrt)-start)
+%                     cancellation_time=alignidx+resssdvalues(plotnum)+round(mssrt)-start-(find(confsigdiffepochs,1)-400);
+%                     cancellation_strengh=max(diffsdf(sigdiffepochs==sigdiffepochs(find(confsigdiffepochs,1))));
+%                 end
+%             else
+%                 plot(sdfplot,find(confsigdiffepochs),ones(1,sum(confsigdiffepochs))*10,'xr','markersize',12);
+%                 if sum(find(confsigdiffepochs)>alignidx-start)
+%                     error_time=find(confsigdiffepochs(alignidx-start:end),1)-1;
+%                     %                     cancellation_strengh
+%                 end
+%             end
+%         end
+%     end
     
     %% condense plot
     % figuresize=getpixelposition(gcf);
@@ -533,7 +586,7 @@ for plotnum=1:numplots
     % to check if file already exists and open it:
     % eval(['!' exportfigname '.pdf']);
     
-    if strcmp('tgt',datalign(1).alignlabel) && latmach
+    if strcmp('tgt',datalign(1).alignlabel) && ~strcmp(aligntype,'ssd') && latmach
         comp=['NSSvsCSS_tgt_ssd' num2str(resssdvalues(plotnum))];
     elseif (strcmp('sac',datalign(1).alignlabel) || strcmp('corsac',datalign(1).alignlabel)) && latmach
         if strcmp('sac',datalign(1).alignlabel)
@@ -547,6 +600,12 @@ for plotnum=1:numplots
         else
             comp='NSSvsNCSS_corsac';  
         end
+    elseif strcmp('ssd',aligntype)
+        if plotnum==1
+            comp='NSSvsCSS_ssd';
+        elseif plotnum==2
+            comp='NSSvsNCSS_ssd';
+        end
     end
     exportfigname=[cell2mat(regexp(directory,'\w+:\\\w+\\','match')),'Analysis\Countermanding\',recname,'_',comp];
     %basic png fig:
@@ -555,6 +614,6 @@ for plotnum=1:numplots
 %     print(gcf, '-dpng', '-noui', '-opengl','-r600', exportfigname);
     
 %     plot2svg([exportfigname,'.svg'],gcf, 'png');
-    delete(gcf);
+%     delete(gcf);
 end
 end
