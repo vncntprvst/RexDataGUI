@@ -85,7 +85,6 @@ end
         newwhentrigs(ctrig) = alltrigs(ind); % save it
         alltrigs(ind) = []; % remove it from the list of pulses to avoid double counting
     end
-    
     whentrigs = newwhentrigs; % should have only TTL pulses corresponding to code 1001
 
 for wtrig = 1:length(whentrigs)
@@ -103,7 +102,6 @@ for wtrig = 1:length(whentrigs)
         if ~isempty(thesespikes)
         whenspikes(highmask) = thesespikes-slight_offset;
         end
-        
     end
 end
 
