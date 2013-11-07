@@ -60,20 +60,12 @@ end
 
 for wtrig = 1:length(whentrigs)
     slight_offset = whentrigs(wtrig)-starttrigs(wtrig); % offset between a 1001 code and its TTL pulse
-    if (wtrig == 1)
-        lowmask = whenspikes < whentrigs(wtrig);
-        thesespikes = whenspikes(lowmask); % are there spikes in this trial?
-        if ~isempty(thesespikes)
-        whenspikes(lowmask) = thesespikes-slight_offset; % apply the micro-corection
-        end
-    else % same as above
-        lowmask = whenspikes < whentrigs(wtrig);
-        highmask = whenspikes > whentrigs(wtrig-1);
+        lowmask = whenspikes < whentrigs(wtrig+1); % spikes before the next trig
+        highmask = whenspikes > whentrigs(wtrig); % but after this one
         thesespikes = whenspikes(lowmask & highmask);
         if ~isempty(thesespikes)
         whenspikes(lowmask & highmask) = thesespikes-slight_offset;
         end
-    end
 end
 
 for whtrig = 1:length(whentrigs) % apply the correction to the pulse times themselves
@@ -81,7 +73,6 @@ for whtrig = 1:length(whentrigs) % apply the correction to the pulse times thems
     whentrigs(whtrig) = whentrigs(whtrig)-slight_offset;
 end
 
-    
 if figs
     fprintf('There are %d triggers\n',length(whentrigs));
     fprintf('There are %d start times\n',sum(ecodes == 1001));
@@ -111,8 +102,6 @@ if figs
     fprintf('The alignment is %5.2f miliseconds off on average',error_bar);
 
 end
-
-
 
 %% Remove old spikes
 
