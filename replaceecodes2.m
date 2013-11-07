@@ -58,14 +58,23 @@ end
     
     whentrigs = newwhentrigs; % should have only TTL pulses corresponding to code 1001
 
-for wtrig = 1:(length(whentrigs)-1)
+for wtrig = 1:length(whentrigs)
     slight_offset = whentrigs(wtrig)-starttrigs(wtrig); % offset between a 1001 code and its TTL pulse
+    if wtrig ~= length(whentrigs)
         lowmask = whenspikes < whentrigs(wtrig+1); % spikes before the next trig
         highmask = whenspikes > whentrigs(wtrig); % but after this one
         thesespikes = whenspikes(lowmask & highmask);
         if ~isempty(thesespikes)
         whenspikes(lowmask & highmask) = thesespikes-slight_offset;
         end
+    else % there is no next 1001 code for the last trial
+        highmask = whenspikes > whentrigs(wtrig);
+        thesespikes = whenspikes(lowmask & highmask);
+        if ~isempty(thesespikes)
+        whenspikes(highmask) = thesespikes-slight_offset;
+        end
+        
+    end
 end
 
 for whtrig = 1:length(whentrigs) % apply the correction to the pulse times themselves
