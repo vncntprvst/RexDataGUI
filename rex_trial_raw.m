@@ -85,8 +85,7 @@ if ~strcmp(currecodename, ecname) || reprocess
 		if replacespikes
             disp('I am about to replace ecodes.');
             howmanyclus = double(max(clustercodes));
-            [ecodes, etimes,clus_label] = replaceecodes(ecodes,etimes,0);
-            %[ecodes, etimes] = replaceecodes(ecodes,etimes);
+            [ecodes, etimes,clus_label] = replaceecodes2(ecodes,etimes,1);
             spike2aidx = find(ecodes == -112);
         else
             clus_label = 1;
