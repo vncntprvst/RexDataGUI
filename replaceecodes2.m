@@ -105,12 +105,13 @@ for wtrig = 1:length(whentrigs)
     end
 end
 
+firstspkoffset= whentrigs(1)-starttrigs(1);
 for whtrig = 1:length(whentrigs) % apply the correction to the pulse times themselves
     slight_offset = whentrigs(whtrig)-starttrigs(whtrig);
     whentrigs(whtrig) = whentrigs(whtrig)-slight_offset;
 end
 
-spk2trig.times = whentrigs.*1e-3; % save the aligned TTL times to the t file.
+spk2trig.times = (whentrigs-(keep_min_rex-keep_min_spk2)-firstspkoffset-1).*1e-3; % save the aligned TTL times to the t file.
 eval([cell2mat(varlist(~cellfun(@isempty,strfind(A,'trigger')))) '= spk2trig;'])
 save(savetname, cell2mat(varlist(~cellfun(@isempty,strfind(A,'trigger')))));
 
