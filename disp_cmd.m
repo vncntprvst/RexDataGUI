@@ -180,6 +180,9 @@ for plotnum=1:numplots
             rasters=datalign(trialtype).rasters(ssdidx,:);
             if strcmp('stop_non_cancel',datalign(trialtype).alignlabel)
                 alignidx=datalign(trialtype).alignidx;
+                if size(datalign(trialtype).ssd,2)>size(datalign(trialtype).ssd,1)
+                    datalign(trialtype).ssd=permute(datalign(trialtype).ssd,[2,1]);
+                end
             else
                 alignidx=datalign(trialtype).alignidx-(resssdvalues(plotnum)+round(mssrt)); % shifting rasters to target presentation
             end
@@ -334,7 +337,7 @@ for plotnum=1:numplots
         hylabel=ylabel(gca,'Firing rate (spikes/s)','FontName','calibri','FontSize',8);
         currylim=get(gca,'YLim');
         
-        if ~isempty(rasters) && ~exist('alignbarh')
+        if ~isempty(rasters) && trialtype==1
             % drawing the alignment bar
             alignbarh=patch([repmat((alignidx-start)-2,1,2) repmat((alignidx-start)+2,1,2)], ...
                 [[0 currylim(2)] fliplr([0 currylim(2)])], ...
@@ -611,9 +614,9 @@ for plotnum=1:numplots
     %basic png fig:
     newpos =  get(gcf,'Position')/60;
     set(gcf,'PaperUnits','inches','PaperPosition',newpos);
-%     print(gcf, '-dpng', '-noui', '-opengl','-r600', exportfigname);
+     print(gcf, '-dpng', '-noui', '-opengl','-r600', exportfigname);
     
 %     plot2svg([exportfigname,'.svg'],gcf, 'png');
-%     delete(gcf);
+     delete(gcf);
 end
 end
