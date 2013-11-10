@@ -153,10 +153,14 @@ if getraw
     rawtrialtimes = eval([cell2mat(varlist(~cellfun(@isempty,strfind(varlist,rawfname)))) '.times']);
     clear(cell2mat(varlist(~cellfun(@isempty,strfind(varlist,rawfname)))));
     load(name, 'alltrigin');
-    if alltrigin(2)-alltrigin(1)~=floor((rawtrialtimes(3)-rawtrialtimes(1))*1000)
-        disp('trial times do not match')
-    end
-    samplingrate=(find(rawdata.times>=rawtrialtimes(3),1) - find(rawdata.times>=rawtrialtimes(1),1))/(rawtrialtimes(3)-rawtrialtimes(1));
+    
+%     if alltrigin(2)-alltrigin(1)~=floor((rawtrialtimes(3)-rawtrialtimes(1))*1000)
+%         disp('trial times do not match')
+%     end
+    
+    %samplingrate=(find(rawdata.times>=rawtrialtimes(3),1) - find(rawdata.times>=rawtrialtimes(1),1))/(rawtrialtimes(3)-rawtrialtimes(1));
+    samplingrate= rawdata.interval.^(-1);
+    
     alignrawidx=nan(1,rexnumtrials); %preallocate
 else
     alignrawidx=[];
