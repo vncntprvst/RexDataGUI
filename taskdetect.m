@@ -23,7 +23,7 @@ end
 
 firstind = find(codes(1, :) >= 4000 & codes(1, :) < 8000, 1); % finds the index of the basecode, only works if basecode is dropped at same index in each row
 
-alltasktypes={'vg_saccades','base2rem50','memguided','st_saccades','gapstop','gapsac','delayedsac','optiloc','tokens','fixation','twoafc'};
+alltasktypes={'vg_saccades','base2rem50','memguided','st_saccades','gapstop','gapsac','delayedsac','optiloc','tokens','fixation','twoafc','periodCmd'};
 %fsttlecode=floor(allcodes(1,2)/10)*10;
 if size(codes,1)>1 %for a full file of ecodes
     ecodetypes=unique(floor(codes(:,firstind)/10)*10); %gives away the different ecode if mixed task
@@ -165,7 +165,8 @@ if ~sum(curtasktype) || strcmp(curtasktype,'Task') %then find task!
             end
         end
     elseif ecodetypes(1)==4080
-        return;
+        curtasktype=alltasktypes(12);
+        tasktype=alltasktypes(12);
     end
 end
 %%
@@ -222,7 +223,7 @@ if ~isempty(curtasktype) %&& ~sum(find(codes==17385))
             ecodesacstart=8;
             ecodesacend=9;
         case 'tokens'
-            %cue on is variable. returns all tokens event numbers
+            %multiple cues. returns all tokens event numbers
             ecodecueon=find(codes==1501);
             %sacstart is variable too.
             ecodesacstart=find(floor(codes/10)==466);
@@ -239,5 +240,27 @@ if ~isempty(curtasktype) %&& ~sum(find(codes==17385))
             ecodecueon=8;
             ecodesacstart=10;
             ecodesacend=12;
+         case 'periodCmd'
+             %returns all periodic cues
+             nxttgt=find(floor(codes/10)==428);
+             codediff=codes(nxttgt)-codes(2);
+             while codediff==200
+                 codediff=codes(nxttgt+1)-codes(nxttgt);
+                 nxttgt=nxttgt+1;
+             end
+             %series of four spec_cd codes:
+%              fix off (6)
+%              tgt on  (7) 
+%              sac detected (8)
+%              eye in window (9)
+%              except for the first two: fix on (4) / eye in window (5)
+             ecodecueon=find(floor(codes/10)==428)+3:4:nxttgt-1;
+            %sac / stop signal is following code.
+            if ~isempty(ecodecueon)
+                 ecodesacstart=nxttgt+1;
+                 ecodesacend=nxttgt+2;
+            else
+                [ecodecueon,ecodesacstart,ecodesacend]=deal(0);
+            end
     end
 end

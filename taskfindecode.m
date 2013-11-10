@@ -1,6 +1,6 @@
-function [fixcode fixoffcode tgtcode tgtoffcode saccode...
-    stopcode rewcode tokcode errcode1 errcode2 errcode3 basecode ...
-    dectgtcode decsaccode] = taskfindecode(tasktype);
+function [fixcode, fixoffcode, tgtcode, tgtoffcode, saccode, ...
+    stopcode, rewcode, tokcode, errcode1, errcode2, errcode3, basecode, ...
+    dectgtcode, decsaccode] = taskfindecode(tasktype)
 
 %define ecodes according to task (reverses taskdetect basically)
 %add last number for direction
@@ -49,8 +49,8 @@ elseif strcmp(tasktype,'gapstop')
     fixoffcode=[664,467];
     tgtcode=[684,487];
     tgtoffcode=[103,103];
-    saccode=[704];
-    stopcode=[507];
+    saccode=704;
+    stopcode=507;
 elseif strcmp(tasktype,'tokens')
     basecode=406;
     fixcode=426;

@@ -973,9 +973,9 @@ elseif strcmp(archst, 'win32') || strcmp(archst, 'win64')
     elseif strcmp(getenv('username'),'The Doctor')
         directory = 'C:\Users\The Doctor\Data\';
         user='generic';
-    else
+    else strcmp(getenv('username'),'Vincent')
         directory = 'B:\data\Recordings\';
-        user='generic';
+        user='Vincent';
     end
     slash = '\';
 end

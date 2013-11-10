@@ -410,7 +410,7 @@ for trialnumber = 1:nt
             [success,outliers,curtasktype]=rex_process_inGUI( rexname, rawdir, 1); %last argument is for reprocessing file
             return;
         end
-        if strcmp(curtasktype,'tokens') && logical(sum(ecodecueon)) %multiple cues
+        if (strcmp(curtasktype,'tokens') || strcmp(curtasktype,'periodCmd')) && logical(sum(ecodecueon)) %multiple cues
             allcues=ecodecueon; %keep it for later
             ecodecueon=ecodecueon(end); %for the moment only keep the last one
         end
@@ -421,14 +421,17 @@ for trialnumber = 1:nt
             else
                 sacofint=nwsacstart>etimeout(ecodesacstart-1); %considering all saccades occuring after the ecode
                 %preceding the saccade ecode, which is often erroneous
-                if strcmp(curtasktype,'gapstop') & find(ecodeout==1503)
+                if strcmp(curtasktype,'gapstop') && find(ecodeout==1503)
+                    sacofint=nwsacstart>etimeout(ecodesacstart-2);
+                elseif strcmp(curtasktype,'periodCmd') && ecodeout(ecodesacstart-1)==17385
+                % subject maintained fixation beyond alloted time window to
+                % make saccade, or broke fixation
                     sacofint=nwsacstart>etimeout(ecodesacstart-2);
                 end
             end
         else
             sacofint=0;
         end
-        
         
         for k=find(sacofint,1):length(sacofint)
             ampsacofint(1,k)=abs(getfield(saccadeInfo, {next,k}, 'amplitude'));
