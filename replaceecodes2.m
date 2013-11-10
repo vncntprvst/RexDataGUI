@@ -72,8 +72,8 @@ end
     offset = keep_min_rex + where_max(1) - 1;
     
     alltrigs = whentrigs+offset; % temporary array to hold all TTL pulses
-                                 % recast in rex times, plus xcorr shift
-    whenspikes = whenspikes +offset;
+    oldtrigs = whentrigs;        % recast in rex times, plus xcorr shift
+    whenspikes = whenspikes + offset;
     
     starttrigs =  etimes(ecodes == 1001); % bring start trigs back to rex time
     newwhentrigs = zeros(size(starttrigs));
@@ -106,12 +106,15 @@ for wtrig = 1:length(whentrigs)
 end
 
 firstspkoffset= whentrigs(1)-starttrigs(1);
+sumoffs = 0;
 for whtrig = 1:length(whentrigs) % apply the correction to the pulse times themselves
     slight_offset = whentrigs(whtrig)-starttrigs(whtrig);
     whentrigs(whtrig) = whentrigs(whtrig)-slight_offset;
 end
 
-spk2trig.times = (whentrigs-(keep_min_rex-keep_min_spk2)-firstspkoffset-1).*1e-3; % save the aligned TTL times to the t file.
+%spk2trig.times = (whentrigs-(keep_min_rex-keep_min_spk2)-firstspkoffset-1).*1e-3; % save the aligned TTL times to the t file.
+spk2trig.times = (whentrigs-offset+keep_min_spk2-1).*1e-3; % save the aligned TTL times to the t file.
+
 eval([cell2mat(varlist(~cellfun(@isempty,strfind(A,'trigger')))) '= spk2trig;'])
 save(savetname, cell2mat(varlist(~cellfun(@isempty,strfind(A,'trigger')))));
 
