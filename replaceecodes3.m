@@ -94,27 +94,9 @@ end
     tr_offset = zeros(1,length(whentrigs));
 for wtrig = 1:length(whentrigs)
     tr_offset(wtrig) = whentrigs(wtrig)-starttrigs(wtrig); % offset between a 1001 code and its TTL pulse
-%     if wtrig ~= length(whentrigs)
-%         lowmask = whenspikes < whentrigs(wtrig+1); % spikes before the next trig
-%         highmask = whenspikes > whentrigs(wtrig); % but after this one
-%         thesespikes = whenspikes(lowmask & highmask);
-%         if ~isempty(thesespikes)
-%         whenspikes(lowmask & highmask) = thesespikes-slight_offset;
-%         end
-%     else % there is no next 1001 code for the last trial
-%         highmask = whenspikes > whentrigs(wtrig);
-%         thesespikes = whenspikes(highmask);
-%         if ~isempty(thesespikes)
-%         whenspikes(highmask) = thesespikes-slight_offset;
-%         end
-%     end
+    whentrigs(wtrig) = whentrigs(wtrig)-tr_offset(wtrig);
 end
 
-firstspkoffset= whentrigs(1)-starttrigs(1);
-sumoffs = 0;
-for whtrig = 1:length(whentrigs) % apply the correction to the pulse times themselves
-    whentrigs(whtrig) = whentrigs(whtrig)-tr_offset(whtrig);
-end
 
 %spk2trig.times = (whentrigs-(keep_min_rex-keep_min_spk2)-firstspkoffset-1).*1e-3; % save the aligned TTL times to the t file.
 spk2trig.times = (whentrigs-offset+keep_min_spk2-1).*1e-3; % save the aligned TTL times to the t file.
