@@ -254,7 +254,7 @@ for rastnum=1:numrast
     axis(gca, 'off'); % axis tight sets the axis limits to the range of the data.
     
     
-    %Plot sdf
+    %% Plot sdf
     sdfplot=subplot(numsubplot,1,(numsubplot/3)+1:(numsubplot/3)+(numsubplot/3),'Layer','top','Parent', handles.mainfig);
     %sdfh = axes('Position', [.15 .65 .2 .2], 'Layer','top');
     title('Spike Density Function','FontName','calibri','FontSize',11);
@@ -269,7 +269,7 @@ for rastnum=1:numrast
     sdf=fullgauss_filtconv(sumall,fsigma,causker)./length(find(~isnantrial)).*1000;
     sdf=sdf(fsigma+1:end-fsigma);
     
-    %calculate confidence intervals
+    %% calculate confidence intervals
     lcut_rasters=rasters(~isnantrial,start-fsigma:stop+fsigma);
     smoothtrial=zeros(size(lcut_rasters));
     for crsem=1:size(rasters(~isnantrial),1)

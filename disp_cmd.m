@@ -1,4 +1,4 @@
-function disp_cmd(recname,datalign,aligntype,triplot)
+function [allsdf,allrast,allalignidx,allviscuetimes,allcomp]=disp_cmd(recname,datalign,aligntype,triplot)
 global directory;
 % if latmach
 %% first get SSDs and SSRT, to later parse latency-matched trials and CSS according to SSDs
@@ -97,6 +97,8 @@ else
     numplots=1;
 end
 
+   
+    
 %% presets
 % need to match latencies in all cases
 if strcmp(aligntype,'correct_slow') %ie, aligned to target
@@ -106,18 +108,28 @@ if strcmp(aligntype,'correct_slow') %ie, aligned to target
     end
     plotstart=200;
     plotstop=600;
+    cellkeepsz=size(datalign,2);
 elseif strcmp(aligntype,'failed_fast')% aligned to sac  NSS Vs NCSS
     latmach=1;
     datalign=datalign([1 3]);
     plotstart=1000;
     plotstop=1000;
+    cellkeepsz=size(datalign,2);
 elseif strcmp(aligntype,'ssd') % aligned to ssd, split into two figure: CSS vs slow NSS abd NCSS vs fast CSS
     latmach=1; 
     plotstart=800;
     plotstop=600;
     org_datalign=datalign;
+    cellkeepsz=size(datalign,2)/2;
 end
 
+ %% preallocs
+    allsdf=cell(cellkeepsz,numplots);
+    allrast=cell(cellkeepsz,numplots);
+    allviscuetimes=cell(cellkeepsz,numplots);
+    allalignidx=cell(cellkeepsz,numplots);
+    allcomp=cell(cellkeepsz,numplots);
+    
 %% plots
 for plotnum=1:numplots
     
@@ -151,12 +163,6 @@ for plotnum=1:numplots
 %              matchlatidx=sacdelay>nccssdval+50 && sacdelay<nccssdval+round(mssrt);  
 %         end
     end
-    
-    %% preallocs and definitions
-    allsdf=cell(size(datalign,2),1);
-    allrast=cell(size(datalign,2),1);
-    allviscuetimes=cell(size(datalign,2),1);
-    allalignidx=cell(size(datalign,2),1);
     
 %     if triplot
         numrast=size(datalign,2);
@@ -211,7 +217,6 @@ for plotnum=1:numplots
         
         %trials = size(rasters,1);
         isnantrial=zeros(1,size(rasters,1));
-        
         
         hrastplot(trialtype)=subplot(numsubplot,1,trialtype,'Layer','top', ...
             'XTick',[],'YTick',[],'XColor','white','YColor','white', 'Parent', cmdplots(plotnum));
@@ -320,6 +325,21 @@ for plotnum=1:numplots
         sdf=fullgauss_filtconv(sumall,fsigma,0)./length(find(~isnantrial)).*1000;
         sdf=sdf(fsigma+1:end-fsigma);
         
+         %% calculate confidence intervals
+    lcut_rasters=rasters(~isnantrial,start-fsigma:stop+fsigma);
+    smoothtrial=zeros(size(lcut_rasters));
+    for crsem=1:size(rasters(~isnantrial),1)
+        smoothtrial(crsem,:)=fullgauss_filtconv(lcut_rasters(crsem,:),1,0).*1000; 
+    end
+    smoothtrial=smoothtrial(:,fsigma+1:end-fsigma);
+%     if numrast==2 && rastnum==1  %collect old trials
+%           first_smtrials=smoothtrial;
+%     end
+    rastsem=std(smoothtrial)/ sqrt(size(smoothtrial,1)); %standard error of the mean
+    %norminv([.025 .975], mean(smoothtrial), std(smoothtrial));
+    rastsem = rastsem * 1.96; % 95% of the data will fall within 1.96 standard deviations of a normal distribution
+  
+    
         plot(sdf,'Color',cc(trialtype,:),'LineWidth',1.8);
         
         if strcmp(datalign(trialtype).alignlabel,'stop_cancel') && ~strcmp(aligntype,'ssd') && latmach
@@ -377,12 +397,13 @@ for plotnum=1:numplots
         end
         
         %% keep sdf, rasters etc
-        allsdf{trialtype}=sdf;
-        allrast{trialtype}=rasters;
+        allsdf{trialtype,plotnum}=sdf;
+        allrast{trialtype,plotnum}=smoothtrial;%(:,start:stop);
         %     alltimetorew{i}=timetorew;
-        allalignidx{trialtype}=alignidx;
+        allalignidx{trialtype,plotnum}=alignidx;
         % get pre-cue 200ms activity
-        allviscuetimes{trialtype}=viscuetimes(:,1);
+        allviscuetimes{trialtype,plotnum}=viscuetimes(:,1);
+        allcomp{trialtype,plotnum}=[datalign(trialtype).alignlabel '_' aligntype];
         end
     end
     
@@ -409,8 +430,8 @@ for plotnum=1:numplots
     eyevelplotpos(1,2)=eyevelplotpos(1,2)-(eyevelplotpos(1,2))/1.5;
     set(heyevelplot,'position',eyevelplotpos);
     % x axis tick labels
-    set(heyevelplot,'XTick',[0:100:(stop-start)]);
-    set(heyevelplot,'XTickLabel',[-plotstart:100:plotstop]);
+    set(heyevelplot,'XTick',0:100:(stop-start));
+    set(heyevelplot,'XTickLabel',-plotstart:100:plotstop);
     
     % plot a legend in this last graph
     clear spacer
@@ -614,7 +635,7 @@ for plotnum=1:numplots
     %basic png fig:
     newpos =  get(gcf,'Position')/60;
     set(gcf,'PaperUnits','inches','PaperPosition',newpos);
-     print(gcf, '-dpng', '-noui', '-opengl','-r600', exportfigname);
+%      print(gcf, '-dpng', '-noui', '-opengl','-r600', exportfigname);
     
 %     plot2svg([exportfigname,'.svg'],gcf, 'png');
      delete(gcf);
