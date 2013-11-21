@@ -1,4 +1,4 @@
-function [allsdf,allrast,allalignidx,allviscuetimes,allcomp]=disp_cmd(recname,datalign,aligntype,triplot)
+function [allsdf,allrast,allalignidx,allssd,allviscuetimes,allcomp]=disp_cmd(recname,datalign,aligntype,plottype)
 global directory;
 % if latmach
 %% first get SSDs and SSRT, to later parse latency-matched trials and CSS according to SSDs
@@ -65,26 +65,38 @@ end
 %% get SSRT used for alignement
 
 [mssrt,~,ccssd,nccssd,ssdvalues,tachomc,tachowidth,sacdelay,rewtimes]=findssrt(recname(1:end-6),0); %1 is for plotting psychophysic curves
-   
+ mssrt=max([mssrt tachomc+tachowidth/2]);
+
 %% find and keep most prevalent ssds
-    ccssdval=unique(ccssd);
-    while sum(diff(ccssdval)==1)
-        ccssdval(diff(ccssdval)==1)=ccssdval(diff(ccssdval)==1)+1;
-    end
-    ccssdval=unique(ccssdval);
     
-    nccssdval=unique(nccssd);
-    while sum(diff(nccssdval)==1)
-        nccssdval(diff(nccssdval)==1)=nccssdval(diff(nccssdval)==1)+1;
+    if plottype==3
+        [~,ssdhistlims]=hist([ccssd;nccssd],3);
+    else
+        ccssdval=unique(ccssd);
+        while sum(diff(ccssdval)==1)
+            ccssdval(diff(ccssdval)==1)=ccssdval(diff(ccssdval)==1)+1;
+        end
+        ccssdval=unique(ccssdval);
+
+        nccssdval=unique(nccssd);
+        while sum(diff(nccssdval)==1)
+            nccssdval(diff(nccssdval)==1)=nccssdval(diff(nccssdval)==1)+1;
+        end
+        nccssdval=unique(nccssdval);
     end
-    nccssdval=unique(nccssdval);
     
 if strcmp(aligntype,'correct_slow')
-
-    [ssdtots,ssdtotsidx]=sort((arrayfun(@(x) sum(ccssd<=x+3 & ccssd>=x-3),unique(ccssd))));
-    % will iterate through matched sac delays while not removing too many CSS trials
-    numplots=sum(ssdtots>=3);
-    resssdvalues=sort(ccssdval(ssdtotsidx(ssdtots>=3)));
+    if plottype==3 %select and pool short SSD, med SSD and long SSD
+        resssdvalues(1)=round(ssdhistlims(1)+(ssdhistlims(2)-ssdhistlims(1))/2); %short SSD below that level
+        resssdvalues(2)=round(ssdhistlims(3)-(ssdhistlims(3)-ssdhistlims(2))/2); %long SSD above that level
+        resssdvalues(3)=max([ccssd;nccssd]); %not terribly important, just to avoid matchlat from bugging
+        numplots=3;
+    else    
+        [ssdtots,ssdtotsidx]=sort((arrayfun(@(x) sum(ccssd<=x+3 & ccssd>=x-3),unique(ccssd))));
+        % loops below will iterate through matched sac delays while not removing too many CSS trials 
+        numplots=sum(ssdtots>=3);
+        resssdvalues=sort(ccssdval(ssdtotsidx(ssdtots>=3)));
+    end
 elseif strcmp(aligntype,'failed_fast')
 
     [ssdtots,ssdtotsidx]=sort((arrayfun(@(x) sum(nccssd<=x+3 & nccssd>=x-3),unique(nccssdval))));
@@ -103,8 +115,10 @@ end
 % need to match latencies in all cases
 if strcmp(aligntype,'correct_slow') %ie, aligned to target
     latmach=1;
-    if ~triplot % only two conditions: NSS Vs CSS
-        datalign=datalign(1:2);
+    if plottype==1 %keep all three struct in datalign %former triplot
+    else
+        % only two conditions: NSS Vs CSS
+        datalign=datalign(1:2); 
     end
     plotstart=200;
     plotstop=600;
@@ -126,6 +140,7 @@ end
  %% preallocs
     allsdf=cell(cellkeepsz,numplots);
     allrast=cell(cellkeepsz,numplots);
+    allssd=cell(1,numplots);
     allviscuetimes=cell(cellkeepsz,numplots);
     allalignidx=cell(cellkeepsz,numplots);
     allcomp=cell(cellkeepsz,numplots);
@@ -143,25 +158,8 @@ for plotnum=1:numplots
         mssrt=adjmssrt+1;
     elseif strcmp(aligntype,'failed_fast')  
         matchlatidx=sacdelay>resssdvalues(plotnum)+50 & sacdelay<resssdvalues(plotnum)+round(mssrt);  
-%         adjmssrt=round(mssrt)-1;
-%         while sum(matchlatidx)<7 && adjmssrt>=max([70 tachomc])
-%             matchlatidx=sacdelay>resssdvalues(plotnum)+adjmssrt;
-%             adjmssrt=adjmssrt-1;
-%         end
-%         mssrt=adjmssrt+1;
     elseif strcmp(aligntype,'ssd')
         datalign=org_datalign([plotnum plotnum+2]);
-%         if plotnum==1 % correct vs slow
-%             matchlatidx=sacdelay>min(ccssdval)+round(mssrt);
-%             adjmssrt=round(mssrt)-1;
-%             while sum(matchlatidx)<7 && adjmssrt>=max([70 tachomc])
-%                 matchlatidx=sacdelay>ccssdval(plotnum)+adjmssrt;
-%                 adjmssrt=adjmssrt-1;
-%             end
-%             mssrt=adjmssrt+1;
-%         elseif plotnum==2
-%              matchlatidx=sacdelay>nccssdval+50 && sacdelay<nccssdval+round(mssrt);  
-%         end
     end
     
 %     if triplot
@@ -182,7 +180,17 @@ for plotnum=1:numplots
             greyareas=datalign(trialtype).allgreyareas(matchlatidx);
             matchrewtimes=rewtimes(matchlatidx);            
         elseif (strcmp('stop_cancel',datalign(trialtype).alignlabel) || strcmp('stop_non_cancel',datalign(trialtype).alignlabel)) && ~strcmp(aligntype,'ssd') && latmach
-            ssdidx=datalign(trialtype).ssd>=resssdvalues(plotnum)-3 & datalign(trialtype).ssd<=resssdvalues(plotnum)+3;
+            if plottype==3
+                if plotnum==1
+                    ssdidx=datalign(trialtype).ssd<=resssdvalues(plotnum);
+                elseif plotnum==2
+                    ssdidx=datalign(trialtype).ssd>=resssdvalues(plotnum-1) & datalign(trialtype).ssd<=resssdvalues(plotnum);
+                elseif plotnum==3
+                    ssdidx=datalign(trialtype).ssd>=resssdvalues(plotnum-1);
+                end                    
+            else
+                ssdidx=datalign(trialtype).ssd>=resssdvalues(plotnum)-3 & datalign(trialtype).ssd<=resssdvalues(plotnum)+3;
+            end
             rasters=datalign(trialtype).rasters(ssdidx,:);
             if strcmp('stop_non_cancel',datalign(trialtype).alignlabel)
                 alignidx=datalign(trialtype).alignidx;
@@ -314,10 +322,12 @@ for plotnum=1:numplots
         %sdfh = axes('Position', [.15 .65 .2 .2], 'Layer','top');
         title('Spike Density Function','FontName','calibri','FontSize',11);
         hold on;
-        if size(rasters,1)<3 %if only few good trials
+        if size(rasters,1)<3 && plottype~=3 %if only few good trials
             %sumall=rasters(~isnantrial,start-fsigma:stop+fsigma);
             %useless plotting this
             sumall=NaN;
+        elseif size(rasters,1)<3 && plottype==3
+            sumall=(rasters(~isnantrial,start-fsigma:stop+fsigma));
         else
             sumall=sum(rasters(~isnantrial,start-fsigma:stop+fsigma));
         end
@@ -399,6 +409,13 @@ for plotnum=1:numplots
         %% keep sdf, rasters etc
         allsdf{trialtype,plotnum}=sdf;
         allrast{trialtype,plotnum}=smoothtrial;%(:,start:stop);
+        if plottype~=3
+            allssd{plotnum}=resssdvalues;
+        else
+            if trialtype==2
+                allssd{plotnum}=round([mean(datalign(trialtype).ssd(ssdidx)),std(datalign(trialtype).ssd(ssdidx))]);
+            end
+        end
         %     alltimetorew{i}=timetorew;
         allalignidx{trialtype,plotnum}=alignidx;
         % get pre-cue 200ms activity
