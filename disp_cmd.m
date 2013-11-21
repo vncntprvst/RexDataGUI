@@ -1,4 +1,4 @@
-function [allsdf,allrast,allalignidx,allssd,allviscuetimes,allcomp]=disp_cmd(recname,datalign,aligntype,plottype)
+function [allsdf,allrast,allalignidx,allssd,allviscuetimes,allcomp,protocole]=disp_cmd(recname,datalign,aligntype,plottype)
 global directory;
 % if latmach
 %% first get SSDs and SSRT, to later parse latency-matched trials and CSS according to SSDs
@@ -36,11 +36,13 @@ end
 allssds=allssds(ordersstrials); %put ssds in the order they occured
 sddsteps=diff(allssds);
 if std(sddsteps(sddsteps>0))>20
-    disp('multiple fixed ssd')
+    protocole='multiple fixed ssd';
+    
 else
-    disp('staircase')
+    protocole='staircase';
 end
-
+    disp(protocole);
+    
 %% get CSS SSDs
 %     ccssd=datalign(2).ssd;
 %     if size(ccssd,2)>size(ccssd,1)
@@ -89,7 +91,7 @@ if strcmp(aligntype,'correct_slow')
     if plottype==3 %select and pool short SSD, med SSD and long SSD
         resssdvalues(1)=round(ssdhistlims(1)+(ssdhistlims(2)-ssdhistlims(1))/2); %short SSD below that level
         resssdvalues(2)=round(ssdhistlims(3)-(ssdhistlims(3)-ssdhistlims(2))/2); %long SSD above that level
-        resssdvalues(3)=max([ccssd;nccssd]); %not terribly important, just to avoid matchlat from bugging
+%         resssdvalues(3)=max([ccssd;nccssd]); %not even necessary. Was just to avoid matchlat from bugging
         numplots=3;
     else    
         [ssdtots,ssdtotsidx]=sort((arrayfun(@(x) sum(ccssd<=x+3 & ccssd>=x-3),unique(ccssd))));
@@ -116,6 +118,8 @@ end
 if strcmp(aligntype,'correct_slow') %ie, aligned to target
     latmach=1;
     if plottype==1 %keep all three struct in datalign %former triplot
+    elseif plottype==3
+        datalign=datalign(2:3);
     else
         % only two conditions: NSS Vs CSS
         datalign=datalign(1:2); 
@@ -140,7 +144,7 @@ end
  %% preallocs
     allsdf=cell(cellkeepsz,numplots);
     allrast=cell(cellkeepsz,numplots);
-    allssd=cell(1,numplots);
+    allssd=cell(cellkeepsz,numplots);
     allviscuetimes=cell(cellkeepsz,numplots);
     allalignidx=cell(cellkeepsz,numplots);
     allcomp=cell(cellkeepsz,numplots);
@@ -148,7 +152,7 @@ end
 %% plots
 for plotnum=1:numplots
     
-    if strcmp(aligntype,'correct_slow')
+    if strcmp(aligntype,'correct_slow') && plottype~=3
         matchlatidx=sacdelay>resssdvalues(plotnum)+round(mssrt);
         adjmssrt=round(mssrt)-1;
         while sum(matchlatidx)<7 && adjmssrt>=max([70 tachomc])
@@ -181,18 +185,18 @@ for plotnum=1:numplots
             matchrewtimes=rewtimes(matchlatidx);            
         elseif (strcmp('stop_cancel',datalign(trialtype).alignlabel) || strcmp('stop_non_cancel',datalign(trialtype).alignlabel)) && ~strcmp(aligntype,'ssd') && latmach
             if plottype==3
-                if plotnum==1
-                    ssdidx=datalign(trialtype).ssd<=resssdvalues(plotnum);
-                elseif plotnum==2
-                    ssdidx=datalign(trialtype).ssd>=resssdvalues(plotnum-1) & datalign(trialtype).ssd<=resssdvalues(plotnum);
-                elseif plotnum==3
-                    ssdidx=datalign(trialtype).ssd>=resssdvalues(plotnum-1);
+                if plotnum==1 %|| plotnum==2
+                    ssdidx=datalign(trialtype).ssd<=resssdvalues(1);
+                elseif plotnum==2 %|| plotnum==4
+                    ssdidx=datalign(trialtype).ssd>=resssdvalues(1) & datalign(trialtype).ssd<=resssdvalues(2);
+                elseif plotnum==3 %|| plotnum==6
+                    ssdidx=datalign(trialtype).ssd>=resssdvalues(2);
                 end                    
             else
                 ssdidx=datalign(trialtype).ssd>=resssdvalues(plotnum)-3 & datalign(trialtype).ssd<=resssdvalues(plotnum)+3;
             end
             rasters=datalign(trialtype).rasters(ssdidx,:);
-            if strcmp('stop_non_cancel',datalign(trialtype).alignlabel)
+            if strcmp('stop_non_cancel',datalign(trialtype).alignlabel) || plottype==3
                 alignidx=datalign(trialtype).alignidx;
                 if size(datalign(trialtype).ssd,2)>size(datalign(trialtype).ssd,1)
                     datalign(trialtype).ssd=permute(datalign(trialtype).ssd,[2,1]);
@@ -289,7 +293,7 @@ for plotnum=1:numplots
                     
                 elseif strcmp(datalign(trialtype).alignlabel,'tgt') && strcmp(aligntype,'correct_slow')
                     plot(sactimes(j),j-0.5,'kd','MarkerSize', 3,'LineWidth', 1.5)
-                elseif strcmp(datalign(trialtype).alignlabel,'stop_cancel') && strcmp(aligntype,'correct_slow')
+                elseif strcmp(datalign(trialtype).alignlabel,'stop_cancel') && strcmp(aligntype,'correct_slow') && ~plottype==3
                     plot(alignidx+resssdvalues(plotnum)-start,j-0.5,'k^','MarkerSize', 2,'LineWidth', 1) % SSD
                     plot(alignidx+resssdvalues(plotnum)+round(mssrt)-start,j-0.5,'kv','MarkerSize', 2,'LineWidth', 1) % SSD +SSRT
                 end
@@ -307,7 +311,7 @@ for plotnum=1:numplots
         %     end
         
         set(hrastplot(trialtype),'xlim',[1 length(start:stop)]);
-        if strcmp(datalign(trialtype).alignlabel,'stop_cancel') && ~strcmp(aligntype,'ssd') && latmach
+        if strcmp(datalign(trialtype).alignlabel,'stop_cancel') && ~strcmp(aligntype,'ssd') && latmach && ~plottype==3
             axes(hrastplot(trialtype));
             patch([repmat((alignidx+resssdvalues(plotnum)+round(mssrt)-start)-tachowidth/2,1,2)...
                 repmat((alignidx+resssdvalues(plotnum)+round(mssrt)-start)+tachowidth/2,1,2)], ...
@@ -322,12 +326,16 @@ for plotnum=1:numplots
         %sdfh = axes('Position', [.15 .65 .2 .2], 'Layer','top');
         title('Spike Density Function','FontName','calibri','FontSize',11);
         hold on;
-        if size(rasters,1)<3 && plottype~=3 %if only few good trials
+        if size(rasters,1)<5 && plottype~=3 %if only few good trials
             %sumall=rasters(~isnantrial,start-fsigma:stop+fsigma);
             %useless plotting this
             sumall=NaN;
-        elseif size(rasters,1)<3 && plottype==3
-            sumall=(rasters(~isnantrial,start-fsigma:stop+fsigma));
+        elseif plottype==3
+            if size(rasters,1)==1
+                sumall=(rasters(~isnantrial,start-fsigma:stop+fsigma));
+            else
+                sumall=sum(rasters(~isnantrial,start-fsigma:stop+fsigma));
+            end
         else
             sumall=sum(rasters(~isnantrial,start-fsigma:stop+fsigma));
         end
@@ -352,7 +360,7 @@ for plotnum=1:numplots
     
         plot(sdf,'Color',cc(trialtype,:),'LineWidth',1.8);
         
-        if strcmp(datalign(trialtype).alignlabel,'stop_cancel') && ~strcmp(aligntype,'ssd') && latmach
+        if strcmp(datalign(trialtype).alignlabel,'stop_cancel') && ~strcmp(aligntype,'ssd') && latmach && ~plottype==3
             patch([repmat((alignidx+resssdvalues(plotnum)-start)-1,1,2) repmat((alignidx+resssdvalues(plotnum)-start)+1,1,2)], ...
                 [[0 currylim(2)] fliplr([0 currylim(2)])],[0 0 0 0],'k^','EdgeColor','none','FaceAlpha',0.5);
             patch([repmat((alignidx+resssdvalues(plotnum)+round(mssrt)-start)-1,1,2) repmat((alignidx+resssdvalues(plotnum)+round(mssrt)-start)+1,1,2)], ...
@@ -412,9 +420,7 @@ for plotnum=1:numplots
         if plottype~=3
             allssd{plotnum}=resssdvalues;
         else
-            if trialtype==2
-                allssd{plotnum}=round([mean(datalign(trialtype).ssd(ssdidx)),std(datalign(trialtype).ssd(ssdidx))]);
-            end
+            allssd{trialtype,plotnum}=round([mean(datalign(trialtype).ssd(ssdidx)),std(datalign(trialtype).ssd(ssdidx))]);
         end
         %     alltimetorew{i}=timetorew;
         allalignidx{trialtype,plotnum}=alignidx;
@@ -647,6 +653,8 @@ for plotnum=1:numplots
         elseif plotnum==2
             comp='NSSvsNCSS_ssd';
         end
+    elseif strcmp('stop_cancel',datalign(1).alignlabel)
+        comp='CSSvsNCSS';
     end
     exportfigname=[cell2mat(regexp(directory,'\w+:\\\w+\\','match')),'Analysis\Countermanding\',recname,'_',comp];
     %basic png fig:
@@ -655,6 +663,6 @@ for plotnum=1:numplots
 %      print(gcf, '-dpng', '-noui', '-opengl','-r600', exportfigname);
     
 %     plot2svg([exportfigname,'.svg'],gcf, 'png');
-     delete(gcf);
+%      delete(gcf);
 end
 end

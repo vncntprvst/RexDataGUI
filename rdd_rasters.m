@@ -465,7 +465,7 @@ while ~islast
                             allssd(nummatch,1)=etimeout(:,9)-etimeout(:,7);
                             allssd(nummatch,2)=etimeout(:,8)-etimeout(:,7);
                         else
-                            allssd(nummatch)=etimeout(:,8)-etimeout(:,7);
+                            allssd(nummatch,1)=etimeout(:,8)-etimeout(:,7);
                         end
                     end
                     
