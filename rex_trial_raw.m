@@ -45,7 +45,7 @@ persistent ovlanl; %overlook first analog pointer in trial following aborted tri
 %% Radu: for spike2 cluster names
 persistent spike2aidx
 global replacespikes
-global spike2times
+
 global triggertimes
 global clustercodes
 
@@ -85,7 +85,7 @@ if ~strcmp(currecodename, ecname) || reprocess
 		if replacespikes
             disp('I am about to replace ecodes.');
             howmanyclus = double(max(clustercodes));
-            [ecodes, etimes,clus_label] = replaceecodes2(ecodes,etimes,1);
+            [ecodes, etimes,clus_label] = replaceecodes3(ecodes,etimes,1);
             spike2aidx = find(ecodes == -112);
         else
             clus_label = 1;
@@ -632,7 +632,7 @@ else
         spkchan(s) = uspk(s);
         if ismember(uspk(s),present_clus)
             if ~isempty(find(currcode == uspk(s)))
-                spk{s} = currtime(find(currcode == uspk(s))) - analog_time;
+                spk{s} = currtime(find(currcode == uspk(s))) - trialstarttimes(trial);
             else
                 spk{s} = nan;
             end
@@ -642,6 +642,7 @@ else
     end;  % looping through spike channels
 end;
 
+%testalignrextrialraw;
 if ~isempty(h)
     % subsample analog signals if necessary
     % analog x is per millisecond
