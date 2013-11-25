@@ -1,4 +1,4 @@
-function [allsdf,allrast,allalignidx,allssd,allviscuetimes,allcomp,protocole]=disp_cmd(recname,datalign,aligntype,plottype)
+function [allsdf,allrast,allalignidx,allssd,allviscuetimes,allcomp,protocol]=disp_cmd(recname,datalign,aligntype,plottype)
 global directory;
 % if latmach
 %% first get SSDs and SSRT, to later parse latency-matched trials and CSS according to SSDs
@@ -36,12 +36,12 @@ end
 allssds=allssds(ordersstrials); %put ssds in the order they occured
 sddsteps=diff(allssds);
 if std(sddsteps(sddsteps>0))>20
-    protocole='multiple fixed ssd';
+    protocol='multiple fixed ssd';
     
 else
-    protocole='staircase';
+    protocol='staircase';
 end
-    disp(protocole);
+    disp(protocol);
     
 %% get CSS SSDs
 %     ccssd=datalign(2).ssd;
