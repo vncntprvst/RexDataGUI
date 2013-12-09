@@ -104,6 +104,7 @@ varlist=who; %list variables
 varlist=varlist(~cellfun(@isempty,strfind(varlist,rexname))); %restrict to the ones that start with the file name (the ones just loaded)
 A = [cellfun(@(x) eval([x '.title']), varlist,'UniformOutput',false)];
 A(strcmp(A, 'trig')) = cellstr('trigger'); % rename trigs to triggers
+A(strcmp(A, '')) = cellstr('trigger'); % rename blanks to triggers
 eval(['data = ' cell2mat(varlist(cellfun(@isempty,strfind(A,'trigger'))))]); 
 global clustercodes
 clustercodes = data.codes(:,1);
