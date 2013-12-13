@@ -1,4 +1,4 @@
-function disp_2AFC(recname,datalign,selclus,aligncode)
+function disp_2AFC(recname,datalign,selclus,aligncode,InterAxn)
 % Called from Rex Data GUI when using Ecodes 465 as alignement (collapse
 % all directions together when doing that)
 % This function will sort data to compare either:
@@ -8,29 +8,36 @@ function disp_2AFC(recname,datalign,selclus,aligncode)
 %  We keep only trials where rule-selecting saccade was contralateral (see
 %  line 45 or so)
 % 8/22/2013 - VP
+fprintf(['Running: disp_2AFC.m\n']);
+fprintf([' Plotting data for: ' InterAxn '\n']);
 
+% Implicitly setting global variables as can't find where set
 global directory output;
+output.savfig=1;
+output.savsdf=0;
+
 load(recname,'allbad','allcodes','alltimes');  % saccadeInfo probably not needed
 
-InterAxn='Interaction';
-% InterAxn controls what is plotted ->
-% if == TT: plot SS,INS,Rule0,Rule1
-% if == Interaction: plot SS_R0,SS_R1,INS_R0,INS_R1
 ReSize=0;
 % ReSize binary controls if the figures rasters are resized
 
-pool = output.sides; % set to 1 for all saccades, 2 for leftward saccades, 3 for rightward saccades (rule selecting)
-poolstr1 = [];
-poolstr2 = [];
-if (pool==1)
-    poolstr1 = ', pooled';
-    poolstr2 = '_pooled';
-elseif (pool==2)
-    poolstr1 = ', leftward';
-    poolstr2 = '_leftward';
-else
-    poolstr1 = ', rightward';
-    poolstr2 = '_rightward';
+try
+    pool = output.sides; % set to 1 for all saccades, 2 for leftward saccades, 3 for rightward saccades (rule selecting)
+    poolstr1 = [];
+    poolstr2 = [];
+    if (pool==1)
+        poolstr1 = ', pooled';
+        poolstr2 = '_pooled';
+    elseif (pool==2)
+        poolstr1 = ', leftward';
+        poolstr2 = '_leftward';
+    else
+        poolstr1 = ', rightward';
+        poolstr2 = '_rightward';
+    end
+catch err
+    fprintf(' Output.sides appears unset: poolstr set to default\n');
+    poolstr1=''; poolstr2=''; pool=[];
 end
 
 %% preallocs and definitions
@@ -80,10 +87,15 @@ elseif (pool==2) % leftward rule selecting saccades
     crsrasts=datalign.rasters(allgoodcodes(:,17)==1901,:); % rasters
     crscodes=allgoodcodes(allgoodcodes(:,17)==1901,:); % ecodes
     crsaddevents=addevents(allgoodcodes(:,17)==1901); % additional events
-else % rightward rule selecting saccades
+elseif (pool==3) % rightward rule selecting saccades
     crsrasts=datalign.rasters(allgoodcodes(:,17)==1900,:); % rasters
     crscodes=allgoodcodes(allgoodcodes(:,17)==1900,:); % ecodes
     crsaddevents=addevents(allgoodcodes(:,17)==1900); % additional events
+else
+    % Original disp_2AFC default
+    crsrasts=datalign.rasters(allgoodcodes(:,17)==1901,:); % rasters
+    crscodes=allgoodcodes(allgoodcodes(:,17)==1901,:); % ecodes
+    crsaddevents=addevents(allgoodcodes(:,17)==1901); % additional events
 end
 
 %% sort trials: SS vs INS
@@ -139,6 +151,11 @@ switch InterAxn
         alladdevents{2}=crsaddevents(and(SS_Trials,Rule1_Trials)); 
         alladdevents{3}=crsaddevents(and(INS_Trials,Rule0_Trials)); 
         alladdevents{4}=crsaddevents(and(INS_Trials,Rule1_Trials));
+    case 'BOTH'
+        disp_2AFC(recname,datalign,selclus,aligncode,'TT');
+        disp_2AFC(recname,datalign,selclus,aligncode,'Interaction');
+        return;
+        
 end
 %% plotting figures: first instructions then rules
 % for fignum=1:2
@@ -448,6 +465,7 @@ if output.savfig
     newpos =  get(AFCplots,'Position')/60;
     set(AFCplots,'PaperUnits','inches','PaperPosition',newpos);
     print(AFCplots, '-dpng', '-noui', '-opengl','-r600', exportfigname);
+    fprintf(' Saved figure\n');
     %vector graphics if needed
     %     plot2svg([exportfigname,'.svg'],AFCplots(fignum), 'png');
     delete(AFCplots); %if needed

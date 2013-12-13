@@ -654,10 +654,28 @@ if strcmp(aligntype,'stop') % make additional analysis
         disp_cmd([rdd_filename,'_Clus',num2str(spikechannel)],datalign,'tgt',0); % keep triplot off until fixed
      end
         plotrasts=0;
+%=========================================================================%
+%% Displaying 2AFC Results
+%=========================================================================%
 elseif strcmp(tasktype, 'twoafc')
-    twoafc()
-    uiwait
-    disp_2AFC(rdd_filename,datalign,spikechannel,ecodealign);
+    AFC_ver=3;
+    %twoafc()
+    %uiwait
+    InterAxn='Interaction';
+    % InterAxn controls what is plotted ->
+    % if == TT: plot SS,INS,Rule0,Rule1
+    % if == Interaction: plot SS_R0,SS_R1,INS_R0,INS_R1
+    % if == BOTH: plots both
+    
+    switch AFC_ver
+        case 1 % Run original version
+            disp_2AFC_v1(rdd_filename,datalign,spikechannel,ecodealign);
+        case 2 % Run new version (w/ interactions)
+            disp_2AFC(rdd_filename,datalign,spikechannel,ecodealign,InterAxn);
+        case 3 % Run both versions
+            disp_2AFC(rdd_filename,datalign,spikechannel,ecodealign,'BOTH');
+            disp_2AFC_v1(rdd_filename,datalign,spikechannel,ecodealign);
+    end
     plotrasts=0;
 elseif strcmp(aligntype,'ecode') % other task-specific analysis
 end
