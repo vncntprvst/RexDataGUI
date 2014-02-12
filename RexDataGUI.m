@@ -778,6 +778,11 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
         %          {selecteprocdir.name};  % Put the file names in a cell array
         rdd_filename =selectionnm{:};
         [rdd_nt, trialdirs] = data_info( rdd_filename, 1);% load file
+        clusnames = GetClusnames(rdd_filename);
+        set(findobj('Tag','whichclus'),'Enable','on');
+        set(findobj('Tag','whichclus'),'String',clusnames);
+        % Radu 2/11/2014 now that we know the filename, retrieve its
+        % clusters
         trialnumber = rex_first_trial( rdd_filename, rdd_nt, 1);
         if trialnumber == 0
             msgbox( 'There are no good trials (no trials, or all are marked BAD) for this set of Rex data.', 'Loading data', 'modal' );
