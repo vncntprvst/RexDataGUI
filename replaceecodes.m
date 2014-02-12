@@ -11,17 +11,6 @@ clus_names = unique(whatcodes);
 
 %% recast in terms of REX times
 starttrigs =  etimes(ecodes == 1001);
-
-if length(whentrigs)/sum(ecodes == 1001) == 2 %expected ratio of triggers to trials (2 triggers per trial
-
-    whentrigs=whentrigs(1:2:end); %keep only start trigger times and remove end triggers. Makes for better correlation
-
-else %either spurious codes in token task, or wrong recording sequence (e.g. Spike2 recording started after REX recording)
-
-    disp('Warning! Inconsistent number of triggers. Will attempt to align via cross correlation.');
-    %pause;
-    
-end
     
 keep_min_rex = min(starttrigs);
 keep_min_spk2 = min(whentrigs);
@@ -33,10 +22,23 @@ rast_whentrigs = 1:max(whentrigs);
 rast_starttrigs = double(ismember(rast_starttrigs, starttrigs));
 rast_whentrigs = double(ismember(rast_whentrigs, whentrigs));
 
-[corr_vec,lag_range] = xcorr(rast_starttrigs,rast_whentrigs);
-where_max = lag_range(corr_vec == max(corr_vec));
-offset = keep_min_rex - keep_min_spk2 + where_max(1);
+if length(whentrigs)/sum(ecodes == 1001) == 2 %expected ratio of triggers to trials (2 triggers per trial
 
+    whentrigs=whentrigs(1:2:end); %keep only start trigger times and remove end triggers. Makes for better correlation
+    where_max = 0;
+
+else %either spurious codes in token task, or wrong recording sequence (e.g. Spike2 recording started after REX recording)
+
+    disp('Warning! Inconsistent number of triggers. Will attempt to align via cross correlation.');
+    [corr_vec,lag_range] = xcorr(rast_starttrigs,rast_whentrigs);
+    where_max = lag_range(corr_vec == max(corr_vec));
+    %where_max = 0;
+    %pause;
+    
+end
+
+    offset = keep_min_rex - keep_min_spk2 + where_max(1);
+    
 if figs
     fprintf('There are %d triggers\n',length(whentrigs));
     fprintf('There are %d start times\n',sum(ecodes == 1001));

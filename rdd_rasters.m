@@ -1,9 +1,9 @@
 function [alignedrasters, alignindex, trialindex, alltrigtosac, ...
     allsactotrig, alltrigtovis, allvistotrig,eyehoriz, eyevert, ....
     eyevelocity, amplitudes, peakvels,...
-    peakaccs, allonoffcodetime,badidx,allssd] = ...
+    peakaccs, allonoffcodetime,badidx,allssd,alignedrawsigs,alignrawidx] = ...
     rdd_rasters( name, selclus, aligntocode, noneofcodes,...
-    allowbadtrials, alignsacnum, aligntype, collapse, conditions)
+    allowbadtrials, alignsacnum, aligntype, collapse, conditions, getraw)
 
 % used to be: rdd_rasters( name, spikechannel, anyofcodes, allofcodes, noneofcodes, alignmentcode, allowbadtrials, alignsacnum, oncode, offcode)
 
@@ -69,36 +69,10 @@ end
 
 if strcmp(aligntype,'stop') % get ssrt
     try
-        [overallMeanSSRT,meanIntSSRT,meanSSRT,~,~,tachomc]=findssrt(name);
-        mssrt=[overallMeanSSRT,meanIntSSRT,meanSSRT];
-        mssrt=round(nanmean(mssrt(mssrt>40 & mssrt<150)))
+        [mssrt,~,~,~,~,tachomc]=findssrt(name);
     catch
         mssrt=NaN;
         tachomc=NaN;
-    end
-    if isnan(mssrt) || ~(mssrt>50 & mssrt<150) %get tachomc and lookup SSRT/tachomc fit. If fit missing, run SSRT_TachoMP
-        try
-            load([name(1),'_tachoSSRTfit'],'fit');
-        catch
-            %SSRT_TachoMP
-        end
-        %get tacho curve midpoint
-        tachomc=mean(tachomc);
-        if tachomc<20 || isnan(tachomc)
-            tachomc=20;
-        end
-        % find reciprocal SSRT value
-        mssrt=max([round(tachomc*fit.coeff(1)+fit.coeff(2)) 75]);
-    end
-    if ~(mssrt>75 & mssrt<150)
-        load([name(1),'_evolSSRT'],'evolSSRT','foSSRT');
-        session=regexp(name,'\d+','match');
-        if min(abs(evolSSRT(2,:)-str2num(session{1})))<=5
-            mssrt=round(mssrt/3+(evolSSRT(1,find(abs(evolSSRT(2,:)-str2num(session{1}))==...
-                min(abs(evolSSRT(2,:)-str2num(session{1}))),1)))*2/3)
-        else
-            mssrt=round(mssrt/3+foSSRT*2/3)
-        end
     end
     
     % get 1st align type (sac or tgt)
@@ -142,6 +116,8 @@ alignmentfound = 0;
 nummatch = 0;
 alignindexlist = [];
 rasters = [];
+alignedrawsigs=[];
+sktg=0;
 eyeh = [];
 eyev = [];
 eyevel = [];
@@ -157,6 +133,38 @@ allvistotrig=[];
 badidx=[];
 allssd=[];
 % allcondtime = [];
+
+if getraw
+    if sum(regexp(name,'Sp2'))>0 || sum(regexp(name,'REX'))>0
+        rawfname=name(1:end-4);
+    else
+        rawfname=name;
+    end
+    try
+        load([rawfname 'f.mat']); %LFP recording
+    catch
+        load([rawfname 'raw.mat']); % try simply orginal voltage trace
+    end
+    varlist=who; %list variables
+    eval(['rawdata = ' cell2mat(varlist(~cellfun(@isempty,strfind(varlist,rawfname))))]);
+    clear(cell2mat(varlist(~cellfun(@isempty,strfind(varlist,rawfname)))));
+    load([rawfname 't.mat']);
+    varlist=who; %re-list variables :)
+    rawtrialtimes = eval([cell2mat(varlist(~cellfun(@isempty,strfind(varlist,rawfname)))) '.times']);
+    clear(cell2mat(varlist(~cellfun(@isempty,strfind(varlist,rawfname)))));
+    load(name, 'alltrigin');
+    
+%     if alltrigin(2)-alltrigin(1)~=floor((rawtrialtimes(3)-rawtrialtimes(1))*1000)
+%         disp('trial times do not match')
+%     end
+    
+    %samplingrate=(find(rawdata.times>=rawtrialtimes(3),1) - find(rawdata.times>=rawtrialtimes(1),1))/(rawtrialtimes(3)-rawtrialtimes(1));
+    samplingrate= rawdata.interval.^(-1);
+    
+    alignrawidx=nan(1,rexnumtrials); %preallocate
+else
+    alignrawidx=[];
+end
 
 %% Which Cluster?
 %%%%%%%%%%%%%%%%%
@@ -314,7 +322,7 @@ while ~islast
                         ncecode=9;
                     end
                     if isbadtrial % non-canceled stop trial
-                        if ATPbuttonnb==6
+                        if ATPbuttonnb==6 ||  ATPbuttonnb==9 % corrective saccade
                             % for non-canceled stop trial, align to saccade
                             % initiation
                             if ecodeout(ncecode)==17385 || ecodeout(ncecode)==16386
@@ -325,12 +333,24 @@ while ~islast
                                 for k=find(sacofint,1):length(sacofint)
                                     ampsacofint(1,k)=abs(getfield(curtrialsacInfo, {k}, 'amplitude'));
                                 end
-                                if sum(sacofint)
-                                    aligntime=getfield(curtrialsacInfo, {find(ampsacofint>2.5,1)}, 'starttime');
-                                else
-                                    alignmentfound = 0;
+                                if ATPbuttonnb==6
+                                    if sum(sacofint)
+                                        aligntime=getfield(curtrialsacInfo, {find(ampsacofint>2.5,1)}, 'starttime');
+                                    else
+                                        alignmentfound = 0;
+                                    end
+                                elseif ATPbuttonnb==9  &&  find(ampsacofint>2.5,1)+1<=length(ampsacofint)% If we are looking for the n-th saccade after the main one
+                                nextgoodsac=find(ampsacofint>2.5,1)+1;
+                                aligntime=getfield(curtrialsacInfo, {nextgoodsac}, 'starttime');
+                                    if aligntime>getfield(curtrialsacInfo, {find(ampsacofint>2.5,1)}, 'starttime')+500
+                                        alignmentfound = 0; % secondary saccade 500ms after erroneous one. Not considered corrective saccade
+                                    else
+                                        sacamp=getfield(curtrialsacInfo, {nextgoodsac}, 'amplitude');
+                                        sacpeakpeakvel=getfield(curtrialsacInfo, {nextgoodsac}, 'peakVelocity');
+                                        sacpeakacc=getfield(curtrialsacInfo, {nextgoodsac}, 'peakAcceleration');
+                                    end
                                 end
-                            end
+                            end  
                         elseif ATPbuttonnb==7
                             aligntime = etimeout(find(floor(ecodeout./10) == 487,1)) * (arate / 1000);
                         end
@@ -351,8 +371,14 @@ while ~islast
                 % rdd_rasters_sdf. VP 7/14/2012
                 %selectedgrey=find([get(findobj('Tag','greycue'),'Value'),get(findobj('Tag','greyemvt'),'Value'),get(findobj('Tag','greyfix'),'Value')]);
                 
-                
                 greytypes={'cue';'eyemvt';'fix'};
+                
+                % Conditions are modified by 2AFC task, in said case,
+                % greytypes are appended w/ null entries. This is necessary
+                % for strcmp to eyemvt to function properly
+                if size(conditions,1)>3
+                    for ii=4:size(conditions,1), greytypes{ii}=''; end
+                end
                 
                 %caveat: some conditions may be 4 or 5 digits long,
                 %such as user defined codes such as TOKSWCD (1501)
@@ -373,7 +399,7 @@ while ~islast
                         catch
                             goodsacnum=0;
                         end
-                        if ~logical(sum(goodsacnum)) && (~strcmp(aligntype,'stop') && ~strcmp(aligntype,'touchbell'))
+                        if ~logical(sum(goodsacnum)) && (~strcmp(aligntype,'stop') && ~strcmp(aligntype,'ssd') && ~strcmp(aligntype,'touchbell'))
                             s = sprintf('cannot display grey area for trial %d because saccade cannot be found. Removing erroneous trial',d);
                             disp(s);
                             alignmentfound = 0;
@@ -443,7 +469,7 @@ while ~islast
                             allssd(nummatch,1)=etimeout(:,9)-etimeout(:,7);
                             allssd(nummatch,2)=etimeout(:,8)-etimeout(:,7);
                         else
-                            allssd(nummatch)=etimeout(:,8)-etimeout(:,7);
+                            allssd(nummatch,1)=etimeout(:,8)-etimeout(:,7);
                         end
                     end
                     
@@ -526,7 +552,25 @@ while ~islast
                             last=length(h);
                         end
                     end;
-                    rasters = cat_variable_size_row( rasters, train );
+                    rasters = cat_variable_size_row(rasters, train);
+                    
+                    if getraw
+                        if rawtrialtimes(d+1+sktg)-rawtrialtimes(d+sktg)<1 %synch issue, trial too short
+                            sktg=sktg+1;
+                        end
+                        % Check raw signal sync with big spikes
+%                         trrawsig=rawdata.values(find(rawdata.times>=rawtrialtimes(d+sktg),1):...
+%                             find(rawdata.times>=rawtrialtimes(d+1+sktg),1)); %get raw signal with the triggers boundaries
+%                         getspkt= @(x) round(find(bwlabel(trrawsig>0.7)==x,1)/50);
+%                         if std((find(train,6)-[getspkt(1) getspkt(2) getspkt(3) getspkt(4) getspkt(5) getspkt(6)])) <1
+%                             mean((find(train,6)-[getspkt(1) getspkt(2) getspkt(3) getspkt(4) getspkt(5) getspkt(6)])) %>1? 
+%                         end
+             
+                        alignedrawsigs=cat_variable_size_row(alignedrawsigs,rawdata.values(find(rawdata.times>=rawtrialtimes(d+sktg),1):...
+                            find(rawdata.times>=rawtrialtimes(d+1+sktg),1)));
+                        alignrawidx(nummatch) = aligntime*samplingrate/1000; %aligntime is in ms already
+                    end
+                    
                     %collect conditions (aka greycodes) times
                     %                     trialonofftime=zeros(1,length(h));
                     %                     for i=size(conditions,1):-1:1
@@ -624,6 +668,12 @@ alignindex = max( alignindexlist );
 eyehoriz = align_rows_on_indices( eyeh, alignindexlist );
 eyevert = align_rows_on_indices( eyev, alignindexlist );
 eyevelocity = align_rows_on_indices( eyevel, alignindexlist );
+
+%and the raw signal traces
+if getraw
+    alignrawidx=alignrawidx(~isnan(alignrawidx));
+    alignedrawsigs= align_rows_on_indices( alignedrawsigs, alignrawidx); 
+end
 
 %add shift to grey areas times
 for shifttm=1:size(shift,1)

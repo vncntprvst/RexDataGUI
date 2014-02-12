@@ -111,11 +111,18 @@ alignlabel=[];
 secalignlabel=[];
 collapsecode=0;
 
+if strcmp(get(findobj('Tag','rawsigoption'),'Checked'),'off'); %get raw traces in addition to rasters
+    getraw=0;
+else
+    getraw=1;
+end
+
 %define ecodes according to task
 %add last number for direction
 tasktype=get(findobj('Tag','taskdisplay'),'String');
-[fixcode fixoffcode tgtcode tgtoffcode saccode ...
-    stopcode rewcode tokcode errcode1 errcode2 errcode3 basecode] = taskfindecode(tasktype);
+[fixcode, fixoffcode, tgtcode, tgtoffcode, saccode, ...
+    stopcode, rewcode, tokcode, errcode1, errcode2, errcode3, basecode ...
+    dectgtcode dessaccode] = taskfindecode(tasktype);
 
 %% get align code from selected button in Align Time panel
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -203,13 +210,13 @@ else
     spikechannel = 1;
 end
 
-if get(findobj('Tag','usespike2'),'value')||strcmp(rdd_filename(end-2:end),'Sp2'); % using data from Spike2 processing
+if strcmp(rdd_filename(end-2:end),'Sp2'); % using data from Spike2 processing
  spikechannel = str2double(get(findobj('Tag','whichclus'),'String'));
 end
 
 %% Fusing task type and direction into ecode
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if (ecodealign(1))<1000 % if only three numbers
+if ecodealign<1000 % if only three numbers
     for i=1:length(trialdirs)
         aligncodes(i,:)=ecodealign*10+trialdirs(i);
     end
@@ -217,7 +224,7 @@ else
     aligncodes=ecodealign;
 end
 if logical(secondcode)
-    if (secondcode(1))<1000
+    if secondcode<1000
         for i=1:length(trialdirs)
             alignseccodes(i,:)=secondcode*10+trialdirs(i);
         end
@@ -325,7 +332,19 @@ if strcmp(tasktype,'gapstop') %otherwise CAT arguments dimensions are not consis
     stopcode=[stopcode stopcode];
 end
 
-conditions =[tgtcode tgtoffcode;saccode saccode;fixcode fixoffcode];
+switch tasktype
+    case 'twoafc'
+        conditions =[tgtcode tgtoffcode;...
+            saccode saccode;...
+            fixcode fixoffcode;...
+            rewcode rewcode;...
+            dectgtcode dectgtcode;...
+            dessaccode dessaccode];
+    otherwise
+        conditions =[tgtcode tgtoffcode;...
+            saccode saccode;...
+            fixcode fixoffcode];
+end
 
 if logical(sum(togrey))
     greycodes=conditions(togrey,:); %selecting out the codes
@@ -352,7 +371,7 @@ nonecodes=[17385 16386];
 datalign=struct('dir',{},'rasters',{},'trials',{},'trigtosac',{},'sactotrig',{},...
     'trigtovis',{},'vistotrig',{},'alignidx',{},'eyeh',{},'eyev',{},'eyevel',{},...
     'amplitudes',{},'peakvels',{},'peakaccs',{},'allgreyareas',{},'stats',{},...
-    'alignlabel',{},'savealignname',{},'bad',{});
+    'alignlabel',{},'savealignname',{},'bad',{},'rawsigs',{},'alignrawidx',{});  
 if strcmp(get(get(findobj('Tag','showdirpanel'),'SelectedObject'),'Tag'),'seleccompall') && sum(secondcode)==0
     singlerastplot=1;
 else
@@ -375,6 +394,8 @@ elseif strfind(ATPSelectedButton,'ecodesalign')
         alignlabel='touchbell';
     elseif ecodealign==742
         alignlabel='retarget';
+    elseif ecodealign==507
+        alignlabel='ssd';
     else
         alignlabel='ecode';
     end
@@ -487,8 +508,8 @@ for cnc=1:numcodes
         numplots=numcodes;
     end
     [rasters,aidx, trialidx, trigtosacs, sactotrigs, trigtovis, vistotrigs, eyeh,eyev,eyevel,...
-        amplitudes,peakvels,peakaccs,allgreyareas,badidx,ssd] = rdd_rasters( rdd_filename, spikechannel, ...
-        allaligncodes(cnc,:), nonecodes, includebad, alignsacnum, aligntype, collapsecode, adjconditions);
+        amplitudes,peakvels,peakaccs,allgreyareas,badidx,ssd,rawsigs,alignrawidx] = rdd_rasters( rdd_filename, spikechannel, ...
+        allaligncodes(cnc,:), nonecodes, includebad, alignsacnum, aligntype, collapsecode, adjconditions, getraw);
     
     if isempty( rasters )
         disp( 'No raster could be generated (rex_rasters_trialtype returned empty raster)' );
@@ -616,24 +637,47 @@ for cnc=1:numcodes
         datalign(cnc).peakaccs=peakaccs;
         datalign(cnc).bad=badidx;
         %             datalign(cnc).condtimes=condtimes;
+        if ~isempty(rawsigs)
+            datalign(cnc).rawsigs=rawsigs;
+            datalign(cnc).alignrawidx=alignrawidx;
+        end
     end
     
 end
 
 if strcmp(aligntype,'stop') % make additional analysis
-     if ATPbuttonnb==6 % saccade
+     if ATPbuttonnb==6 || ATPbuttonnb==9 % saccade or corrective saccade
 %     [p_cancellation,h_cancellation] = cmd_wilco_cancellation(rdd_filename,datalign);
-        disp_cmd([rdd_filename,'_Clus',num2str(spikechannel)],datalign,0,0); %0, 0: latmatch, no; triplot, no
+        disp_cmd([rdd_filename,'_Clus',num2str(spikechannel)],datalign,'sac',0); %0, 0: latmatch, no; triplot, no
 %     disp_cmd(rdd_filename,datalign,1);
     elseif ATPbuttonnb==7 % target
-        disp_cmd([rdd_filename,'_Clus',num2str(spikechannel)],datalign,1,0); % keep triplot off until fixed
+        disp_cmd([rdd_filename,'_Clus',num2str(spikechannel)],datalign,'tgt',0); % keep triplot off until fixed
      end
         plotrasts=0;
-elseif strcmp(aligntype,'ecode') % may need task-specific analysis
-    if adjconditions(1)==465 %2AFC rule target 
-        disp_2AFC(rdd_filename,datalign,spikechannel,ecodealign);
+%=========================================================================%
+%% Displaying 2AFC Results
+%=========================================================================%
+elseif strcmp(tasktype, 'twoafc')
+    AFC_ver=3;
+    %twoafc()
+    %uiwait
+    InterAxn='Interaction';
+    % InterAxn controls what is plotted ->
+    % if == TT: plot SS,INS,Rule0,Rule1
+    % if == Interaction: plot SS_R0,SS_R1,INS_R0,INS_R1
+    % if == BOTH: plots both
+    
+    switch AFC_ver
+        case 1 % Run original version
+            disp_2AFC_v1(rdd_filename,datalign,spikechannel,ecodealign);
+        case 2 % Run new version (w/ interactions)
+            disp_2AFC(rdd_filename,datalign,spikechannel,ecodealign,InterAxn);
+        case 3 % Run both versions
+            disp_2AFC(rdd_filename,datalign,spikechannel,ecodealign,'BOTH');
+            disp_2AFC_v1(rdd_filename,datalign,spikechannel,ecodealign);
     end
     plotrasts=0;
+elseif strcmp(aligntype,'ecode') % other task-specific analysis
 end
 
 %% Now plotting rasters
@@ -866,9 +910,10 @@ if plotrasts
         
         %% sdf plot
         % for kernel optimization, see : http://176.32.89.45/~hideaki/res/ppt/histogram-kernel_optimization.pdf
-        sumall=sum(rasters(~isnantrial{cnp},start:stop));
+        sumall=sum(rasters(~isnantrial{cnp},start-fsigma:stop+fsigma));
         %sdf=spike_density(sumall,fsigma)./length(find(~isnantrial{cnp})); %instead of number of trials
-        sdf=fullgauss_filtconv(sumall,fsigma,0)./length(find(~isnantrial{cnp})); %instead of number of trials
+        sdf=fullgauss_filtconv(sumall,fsigma,0)./length(find(~isnantrial{cnp})).*1000; %instead of number of trials
+        sdf=sdf(fsigma+1:end-fsigma);
         %pdf = probability_density( sumall, fsigma ) ./ trials;
         
         if cut_rast_siz(1) == 1 || length(sdf) <= 1
@@ -899,6 +944,10 @@ if plotrasts
     end
     
     %toc;
+end
+
+if getraw
+%     PlotRawSigRasters(rawsigs,alignrawidx);
 end
 
 %% last item: save name

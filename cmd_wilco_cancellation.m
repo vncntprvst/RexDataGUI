@@ -7,8 +7,8 @@ function [p_cancellation,h_cancellation,xctr] = cmd_wilco_cancellation(recname,d
     alllats=reshape({saccadeInfo.latency},size(saccadeInfo));
     alllats=alllats';%needs to be transposed because the logical indexing below will be done column by column, not row by row
     allgoodsacs=~cellfun('isempty',reshape({saccadeInfo.latency},size(saccadeInfo)));
-    %removing bad trials
-    allgoodsacs(logical(allbad),:)=0;
+    %weeding out bad trials that are not stop trials
+    allgoodsacs(logical(allbad)'&floor(allcodes(:,2)./1000)==6,:)=0;
     %keeping sac info of non-canceled SS trials
     allncsacs=allgoodsacs;
     allncsacs(floor(allcodes(:,2)./1000)==6,:)=0; % nullifying NSS trials
@@ -47,7 +47,7 @@ function [p_cancellation,h_cancellation,xctr] = cmd_wilco_cancellation(recname,d
     if length(prevssds)<2
         prevssds=sort(ssdvalues(ssdtotsidx(ssdtots>ceil(median(ssdtots)))));
     end
-    [~,~,mssrt]=findssrt(recname);
+    [mssrt]=findssrt(recname);
     
         try
         probaresp_diff=hist(nccssd,prevssds)'./(hist(nccssd,prevssds)'+hist(ccssd,prevssds)');
