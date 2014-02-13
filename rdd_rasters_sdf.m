@@ -211,7 +211,7 @@ else
 end
 
 if strcmp(rdd_filename(end-2:end),'Sp2'); % using data from Spike2 processing
- spikechannel = str2double(get(findobj('Tag','whichclus'),'Value'));
+ spikechannel = get(findobj('Tag','whichclus'),'Value');
 end
 
 %% Fusing task type and direction into ecode

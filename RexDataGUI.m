@@ -781,6 +781,7 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
         clusnames = GetClusnames(rdd_filename);
         set(findobj('Tag','whichclus'),'Enable','on');
         set(findobj('Tag','whichclus'),'String',clusnames);
+        set(findobj('Tag','whichclus'),'Value',1);
         % Radu 2/11/2014 now that we know the filename, retrieve its
         % clusters
         trialnumber = rex_first_trial( rdd_filename, rdd_nt, 1);
