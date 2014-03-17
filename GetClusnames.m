@@ -3,7 +3,6 @@ function clusnames = GetClusnames(input_args)
 %   Detailed explanation goes here
 global allspk_clus directory slash;
 comments = false;
-try
     if strcmp(input_args(1),'S')                     
         fhandle = fopen([directory 'Sixx' slash 'Spike2Exports' slash input_args(1:end-4) 'n.txt']);
     elseif strcmp(input_args(1),'R')
@@ -11,10 +10,9 @@ try
     elseif strcmp(input_args(1),'H')
         fhandle = fopen([directory 'Hilda' slash 'Spike2Exports' slash input_args(1:end-4) 'n.txt']);
     end
-    comments = true;
-catch
-    comments = false;
-end
+    if fhandle ~= -1
+        comments = true;
+    end
 if comments
     a = 1;
     clusnames{a} = fgetl(fhandle);
@@ -23,6 +21,7 @@ if comments
         clusnames{a} = fgetl(fhandle);
     end
     clusnames{a} = [];
+    fclose(fhandle);
 else
     b = []; % count non empty allspk_clus entries
     for a = 1:length(allspk_clus)
