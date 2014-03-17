@@ -5,18 +5,24 @@ global allspk_clus directory slash;
 comments = false;
 try
     if strcmp(input_args(1),'S')                     
-        fhandle = fopen([directory 'Sixx' slash 'Spike2Exports' slash input_args 'n.txt']);
+        fhandle = fopen([directory 'Sixx' slash 'Spike2Exports' slash input_args(1:end-4) 'n.txt']);
     elseif strcmp(input_args(1),'R')
-        fhandle = fopen([directory 'Rigel' slash 'Spike2Exports' slash input_args 'n.txt']);
+        fhandle = fopen([directory 'Rigel' slash 'Spike2Exports' slash input_args(1:end-4) 'n.txt']);
     elseif strcmp(input_args(1),'H')
-        fhandle = fopen([directory 'Hilda' slash 'Spike2Exports' slash input_args 'n.txt']);
+        fhandle = fopen([directory 'Hilda' slash 'Spike2Exports' slash input_args(1:end-4) 'n.txt']);
     end
     comments = true;
 catch
     comments = false;
 end
 if comments
-    
+    a = 1;
+    clusnames{a} = fgetl(fhandle);
+    while ischar(clusnames{a})
+        a = a+1;
+        clusnames{a} = fgetl(fhandle);
+    end
+    clusnames{a} = [];
 else
     b = []; % count non empty allspk_clus entries
     for a = 1:length(allspk_clus)
