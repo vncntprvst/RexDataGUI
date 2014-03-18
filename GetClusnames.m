@@ -2,7 +2,7 @@ function clusnames = GetClusnames(input_args)
 %UNTITLED2 Summary of this function goes here
 %   Detailed explanation goes here
 global allspk_clus directory slash;
-comments = false;
+comments = false; % is there an "n" file with names and notes for the clusters?
     if strcmp(input_args(1),'S')                     
         fhandle = fopen([directory 'Sixx' slash 'Spike2Exports' slash input_args(1:end-4) 'n.txt']);
     elseif strcmp(input_args(1),'R')

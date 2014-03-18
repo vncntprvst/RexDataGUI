@@ -1588,7 +1588,9 @@ else
     exportfn=filename;
     exporttsk=tasktype;
 end
-selclus = get(findobj('Tag','whichclus'),'Value');
+selclus_order = get(findobj('Tag','whichclus'),'Value'); %Which element of the list
+selclus = get(findobj('Tag','whichclus'),'String');
+selclus = selclus{selclus_order}(1);
 exportfigname=[directory,'figures\',exportfn,'_',exporttsk,'_',alignment,'_cl_',selclus];
 exportfig=figure('color','white','position',figuresize);
 for k=1:length(subplots)

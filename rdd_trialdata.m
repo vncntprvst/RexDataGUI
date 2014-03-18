@@ -41,7 +41,9 @@ end
 global clustercodes
 %% Which Cluster?
 %%%%%%%%%%%%%%%%%
-selclus = get(findobj('Tag','whichclus'),'Value');
+selclus_order = get(findobj('Tag','whichclus'),'Value'); %Which element of the list
+selclus = get(findobj('Tag','whichclus'),'String');
+selclus = str2double(selclus{selclus_order}(1));
 
 [ecodeout, etimeout, ~, ~, ~, h, v, ~, badtrial, curtrialsacInfo] = rdd_rex_trial(rdd_filename, trialnumber, selclus, reload);%, rdt_includeaborted);
 
