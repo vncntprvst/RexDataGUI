@@ -422,7 +422,7 @@ for trialnumber = 1:nt
             else
                 sacofint=nwsacstart>etimeout(ecodesacstart-1); %considering all saccades occuring after the ecode
                 %preceding the saccade ecode, which is often erroneous
-                if strcmp(curtasktype,'gapstop') && find(ecodeout==1503)
+                if strcmp(curtasktype,'gapstop') && ~isempty(find(ecodeout==1503))
                     sacofint=nwsacstart>etimeout(ecodesacstart-2);
                 elseif strcmp(curtasktype,'periodCmd') && ecodeout(ecodesacstart-1)==17385
                 % subject maintained fixation beyond alloted time window to
