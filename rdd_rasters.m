@@ -192,7 +192,7 @@ while ~islast
     
     %if ~isbadtrial
     if logical(sum((ecodeout==2222)))  % had a weird case of a trial with ecode 2222. Don't know what that was. See file S110L4A5_12951
-        ecodeout(find(ecodeout==1035))=17385; % replace 1035 code by error code, to false positive on 1030
+        ecodeout(ecodeout==1035)=17385; % replace 1035 code by error code, to false positive on 1030
         isbadtrial=1;
     end
     %end
