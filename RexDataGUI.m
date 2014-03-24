@@ -550,7 +550,7 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
                 ftoanlz = regexp(fileNames, strcat('^\w',sessionNumber{sessnumnum}{:}),'match');
                 ftoanlz = fileNames(~cellfun(@isempty,ftoanlz));  % Get the names of the matching files in a cell array
                 ftoanlz = regexprep(ftoanlz, '(A$)|(E$)',''); %remove A and E from end of names (if raw files)
-                ftoanlz = regexprep(ftoanlz, '.mat$',''); %remove _REX and Sp2 from end of names (if processed files)
+                ftoanlz = regexprep(ftoanlz, '.mat$',''); %remove .mat from end of names (if processed files)
                 ftoanlz = unique(ftoanlz);
                 allftoanlz{sessnumnum}=ftoanlz;
             end
@@ -594,7 +594,8 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
             procname=allftoanlz{i};
             
             if overwrite
-                [success,outliers]=rex_process_inGUI(procname,monkeydir); %shouldn't need the rfpathname
+                trimmed_procname = regexprep(ftoanlz, '(_REX$)|(_sp2$)','');
+                [success,outliers]=rex_process_inGUI(trimmed_procname,monkeydir); %shouldn't need the rfpathname
                 % outliers are stored in file now
                 
                 if success
@@ -616,12 +617,6 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
             end
             % load file
             clear global tasktype;
-            
-            if replacespikes
-                procname=[procname '_Sp2'];
-            else
-                procname=[procname '_REX'];
-            end
             
             try
                 [~, trialdirs] = data_info(procname, 1, 1); %1, 1 = reload file: yes (shouldn't happen, though), skip unprocessed files: yes
@@ -740,35 +735,35 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
             % write result to excel file
             
             % get number of row in "database"
-            exl = actxserver('excel.application');
-            exlWkbk = exl.Workbooks;
-            exlFile = exlWkbk.Open([directory 'procdata.xlsx']);
-            exlSheet = exlFile.Sheets.Item(monknum);% e.g.: 2 = Sixx
-            robj = exlSheet.Columns.End(4);
-            numrows = robj.row;
-            if numrows==1048576 %empty document
-                numrows=1;
-            end
-            Quit(exl);
-            
-            cd(directory);
-            % remove appendix
-            procname=procname(1:end-4);
-            % get current processed file list from excel file
-            [~,pfilelist] = xlsread('procdata.xlsx',monknum,['A2:A' num2str(numrows)]);
-            if logical(sum(ismember(pfilelist,procname))) %file has to have been processed already, but if for some reason not, then do not go further
-                wline=find(ismember(pfilelist,procname))+1;
-            else
-                continue
-            end
-            
-            xlswrite('procdata.xlsx', compart, monknum, sprintf('H%d',wline));
-            xlswrite('procdata.xlsx', {max([activlevel{foundeff}])}, monknum, sprintf('K%d',wline));
-            xlswrite('procdata.xlsx', {[activtype{foundeff}]}, monknum, sprintf('L%d',wline));
-            xlswrite('procdata.xlsx', {max([maxmean{foundeff}])}, monknum, sprintf('M%d',wline));
-            xlswrite('procdata.xlsx', {[profile{foundeff}]}, monknum, sprintf('N%d',wline));
-            xlswrite('procdata.xlsx', {[dirselective{foundeff}]}, monknum, sprintf('O%d',wline));
-            xlswrite('procdata.xlsx', {[bestlt{foundeff}]}, monknum, sprintf('P%d',wline));
+%             exl = actxserver('excel.application');
+%             exlWkbk = exl.Workbooks;
+%             exlFile = exlWkbk.Open([directory 'procdata.xlsx']);
+%             exlSheet = exlFile.Sheets.Item(monknum);% e.g.: 2 = Sixx
+%             robj = exlSheet.Columns.End(4);
+%             numrows = robj.row;
+%             if numrows==1048576 %empty document
+%                 numrows=1;
+%             end
+%             Quit(exl);
+%             
+%             cd(directory);
+%             % remove appendix
+%             procname=procname(1:end-4);
+%             % get current processed file list from excel file
+%             [~,pfilelist] = xlsread('procdata.xlsx',monknum,['A2:A' num2str(numrows)]);
+%             if logical(sum(ismember(pfilelist,procname))) %file has to have been processed already, but if for some reason not, then do not go further
+%                 wline=find(ismember(pfilelist,procname))+1;
+%             else
+%                 continue
+%             end
+%             
+%             xlswrite('procdata.xlsx', compart, monknum, sprintf('H%d',wline));
+%             xlswrite('procdata.xlsx', {max([activlevel{foundeff}])}, monknum, sprintf('K%d',wline));
+%             xlswrite('procdata.xlsx', {[activtype{foundeff}]}, monknum, sprintf('L%d',wline));
+%             xlswrite('procdata.xlsx', {max([maxmean{foundeff}])}, monknum, sprintf('M%d',wline));
+%             xlswrite('procdata.xlsx', {[profile{foundeff}]}, monknum, sprintf('N%d',wline));
+%             xlswrite('procdata.xlsx', {[dirselective{foundeff}]}, monknum, sprintf('O%d',wline));
+%             xlswrite('procdata.xlsx', {[bestlt{foundeff}]}, monknum, sprintf('P%d',wline));
             
         end
     else
