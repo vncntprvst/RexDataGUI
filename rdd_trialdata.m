@@ -43,7 +43,11 @@ global clustercodes
 %%%%%%%%%%%%%%%%%
 selclus_order = get(findobj('Tag','whichclus'),'Value'); %Which element of the list
 selclus = get(findobj('Tag','whichclus'),'String');
-selclus = str2double(selclus{selclus_order}(1));
+if iscell(selclus)
+    selclus = str2double(selclus{selclus_order}(1));
+else
+    selclus = str2double(selclus);
+end
 
 [ecodeout, etimeout, ~, ~, ~, h, v, ~, badtrial, curtrialsacInfo] = rdd_rex_trial(rdd_filename, trialnumber, selclus, reload);%, rdt_includeaborted);
 

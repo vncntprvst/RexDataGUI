@@ -1597,8 +1597,12 @@ else
 end
 selclus_order = get(findobj('Tag','whichclus'),'Value'); %Which element of the list
 selclus = get(findobj('Tag','whichclus'),'String');
-selclus = selclus{selclus_order}(1);
-exportfigname=[directory,'figures\',exportfn,'_',exporttsk,'_',alignment,'_cl_',selclus];
+if iscell(selclus)
+    selclus = str2double(selclus{selclus_order}(1));
+else
+    selclus = str2double(selclus);
+end
+exportfigname=[directory,'figures\',exportfn,'_cl_',selclus,'_',exporttsk,'_',alignment];
 exportfig=figure('color','white','position',figuresize);
 for k=1:length(subplots)
     copyobj(subplots(k),exportfig);
