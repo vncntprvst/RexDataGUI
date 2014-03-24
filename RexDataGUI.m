@@ -812,7 +812,13 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
         try
             
             if strcmp(rdd_filename(end-2:end),'Sp2'); % using data from Spike2 processing
-                spikechannel = get(findobj('Tag','whichclus'),'Value');
+                selclus_order = get(findobj('Tag','whichclus'),'Value'); %Which element of the list
+                spikechannel = get(findobj('Tag','whichclus'),'String');
+                if iscell(spikechannel)
+                    spikechannel = str2double(spikechannel{selclus_order}(1));
+                else
+                    spikechannel = str2double(spikechannel);
+                end
             else
                 spikechannel = 1;
             end
