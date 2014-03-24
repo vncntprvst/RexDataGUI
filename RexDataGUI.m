@@ -593,6 +593,27 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
         for i = 1:length(allftoanlz)
             procname=allftoanlz{i};
             
+            % crude segmentation: set depth limits for top cortex / dentate / bottom cortex
+            if monknum==1
+                cdn_depth=19000;
+                bcx_depth=22000;
+            elseif monknum==2
+                cdn_depth=11000;
+                bcx_depth=17000;
+            elseif monknum==3
+                cdn_depth=19000;
+                bcx_depth=26000;
+            end
+            recdepth=regexp(procname,'_\d+_','match');
+            recdepth=str2num([recdepth{:}(2:end-2) '0']);
+            if (recdepth<cdn_depth)
+                compart={'top_cortex'};
+            elseif (recdepth>=cdn_depth && recdepth<=bcx_depth)
+                compart={'dentate'};
+            elseif (recdepth>bcx_depth)
+                compart={'bottom_cortex'};
+            end
+            
             if overwrite
                 trimmed_procname = regexprep(ftoanlz, '(_REX$)|(_sp2$)','');
                 [success,outliers]=rex_process_inGUI(trimmed_procname,monkeydir); %shouldn't need the rfpathname
@@ -627,6 +648,9 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
             % process file, aligning to sac, cue, reward
             alignmtname={'mainsacalign','tgtshownalign','rewardalign'};
             alignbh=get( findobj('Tag','aligntimepanel'),'children');
+            
+            % For each of this file's clusters
+            
             for alignmt=1:3
                 set(findobj('Tag','aligntimepanel'),'SelectedObject',alignbh(strcmp(get(alignbh,'tag'),alignmtname{alignmt})))
                 getaligndata{alignmt} = rdd_rasters_sdf(procname, trialdirs, 0); % align data, don't plot rasters
@@ -711,27 +735,6 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
                 foundeff=max(1,find([activlevel{:}]==max([activlevel{:}])));
             end
             
-            % crude segmentation: set depth limits for top cortex / dentate / bottom cortex
-            if monknum==1
-                cdn_depth=19000;
-                bcx_depth=22000;
-            elseif monknum==2
-                cdn_depth=11000;
-                bcx_depth=17000;
-            elseif monknum==3
-                cdn_depth=19000;
-                bcx_depth=26000;
-            end
-            recdepth=regexp(procname,'_\d+_','match');
-            recdepth=str2num([recdepth{:}(2:end-2) '0']);
-            if (recdepth<cdn_depth)
-                compart={'top_cortex'};
-            elseif (recdepth>=cdn_depth && recdepth<=bcx_depth)
-                compart={'dentate'};
-            elseif (recdepth>bcx_depth)
-                compart={'bottom_cortex'};
-            end
-            
             % write result to excel file
             
             % get number of row in "database"
@@ -764,7 +767,7 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
 %             xlswrite('procdata.xlsx', {[profile{foundeff}]}, monknum, sprintf('N%d',wline));
 %             xlswrite('procdata.xlsx', {[dirselective{foundeff}]}, monknum, sprintf('O%d',wline));
 %             xlswrite('procdata.xlsx', {[bestlt{foundeff}]}, monknum, sprintf('P%d',wline));
-            
+            % End of things to do for this cluster
         end
     else
         %% normal method
@@ -795,6 +798,7 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
         
         rdd_trialdata(rdd_filename, trialnumber); % add 1 to make sure it reloads file
         try
+            % Radu TODO add cluster info at this point
             dataaligned=rdd_rasters_sdf(rdd_filename, trialdirs,1); %align data, plot rasters
         catch err
             fprintf([err.message '\n']); % Print error message as well
@@ -846,6 +850,7 @@ dbstop(s);
 rdd_filename=get(findobj('Tag','filenamedisplay'),'String');
 [rdd_nt, trialdirs] = data_info( rdd_filename );
 try
+    % Radu TODO add whichclus here
     dataaligned=rdd_rasters_sdf(rdd_filename, trialdirs,1);
 catch err
     fprintf(['Error: ' err.message '\n']); % Print error message as well
