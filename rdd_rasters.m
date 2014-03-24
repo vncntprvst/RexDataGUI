@@ -2,7 +2,7 @@ function [alignedrasters, alignindex, trialindex, alltrigtosac, ...
     allsactotrig, alltrigtovis, allvistotrig,eyehoriz, eyevert, ....
     eyevelocity, amplitudes, peakvels,...
     peakaccs, allonoffcodetime,badidx,allssd,alignedrawsigs,alignrawidx] = ...
-    rdd_rasters( name, selclus, aligntocode, noneofcodes,...
+    rdd_rasters( name, spikechannel, aligntocode, noneofcodes,...
     allowbadtrials, alignsacnum, aligntype, collapse, conditions, getraw)
 
 % used to be: rdd_rasters( name, spikechannel, anyofcodes, allofcodes, noneofcodes, alignmentcode, allowbadtrials, alignsacnum, oncode, offcode)
@@ -168,8 +168,8 @@ end
 
 %% Which Cluster?
 %%%%%%%%%%%%%%%%%
-% selclus = str2double(get(findobj('Tag','whichclus'),'String')); %
-% unnecessary now: spikechannel and selclus are now one and the same
+% spikechannel = str2double(get(findobj('Tag','whichclus'),'String')); %
+% unnecessary now: spikechannel and spikechannel are now one and the same
 
 %  Loop through all of the trials using rex_first_trial and rex_next_trial.
 %  See if each trial has the right codes, and try to align the spike data
@@ -188,7 +188,7 @@ while ~islast
     % rex_first_trial and rex_next_trial).
     
     %[ecodeout, etimeout, spkchan, spk, arate, h, v, start_time, badtrial ] = rex_trial(name, d );
-    [ecodeout, etimeout, spkchan, spk, arate, h, v, start_time, isbadtrial, curtrialsacInfo] = rdd_rex_trial(name, d, selclus);%, rdt_includeaborted);
+    [ecodeout, etimeout, spkchan, spk, arate, h, v, start_time, isbadtrial, curtrialsacInfo] = rdd_rex_trial(name, d, spikechannel);%, rdt_includeaborted);
     
     %if ~isbadtrial
     if logical(sum((ecodeout==2222)))  % had a weird case of a trial with ecode 2222. Don't know what that was. See file S110L4A5_12951
