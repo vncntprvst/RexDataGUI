@@ -550,7 +550,7 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
                 ftoanlz = regexp(fileNames, strcat('^\w',sessionNumber{sessnumnum}{:}),'match');
                 ftoanlz = fileNames(~cellfun(@isempty,ftoanlz));  % Get the names of the matching files in a cell array
                 ftoanlz = regexprep(ftoanlz, '(A$)|(E$)',''); %remove A and E from end of names (if raw files)
-                ftoanlz = regexprep(ftoanlz, '(_REX.mat$)|(_Sp2.mat$)',''); %remove _REX and Sp2 from end of names (if processed files)
+                ftoanlz = regexprep(ftoanlz, '.mat$',''); %remove _REX and Sp2 from end of names (if processed files)
                 ftoanlz = unique(ftoanlz);
                 allftoanlz{sessnumnum}=ftoanlz;
             end
