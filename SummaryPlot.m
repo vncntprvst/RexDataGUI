@@ -1602,7 +1602,7 @@ if iscell(selclus)
 else
     selclus = str2double(selclus);
 end
-exportfigname=[directory,'figures\',exportfn,'_cl_',selclus,'_',exporttsk,'_',alignment];
+exportfigname=[directory,'figures\',exportfn,'_cl_',num2str(selclus),'_',exporttsk,'_',alignment];
 exportfig=figure('color','white','position',figuresize);
 for k=1:length(subplots)
     copyobj(subplots(k),exportfig);
