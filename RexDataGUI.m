@@ -590,9 +590,23 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
             overwrite=0;
         end
         
+        conn = connect2DB();
+        ftp_conn = ftp('152.3.216.217', 'Radu', 'monkey');
+        date_today = datestr(date,'yyyy-mm-dd');
+        chamber = 'UNKNOWN';
+        user = getUser(conn);
+        
         for i = 1:length(allftoanlz)
             procname=allftoanlz{i};
-            
+            trimmed_procname = regexprep(procname, '(_REX$)|(_Sp2$)','');
+            origin = procname(end-2:end);
+            origin = regexprep(origin,'Sp2','Spike2');
+            origin = regexprep(origin,'REX','Rex');
+            if strcmp(origin,'Spike2');
+            fcomments = getComments(trimmed_procname, conn);
+            else
+                fcomments = ' ';
+            end
             % crude segmentation: set depth limits for top cortex / dentate / bottom cortex
             if monknum==1
                 cdn_depth=19000;
@@ -615,7 +629,7 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
             end
             
             if overwrite
-                trimmed_procname = regexprep(ftoanlz, '(_REX$)|(_sp2$)','');
+                
                 [success,outliers]=rex_process_inGUI(trimmed_procname,monkeydir); %shouldn't need the rfpathname
                 % outliers are stored in file now
                 
@@ -654,9 +668,37 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
             for a = 1:length(clusnames)-1
                 clusnums(a) = str2num(clusnames{a}(1));
             end
-            % For each of this file's clusters
             
-            for curclus = 1:length(clusnums)
+            % add record to database if not already there
+            newrecord = struct('name',trimmed_procname,...
+                'date',date_today,...
+                'chamber', chamber,...
+                'user', user);
+            
+            
+            
+            [already, success, rec_id] = addRecord(newrecord, conn);
+            
+            % overwrite a sort, or make a new one?
+            newsort = struct('name', trimmed_procname,...
+                'comments', fcomments,...
+                'user', user, 'origin', origin,...
+                'parent', rec_id);
+            
+            q = ['SELECT sort_id FROM sorts s INNER JOIN recordings r ON s.recording_fid = r.recording_id WHERE user = ''' user ''' AND '...
+                    'origin = ''' origin ''' AND r.a_file = ''' trimmed_procname 'A'''];
+                checksort = fetch(conn,q);
+            
+            if ~isempty(checksort)
+                % overwrite the user's oldest sort for this file
+                sort_id = checksort(end); sort_id = sort_id{1};
+                [success] = deleteChildren(sort_id, conn, ftp_conn);
+                updateSort(sort_id, newsort, conn);
+            else
+                [success, sort_id] = addSort(newsort, conn);
+            end
+            
+            for curclus = 1:length(clusnums) % For each of this file's clusters
                 
                 for alignmt=1:3
                     set(findobj('Tag','aligntimepanel'),'SelectedObject',alignbh(strcmp(get(alignbh,'tag'),alignmtname{alignmt})))
@@ -778,7 +820,8 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
     %             xlswrite('procdata.xlsx', {[profile{foundeff}]}, monknum, sprintf('N%d',wline));
     %             xlswrite('procdata.xlsx', {[dirselective{foundeff}]}, monknum, sprintf('O%d',wline));
     %             xlswrite('procdata.xlsx', {[bestlt{foundeff}]}, monknum, sprintf('P%d',wline));
-                
+                [success, c_id] = addCluster(sort_id, clusnums(curclus),conn,ftp_conn);
+                [success, psth_id] = addPsth(c_id, conn, ftp_conn);
             end % End of things to do for this cluster
         end % End of things to do for this file
     else
