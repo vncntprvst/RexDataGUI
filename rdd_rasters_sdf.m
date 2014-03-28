@@ -210,7 +210,7 @@ else
     spikechannel = 1;
 end
 
-if strcmp(rdd_filename(end-2:end),'Sp2'); % using data from Spike2 processing
+if strcmp(rdd_filename(end-2:end),'Sp2') || strcmp(rdd_filename(end-2:end),'mod'); % using data from Spike2 processing
  spikechannel = str2double(get(findobj('Tag','whichclus'),'String'));
 end
 
@@ -658,10 +658,10 @@ if strcmp(aligntype,'stop') % make additional analysis
 %% Displaying 2AFC Results
 %=========================================================================%
 elseif strcmp(tasktype, 'twoafc')
-    AFC_ver=3;
+    AFC_ver=2;
     %twoafc()
     %uiwait
-    InterAxn='Interaction';
+    InterAxn='BOTH';
     % InterAxn controls what is plotted ->
     % if == TT: plot SS,INS,Rule0,Rule1
     % if == Interaction: plot SS_R0,SS_R1,INS_R0,INS_R1
