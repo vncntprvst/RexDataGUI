@@ -43,6 +43,11 @@ if strcmp(cure,'fixdircs') || strcmp(cure,'fixdirol')
     allgoodsacs(logical(allbad),:)=0;
     %removing stop trials that may be included
     allgoodsacs(floor(allcodes(:,2)./1000)~=6,:)=0;
+    %removing "2222" trials, although they may be correct
+    if find(allcodes==2222,1)
+        [~,wecol]=ind2sub(size(allcodes),find(allcodes==2222,1));
+        allgoodsacs(allcodes(:,wecol)==2222,:)=0;
+    end
     %indexing good sac trials
     % if saccade detection corrected, there may two 'good' saccades
     if max(sum(allgoodsacs,2))>1

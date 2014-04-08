@@ -13,8 +13,9 @@ fprintf([' Plotting data for: ' InterAxn '\n']);
 
 % Implicitly setting global variables as can't find where set
 global directory output;
-output.savfig=1;
+output.savfig=0;
 output.savsdf=0;
+output.sides = 3; % set to 1 for all saccades, 2 for leftward saccades, 3 for rightward saccades (rule selecting)
 
 load(recname,'allbad','allcodes','alltimes');  % saccadeInfo probably not needed
 
@@ -22,7 +23,7 @@ ReSize=0;
 % ReSize binary controls if the figures rasters are resized
 
 try
-    pool = output.sides; % set to 1 for all saccades, 2 for leftward saccades, 3 for rightward saccades (rule selecting)
+    pool = output.sides; 
     poolstr1 = [];
     poolstr2 = [];
     if (pool==1)
@@ -43,9 +44,10 @@ end
 %% preallocs and definitions
 if aligncode == 465;
     alignname = 'RuleStim';
-end
-if aligncode == 585;
+elseif aligncode == 585;
     alignname = 'Refix';
+else
+    alignname = 'Unknown';
 end
 AFCplots=nan(2,1);
 
@@ -72,7 +74,8 @@ plotstop=1000; %1000 ms after alignment time
 
 %% removing bad trials from codes and times
 % first checking we have the right number of good trials
-if size(logical(datalign.bad),2)~=size(allbad(~logical(allbad)),2)
+temp = [datalign(:).bad];
+if size(logical(temp),2)~=size(allbad(~logical(allbad)),2)
     return
 end
 allgoodcodes=allcodes(~logical(allbad),:); %#ok<NODEF>
