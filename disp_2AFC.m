@@ -15,10 +15,12 @@ fprintf([' Plotting data for: ' InterAxn '\n']);
 global directory output;
 output.savfig=0;
 output.savsdf=0;
-output.sides = 3; % set to 1 for all saccades, 2 for leftward saccades, 3 for rightward saccades (rule selecting)
+output.sides = 1; % set to 1 for all saccades, 2 for leftward saccades, 3 for rightward saccades (rule selecting)
 
 load(recname,'allbad','allcodes','alltimes');  % saccadeInfo probably not needed
-
+FRfortestB = [];
+FRfortestA = [];
+FRfortestT = [];
 ReSize=0;
 % ReSize binary controls if the figures rasters are resized
 
@@ -44,8 +46,14 @@ end
 %% preallocs and definitions
 if aligncode == 465;
     alignname = 'RuleStim';
+elseif aligncode == 505;
+    alignname = 'Sac1';
 elseif aligncode == 585;
     alignname = 'Refix';
+elseif aligncode == 605;
+    alignname = 'PercStim';
+elseif aligncode == 645;
+    alignname = 'Sac2';
 else
     alignname = 'Unknown';
 end
@@ -68,6 +76,14 @@ alignidx=datalign.alignidx;
 addevents=datalign.allgreyareas;
 plotstart=400; %400 ms before alignment time
 plotstop=1000; %1000 ms after alignment time
+if aligncode >= 625;
+    plotstop = 600;
+end
+save_refix = 0;
+if save_refix;
+    plotstart = 300;
+    plotstop = 300;
+end
 
 % aligntype={'Self-selected','Instructed','Rule 0','Rule 1'}; % set alignment types for legend
 % fnaligntype={'SSvsINS','R0vsR1'};
@@ -315,6 +331,49 @@ for dataset=1:numrast
     sdlines(dataset, 1)=plot(sdf+sd, ':', 'Color',cc(dataset, :), 'LineWidth', 1);
     sdlines(dataset, 2)=plot(sdf-sd, ':', 'Color',cc(dataset, :), 'LineWidth', 1);
     
+    %% ZMA extract average FRs around ??
+    if aligncode == 465;
+      befspan = 1;
+      aftspan = 400;
+    elseif aligncode == 505;
+      befspan = 200;
+      aftspan = 100;
+    elseif aligncode == 585;
+      befspan = 300;
+      aftspan = 300;     
+    elseif aligncode == 605;
+      befspan = 1;
+      aftspan = 600;         
+    elseif aligncode == 625;
+      befspan = 1;
+      aftspan = 100;         
+    elseif aligncode == 645;
+      befspan = 200;
+      aftspan = 200;        
+    else
+      befspan = 1;
+      aftspan = 1;
+    end
+    
+    Aft = rasters(:, alignidx:alignidx+aftspan); %pull out 300ms after refix
+    Aft_sum = nansum(Aft, 2); %count spikes
+    Aft_r = Aft_sum/(aftspan/1000); %divide by 300ms to find "rate"
+    Aft_out = [mean(Aft_r) std(Aft_r)./sqrt(length(Aft_r)) length(Aft_r)];
+        
+    Bef = rasters(:, alignidx-befspan:alignidx); %pull out 300ms before refix
+    Bef_sum = nansum(Bef, 2); %count spikes
+    Bef_r = Bef_sum/(befspan/1000); %divide by 300ms to find "rate"
+    Bef_out = [mean(Bef_r) std(Bef_r)./sqrt(length(Bef_r)) length(Bef_r)];
+    FRout(dataset, :) = [Bef_out Aft_out];
+    FRfortestB = cat_variable_size_row(FRfortestB, Bef_r');
+    FRfortestA = cat_variable_size_row(FRfortestA, Aft_r');
+    
+    Tot = rasters(:, alignidx-befspan:alignidx+aftspan);
+    Tot_sum = nansum(Tot, 2);
+    Tot_r = Tot_sum/((aftspan+befspan)/1000);
+    FRfortestT = cat_variable_size_row(FRfortestT, Tot_r');
+
+    %%
     axis(gca,'tight');
     box off;
     set(gca,'Color','white','TickDir','out','FontName','calibri','FontSize',8);
@@ -332,7 +391,39 @@ for dataset=1:numrast
     allsdf{dataset}=sdf;
     clear TimeInd; % Just in case    
 end
-
+%FRout %output ZMA
+%% Quick stats ZMA
+if strcmp(InterAxn, 'TT')
+    h1 = ttest2(FRfortestB(1,:), FRfortestB(2,:));
+    h2 = ttest2(FRfortestB(3,:), FRfortestB(4,:));
+    h3 = ttest2(FRfortestA(1,:), FRfortestA(2,:));
+    h4 = ttest2(FRfortestA(3,:), FRfortestA(4,:));
+    bigh = [h1 h3; h2 h4];
+elseif strcmp(InterAxn, 'Interaction')
+    h1 = ttest2(FRfortestB(1,:), FRfortestB(2,:));
+    h2 = ttest2(FRfortestB(1,:), FRfortestB(3,:));
+    h3 = ttest2(FRfortestB(2,:), FRfortestB(4,:));
+    h4 = ttest2(FRfortestB(3,:), FRfortestB(4,:));
+    h5 = ttest2(FRfortestA(1,:), FRfortestA(2,:));
+    h6 = ttest2(FRfortestA(1,:), FRfortestA(3,:));
+    h7 = ttest2(FRfortestA(2,:), FRfortestA(4,:));
+    h8 = ttest2(FRfortestA(3,:), FRfortestA(4,:));   
+    bigh = [h1 h5; h2 h6; h3 h7; h4 h8];
+    % anova
+    FRvecB = [FRfortestB(1,:) FRfortestB(2,:) FRfortestB(3,:) FRfortestB(4,:)]; %put into vector
+    FRvecB = FRvecB(isfinite(FRvecB)); % remove NaNs from cat_variable_size_row
+    FRvecA = [FRfortestA(1,:) FRfortestA(2,:) FRfortestA(3,:) FRfortestA(4,:)]; %put into vector
+    FRvecA = FRvecA(isfinite(FRvecA));
+    FRvecT = [FRfortestT(1,:) FRfortestT(2,:) FRfortestT(3,:) FRfortestT(4,:)]; %put into vector
+    FRvecT = FRvecT(isfinite(FRvecT));
+    TT = [0.*ones(1,FRout(1,3)) 0.*ones(1,FRout(2,3)) 1.*ones(1,FRout(3,3)) 1.*ones(1,FRout(4,3))];
+    RR = [0.*ones(1,FRout(1,3)) 1.*ones(1,FRout(2,3)) 0.*ones(1,FRout(3,3)) 1.*ones(1,FRout(4,3))];
+    pB = anovan(FRvecB, {TT RR}, 'display', 'off');%, 'model', 'interaction');
+    pA = anovan(FRvecA, {TT RR}, 'display', 'off');%, 'model', 'interaction');
+    pT = anovan(FRvecT, {TT RR}, 'display', 'off');%, 'model', 'interaction'); 
+    pAll = [pB' pA' pT'];
+    hAll = pAll<0.05
+end
 %% last adjustments and save - routine for multiple figures produced
 % for fignum=1:2
 %     
@@ -470,7 +561,7 @@ if output.savfig
     print(AFCplots, '-dpng', '-noui', '-opengl','-r600', exportfigname);
     fprintf(' Saved figure\n');
     %vector graphics if needed
-    %     plot2svg([exportfigname,'.svg'],AFCplots(fignum), 'png');
+%         plot2svg([exportfigname,'.svg'],AFCplots, 'png');
     delete(AFCplots); %if needed
 end
 

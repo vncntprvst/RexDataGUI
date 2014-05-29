@@ -60,6 +60,9 @@ function [alignedrasters, alignindex, trialindex, alltrigtosac, ...
 global rexnumtrials;
 
 tasktype=get(findobj('Tag','taskdisplay'),'String');
+if isempty(tasktype) && aligntocode(1)==4650;
+    tasktype = 'twoafc';
+end
 
 if strcmp(tasktype,'gapstop') || strcmp(tasktype,'base2rem50')
     multicodetask=1;
