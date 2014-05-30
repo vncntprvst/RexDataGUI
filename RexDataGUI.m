@@ -301,72 +301,40 @@ function OpenRawFile_Callback(hObject, eventdata, handles)
 % hObject    handle to OpenRawFile (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-global directory slash unprocfiles replacespikes;
+global directory slash unprocfiles replacespikes subject;
+subjectlist=GetSubjects;
+subjseleclist=get(get(findobj('Tag','monkeyselect'),'children') ,'Tag');
+% get the one selected
+subjselec=get(get(findobj('Tag','monkeyselect'),'children') ,'Value');
+monknum=find(strcmp(subjectlist,...
+    subjectlist{~cellfun(@isempty,(regexpi(subjseleclist{logical([subjselec{:}])},subjectlist)))}));
 
-monkeydirselected=get(get(findobj('Tag','monkeyselect'),'SelectedObject'),'Tag');
-if strcmp(monkeydirselected,'rigelselect')
-    monkeydir = [directory,'Rigel',slash]; %'B:\data\Recordings\Rigel';
-    procdir = [directory,'processed',slash,'Rigel',slash];
-elseif strcmp(monkeydirselected,'sixxselect')
-    monkeydir = [directory,'Sixx',slash]; %'B:\data\Recordings\Sixx';
-    procdir = [directory,'processed',slash,'Sixx',slash];
-elseif strcmp(monkeydirselected,'hildaselect')
-    monkeydir = [directory,'Hilda',slash]; %'B:\data\Recordings\Sixx';
-    procdir = [directory,'processed',slash,'Hilda',slash];
-elseif strcmp(monkeydirselected,'shufflesselect')
-    monkeydir = [directory,'Shuffles',slash]; %'B:\data\Recordings\Sixx';
-    procdir = [directory,'processed',slash,'Shuffles',slash];
-end
+monkeydir = [directory,subject,slash]; %'B:\data\Recordings\Rigel';
+procdir = [directory,'processed',slash,subject,slash];
 
 % determines computer type
 archst  = computer('arch');
 
 try
     if strcmp(archst, 'maci64')
-        [rfname, rfpathname]=uigetfile({'*.*','All Files';'*A','A Files'},'raw files directory',...
-            monkeydir);
+        [rfname]=uigetfile({'*.*','All Files';'*A','A Files'},'raw files directory',...
+            monkeydir); %rfpathname
     else
-        [rfname, rfpathname]=uigetfile({'*A','A Files';'*.*','All Files'},'raw files directory',...
-            monkeydir);
+        [rfname]=uigetfile({'*A','A Files';'*.*','All Files'},'raw files directory',...
+            monkeydir); %rfpathname
     end
     %check if file exists already
     rfname=rfname(1:length(rfname)-1);
     overwrite = 1;
     
-    if strcmp(monkeydirselected,'rigelselect')
-        if ~strcmp(rfname(1),'R')
-            procname=cat(2,'R', rfname);
+     if ~strcmp(rfname(1),subject(1))
+            procname=cat(2,subject(1), rfname);
             set(findobj('Tag','filenamedisplay'),'String',procname);
         else
             procname=rfname;
             set(findobj('Tag','filenamedisplay'),'String',rfname);
-        end
-    elseif strcmp(monkeydirselected,'sixxselect')
-        if ~strcmp(rfname(1),'S')
-            procname=cat(2,'S', rfname);
-            set(findobj('Tag','filenamedisplay'),'String',procname);
-        else
-            procname=rfname;
-            set(findobj('Tag','filenamedisplay'),'String',rfname);
-        end
-    elseif strcmp(monkeydirselected,'hildaselect')
-        if ~strcmp(rfname(1),'H')
-            procname=cat(2,'H', rfname);
-            set(findobj('Tag','filenamedisplay'),'String',procname);
-        else
-            procname=rfname;
-            set(findobj('Tag','filenamedisplay'),'String',rfname);
-        end
-    elseif strcmp(monkeydirselected,'shufflesselect')
-        if ~strcmp(rfname(1),'S')
-            procname=cat(2,'S', rfname);
-            set(findobj('Tag','filenamedisplay'),'String',procname);
-        else
-            procname=rfname;
-            set(findobj('Tag','filenamedisplay'),'String',rfname);
-        end
-    end
-
+     end
+    
 catch
     disp('Aborted raw import.');
     return;
@@ -390,22 +358,12 @@ if overwrite
             rfname=[rfname '_REX'];
         end
         %then update the directory listing
-        if strcmp(monkeydirselected,'rigelselect')
-            dirlisting = dir([directory,'processed',slash,'Rigel',slash]); %('B:\data\Recordings\processed');
-            monknum=1;
-        elseif strcmp(monkeydirselected,'sixxselect')
-            dirlisting = dir([directory,'processed',slash,'Sixx',slash]); %('B:\data\Recordings\processed');
-            monknum=2;
-        elseif strcmp(monkeydirselected,'hildaselect')
-            dirlisting = dir([directory,'processed',slash,'Hilda',slash]); %('B:\data\Recordings\processed');
-            monknum=3;
-        elseif strcmp(monkeydirselected,'shufflesselect')
-            dirlisting = dir([directory,'processed',slash,'Shuffles',slash]); %('B:\data\Recordings\processed');
-            monknum=4;
-        end
+        
+        dirlisting = dir([directory,'processed',slash,subject,slash]);
+         
         % Order by date
         filedates=cell2mat({dirlisting(:).datenum});
-        [filedates,fdateidx] = sort(filedates,'descend');
+        [~,fdateidx] = sort(filedates,'descend');
         dirlisting = {dirlisting(:).name};
         dirlisting=dirlisting(fdateidx);
         dirlisting = dirlisting(cellfun('isempty',strfind(dirlisting,'myBreakpoints')));
@@ -474,26 +432,17 @@ function displaymfiles_Callback(hObject, eventdata, handles)
 % hObject    handle to displaymfiles (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-global directory slash replacespikes ; %unprocfiles rexloadedname
+global directory slash subject; %unprocfiles rexloadedname
 
-monkeydirselected=get(get(findobj('Tag','monkeyselect'),'SelectedObject'),'Tag');
-if strcmp(monkeydirselected,'rigelselect')
-    monknum=1;
-    monkeydir = [directory,'Rigel',slash]; %'B:\data\Recordings\Rigel';
-    procdir = [directory,'processed',slash,'Rigel',slash];
-elseif strcmp(monkeydirselected,'sixxselect')
-    monknum=2;
-    monkeydir = [directory,'Sixx',slash]; %'B:\data\Recordings\Sixx';
-    procdir = [directory,'processed',slash,'Sixx',slash];
-elseif strcmp(monkeydirselected,'hildaselect')
-    monknum=3;
-    monkeydir = [directory,'Hilda',slash]; %'B:\data\Recordings\Hilda';
-    procdir = [directory,'processed',slash,'Hilda',slash];
-elseif strcmp(monkeydirselected,'shufflesselect')
-    monknum=4;
-    monkeydir = [directory,'Shuffles',slash]; %'B:\data\Recordings\Hilda';
-    procdir = [directory,'processed',slash,'Shuffles',slash];
-end
+subjectlist=GetSubjects;
+subjseleclist=get(get(findobj('Tag','monkeyselect'),'children') ,'Tag');
+% get the one selected
+subjselec=get(get(findobj('Tag','monkeyselect'),'children') ,'Value');
+monknum=find(strcmp(subjectlist,...
+    subjectlist{~cellfun(@isempty,(regexpi(subjseleclist{logical([subjselec{:}])},subjectlist)))}));
+
+% monkeydir = [directory,subject,slash]; %'B:\data\Recordings\Rigel';
+procdir = [directory,'processed',slash,subject,slash];
 
 if strcmp(get(gcf,'SelectionType'),'normal') && ~strcmp(eventdata,'rightclkevt') % if simple click, just higlight it, don't open
     if get(findobj('Tag','displayfbt_files'),'Value') % works only with individual file display
@@ -1547,23 +1496,17 @@ function displayfbox_SelectionChangeFcn(hObject, eventdata, handles)
 %	OldValue: handle of the previously selected object or empty if none was selected
 %	NewValue: handle of the currently selected object
 % handles    structure with handles and user data (see GUIDATA)
-global directory slash;
+global directory slash subject;
 
 % set(eventdata.OldValue, 'BackgroundColor', [0.9608    0.9216    0.9216]);
-
-if get(findobj('Tag','rigelselect'),'Value')
-    dirlisting = dir([directory,'processed',slash,'Rigel',slash]); %('B:\data\Recordings\processed\Rigel');
-    sinitial='R';
-elseif get(findobj('Tag','sixxselect'),'Value')
-    dirlisting = dir([directory,'processed',slash,'Sixx',slash]); %('B:\data\Recordings\processed\Sixx');\
-    sinitial='S';
-elseif get(findobj('Tag','hildaselect'),'Value')
-    dirlisting = dir([directory,'processed',slash,'Hilda',slash]); %('B:\data\Recordings\processed\Sixx');
-    sinitial='H';
-elseif get(findobj('Tag','shufflesselect'),'Value')
-    dirlisting = dir([directory,'processed',slash,'Shuffles',slash]); %('B:\data\Recordings\processed\Sixx');
-    sinitial='S';
-end
+subjectlist=GetSubjects;
+subjseleclist=get(get(findobj('Tag','monkeyselect'),'children') ,'Tag');
+% get the one selected
+subjselec=get(get(findobj('Tag','monkeyselect'),'children') ,'Value');
+subject=subjectlist{~cellfun(@isempty,(regexpi(subjseleclist{logical([subjselec{:}])},subjectlist)))};
+%list directory
+dirlisting = dir([directory,'processed',slash,subject,slash]); %('B:\data\Recordings\processed\Rigel');
+   
 fileNames = {dirlisting.name};  % Put the file names in a cell array
 
 if hObject==findobj('Tag','displayfbt_files')
@@ -1582,9 +1525,9 @@ if hObject==findobj('Tag','displayfbt_files')
 elseif hObject==findobj('Tag','displayfbt_session')
     
     index = regexpi(fileNames,...              % Match a file name if it begins with the subject
-        ['^' sinitial '\d+'], 'match');           % initial letter  followed by a set of digits 1 or larger
+        ['^' subject(1) '\d+'], 'match');           % initial letter  followed by a set of digits 1 or larger
     inFiles = index(~cellfun(@isempty,index));  % Get the names of the matching files in a cell array
-    sessionNumbers = cellfun(@(x) strrep(x, sinitial, ' '), inFiles, 'UniformOutput', false);
+    sessionNumbers = cellfun(@(x) strrep(x, subject(1), ' '), inFiles, 'UniformOutput', false);
 
     
     if ~isempty(sessionNumbers)
