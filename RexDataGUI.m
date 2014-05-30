@@ -54,7 +54,7 @@ function RexDataGUI_OpeningFcn(hObject, eventdata, handles, varargin)
 
 % Choose default command line output for RexDataGUI
 handles.output = hObject;
-global replacespikes user;
+global replacespikes user subject;
 replacespikes = 0;
 % tiny design changes
 set(hObject,'DefaultTextFontName','Calibri'); %'Color',[0.9 .9 .8]
@@ -1009,76 +1009,45 @@ function displaymfiles_CreateFcn(hObject, eventdata, handles)
 % hObject    handle to displaymfiles (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
-global directory slash unprocfiles user;
+global directory slash unprocfiles user subject;
 
 % Hint: listbox controls usually have a white background on Windows.
 %       See ISPC and COMPUTER.
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
+%find user, directory and slash type
+[directory,slash,user]=SetUserDir;
+
+%get subject list
+subjectlist=GetSubjects;
+
 % get list of subject select boxes
 selboxh=get(findobj('tag','monkeyselect'),'Children');
-
-% determines computer type
-archst  = computer('arch');
-
-if strcmp(archst, 'maci64')
-    name = getenv('USER');
-    if strcmp(name, 'zacharyabzug')
-        directory = '/Users/zacharyabzug/Desktop/zackdata/';
-        user='Zach';
-    elseif strcmp(name, 'zmabzug')
-        directory = '/Users/zmabzug/Desktop/zackdata/';
-        user='Zach';
-    end
-    slash = '/';
-elseif strcmp(archst, 'win32') || strcmp(archst, 'win64')
-    if strcmp(getenv('username'),'SommerVD') || ...
-            strcmp(getenv('username'),'LabV') || ...
-            strcmp(getenv('username'),'Purkinje') || ...
-            strcmp(getenv('username'),'JuanandKimi') || ...
-            strcmp(getenv('username'),'vp35')
-        directory = 'C:\Data\Recordings\';
-        user='generic';
-    elseif strcmp(getenv('username'),'DangerZone')
-        directory = 'E:\data\Recordings\';
-        user='Vincent';
-        set(selboxh(strcmp(get(selboxh,'tag'),'sixxselect')),'value',1)
-    elseif strcmp(getenv('username'),'Radu')
-        directory = 'E:\Spike_Sorting\';
-        user='Radu';
-    elseif strcmp(getenv('username'),'The Doctor')
-        directory = 'C:\Users\The Doctor\Data\';
-        user='generic';
-    else strcmp(getenv('username'),'Vincent')
-        directory = 'B:\data\Recordings\';
-        user='Vincent';
-    end
-    slash = '\';
+if strcmp(user,'Vincent')
+	set(selboxh(strcmp(get(selboxh,'tag'),'sixxselect')),'value',1);
 end
 
 %setting process directory
 monkeydir= get(get(findobj('Tag','monkeyselect'),'SelectedObject'),'Tag');
 if strcmp(monkeydir,'rigelselect')
-    monknum=1;
+    subject=subjectlist{1};
 elseif strcmp(monkeydir,'sixxselect')
-    monknum=2;
+    subject=subjectlist{2};
 elseif strcmp(monkeydir,'hildaselect')
-    monknum=3;
+    subject=subjectlist{3};
 elseif strcmp(monkeydir, 'shufflesselect')
-    monknum=4;
+    subject=subjectlist{4};
 end
-dirlisting{1} = dir([directory,'processed',slash,'Rigel',slash]);%('B:\data\Recordings\processed\Rigel');
-dirlisting{2} = dir([directory,'processed',slash,'Sixx',slash]);
-dirlisting{3} = dir([directory,'processed',slash,'Hilda',slash]);
-dirlisting{4} = dir([directory,'processed',slash,'Shuffles',slash]);
+
 
 %%  add subject ID letter in front of file names for sessions >= 100
 %   change hyphens into underscores
 %   output unprocessed file list
 
-rawdirs=[{[directory,'Rigel',slash]};{[directory,'Sixx',slash]};{[directory,'Hilda',slash]};{[directory,'Shuffles',slash]}];
-idletters=['R';'S';'H';'S'];
+rawdirs=cellfun(@(x) [directory x slash], subjectlist, 'UniformOutput', false);
+idletters=cellfun(@(x)  x(1), subjectlist);
 olddir=pwd; %keep current dir in memory
 
 %preallocate
@@ -1125,22 +1094,24 @@ for rwadirnum=1:length(rawdirs)
     cd(olddir); %go back to original dir
     
     % Order by date
-    procdirlist=dirlisting{rwadirnum};
+    procdirlist= dir([directory,'processed',slash,subjectlist{rwadirnum},slash]);
     filedates=cell2mat({procdirlist(:).datenum});
-    [filedates,fdateidx] = sort(filedates,'descend');
+    [~,fdateidx] = sort(filedates,'descend');
     procdirlist = {procdirlist(:).name};
     procdirlist = procdirlist(fdateidx);
     procdirlist = procdirlist(~cellfun('isempty',strfind(procdirlist,'mat')));
     procdirlist = procdirlist(cellfun('isempty',strfind(procdirlist,'myBreakpoints')));
     procdirlist = cellfun(@(x) x(1:end-4), procdirlist, 'UniformOutput', false);
-    dirlisting{rwadirnum}=procdirlist;
+    if rwadirnum==find(strcmp(subjectlist,subject))
+        dirlisting=procdirlist; %keep for display
+    end
     if sum(~ismember(indfilenames{rwadirnum},procdirlist))
         % beware if length of ismember is 1, the ~ will make a null
         % subscript ... Shouldn't happen.
         unprocfiles{rwadirnum}=indfilenames{rwadirnum}([~ismember(indfilenames{rwadirnum},procdirlist)]);
     end
 end
-set(hObject,'string',dirlisting{monknum});
+set(hObject,'string',dirlisting);
 
 % --- Executes on button press in LoadFile.
 function LoadFile_Callback(hObject, eventdata, handles)
