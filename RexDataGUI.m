@@ -519,11 +519,16 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
             overwrite=0;
         end
         
-        conn = connect2DB();
-        ftp_conn = ftp('152.3.216.217', 'Radu', 'monkey');
-        date_today = datestr(date,'yyyy-mm-dd');
-        chamber = 'UNKNOWN';
-        user = getUser(conn);
+        try % see if database is running
+            conn = connect2DB();        
+            ftp_conn = ftp('152.3.216.217', 'Radu', 'monkey');
+            date_today = datestr(date,'yyyy-mm-dd');
+            chamber = 'UNKNOWN';
+            user = getUser(conn);
+            isdbrunning=1;
+        catch
+            isdbrunning=0;
+        end
         
         for i = 1:length(allftoanlz)
             procname=allftoanlz{i};
@@ -597,36 +602,35 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
             for a = 1:length(clusnames)-1
                 clusnums(a) = str2num(clusnames{a}(1));
             end
-            
-            % add record to database if not already there
-            newrecord = struct('name',trimmed_procname,...
-                'date',date_today,...
-                'chamber', chamber,...
-                'user', user);
-            
-            
-            
-            [already, success, rec_id] = addRecord(newrecord, conn);
-            
-            % overwrite a sort, or make a new one?
-            newsort = struct('name', trimmed_procname,...
-                'comments', fcomments,...
-                'user', user, 'origin', origin,...
-                'parent', rec_id);
-            
-            q = ['SELECT sort_id FROM sorts s INNER JOIN recordings r ON s.recording_fid = r.recording_id WHERE user = ''' user ''' AND '...
-                    'origin = ''' origin ''' AND r.a_file = ''' trimmed_procname 'A'''];
-                checksort = fetch(conn,q);
-            
-            if ~isempty(checksort)
-                % overwrite the user's oldest sort for this file
-                sort_id = checksort(end); sort_id = sort_id{1};
-                [success] = deleteChildren(sort_id, conn, ftp_conn);
-                updateSort(sort_id, newsort, conn);
-            else
-                [success, sort_id] = addSort(newsort, conn);
+ 
+             if isdbrunning
+                % add record to database if not already there
+                newrecord = struct('name',trimmed_procname,...
+                    'date',date_today,...
+                    'chamber', chamber,...
+                    'user', user);
+
+                [~, ~, rec_id] = addRecord(newrecord, conn);
+
+                % overwrite a sort, or make a new one?
+                newsort = struct('name', trimmed_procname,...
+                    'comments', fcomments,...
+                    'user', user, 'origin', origin,...
+                    'parent', rec_id);
+
+                q = ['SELECT sort_id FROM sorts s INNER JOIN recordings r ON s.recording_fid = r.recording_id WHERE user = ''' user ''' AND '...
+                        'origin = ''' origin ''' AND r.a_file = ''' trimmed_procname 'A'''];
+                    checksort = fetch(conn,q);
+
+                if ~isempty(checksort)
+                    % overwrite the user's oldest sort for this file
+                    sort_id = checksort(end); sort_id = sort_id{1};
+                    [success] = deleteChildren(sort_id, conn, ftp_conn);
+                    updateSort(sort_id, newsort, conn);
+                else
+                    [~, sort_id] = addSort(newsort, conn);
+                end
             end
-            
             for curclus = 1:length(clusnums) % For each of this file's clusters
                 
                 for alignmt=1:3
@@ -717,40 +721,44 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
                     foundeff=max(1,find([activlevel{:}]==max([activlevel{:}])));
                 end
 
-                % write result to excel file
+                if isdbrunning
+                [~, c_id] = addCluster(sort_id, clusnums(curclus),conn,ftp_conn);
+                [~, psth_id] = addPsth(c_id, conn, ftp_conn);
+                else
+                % if not database, write result to excel file
 
-                % get number of row in "database"
-    %             exl = actxserver('excel.application');
-    %             exlWkbk = exl.Workbooks;
-    %             exlFile = exlWkbk.Open([directory 'procdata.xlsx']);
-    %             exlSheet = exlFile.Sheets.Item(monknum);% e.g.: 2 = Sixx
-    %             robj = exlSheet.Columns.End(4);
-    %             numrows = robj.row;
-    %             if numrows==1048576 %empty document
-    %                 numrows=1;
-    %             end
-    %             Quit(exl);
-    %             
-    %             cd(directory);
-    %             % remove appendix
-    %             procname=procname(1:end-4);
-    %             % get current processed file list from excel file
-    %             [~,pfilelist] = xlsread('procdata.xlsx',monknum,['A2:A' num2str(numrows)]);
-    %             if logical(sum(ismember(pfilelist,procname))) %file has to have been processed already, but if for some reason not, then do not go further
-    %                 wline=find(ismember(pfilelist,procname))+1;
-    %             else
-    %                 continue
-    %             end
-    %             
-    %             xlswrite('procdata.xlsx', compart, monknum, sprintf('H%d',wline));
-    %             xlswrite('procdata.xlsx', {max([activlevel{foundeff}])}, monknum, sprintf('K%d',wline));
-    %             xlswrite('procdata.xlsx', {[activtype{foundeff}]}, monknum, sprintf('L%d',wline));
-    %             xlswrite('procdata.xlsx', {max([maxmean{foundeff}])}, monknum, sprintf('M%d',wline));
-    %             xlswrite('procdata.xlsx', {[profile{foundeff}]}, monknum, sprintf('N%d',wline));
-    %             xlswrite('procdata.xlsx', {[dirselective{foundeff}]}, monknum, sprintf('O%d',wline));
-    %             xlswrite('procdata.xlsx', {[bestlt{foundeff}]}, monknum, sprintf('P%d',wline));
-                [success, c_id] = addCluster(sort_id, clusnums(curclus),conn,ftp_conn);
-                [success, psth_id] = addPsth(c_id, conn, ftp_conn);
+%                 get number of row in "database"
+                exl = actxserver('excel.application');
+                exlWkbk = exl.Workbooks;
+                exlFile = exlWkbk.Open([directory 'procdata.xlsx']);
+                exlSheet = exlFile.Sheets.Item(monknum);% e.g.: 2 = Sixx
+                robj = exlSheet.Columns.End(4);
+                numrows = robj.row;
+                if numrows==1048576 %empty document
+                    numrows=1;
+                end
+                Quit(exl);
+                
+                cd(directory);
+                % remove appendix
+                procname=procname(1:end-4);
+                % get current processed file list from excel file
+                [~,pfilelist] = xlsread('procdata.xlsx',monknum,['A2:A' num2str(numrows)]);
+                if logical(sum(ismember(pfilelist,procname))) %file has to have been processed already, but if for some reason not, then do not go further
+                    wline=find(ismember(pfilelist,procname))+1;
+                else
+                    continue
+                end
+                
+                xlswrite('procdata.xlsx', compart, monknum, sprintf('H%d',wline));
+                xlswrite('procdata.xlsx', {max([activlevel{foundeff}])}, monknum, sprintf('K%d',wline));
+                xlswrite('procdata.xlsx', {[activtype{foundeff}]}, monknum, sprintf('L%d',wline));
+                xlswrite('procdata.xlsx', {max([maxmean{foundeff}])}, monknum, sprintf('M%d',wline));
+                xlswrite('procdata.xlsx', {[profile{foundeff}]}, monknum, sprintf('N%d',wline));
+                xlswrite('procdata.xlsx', {[dirselective{foundeff}]}, monknum, sprintf('O%d',wline));
+                xlswrite('procdata.xlsx', {[bestlt{foundeff}]}, monknum, sprintf('P%d',wline));
+                end
+                
             end % End of things to do for this cluster
         end % End of things to do for this file
     else
