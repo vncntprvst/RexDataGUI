@@ -54,7 +54,7 @@ function RexDataGUI_OpeningFcn(hObject, eventdata, handles, varargin)
 
 % Choose default command line output for RexDataGUI
 handles.output = hObject;
-global replacespikes user subject;
+global replacespikes user;
 replacespikes = 0;
 % tiny design changes
 set(hObject,'DefaultTextFontName','Calibri'); %'Color',[0.9 .9 .8]
@@ -74,26 +74,6 @@ end
 
 % Update handles structure
 guidata(hObject, handles);
-
-% % determines computer type  % moved it to displaym_files_create
-% archst  = computer('arch');
-%
-% global directory slash;
-%
-% if strcmp(archst, 'maci64')
-%     name = getenv('USER');
-%     if strcmp(name, 'nick')
-%         directory = '/Users/nick/Dropbox/filesforNick/';
-%     elseif strcmp(name, 'Frank')
-%         directory = '/Users/Frank/Desktop/monkeylab/data/';
-%     end
-%     slash = '/';
-% elseif strcmp(archst, 'win32') || strcmp(archst, 'win64')
-%     % for future users, make it name = getenv('username');
-%     directory = 'B:\data\Recordings\';
-%     slash = '\';
-% end
-
 
 % UIWAIT makes RexDataGUI wait for user response (see UIRESUME)
 % uiwait(handles.rdd);

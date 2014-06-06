@@ -50,23 +50,8 @@ function SummaryPlot_OpeningFcn(hObject, eventdata, handles, varargin)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 % varargin   command line arguments to SummaryPlot (see VARARGIN)
-global directory slash;
-if strcmp(getenv('username'),'SommerVD') ||...
-        strcmp(getenv('username'),'LabV') || ...
-        strcmp(getenv('username'),'Purkinje')|| ...
-        strcmp(getenv('username'),'JuanandKimi') || ...
-        strcmp(getenv('username'),'vp35')
-    directory = 'C:\Data\Recordings\';
-elseif strcmp(getenv('username'),'DangerZone')
-    directory = 'E:\data\Recordings\';
-elseif strcmp(getenv('username'),'Radu')
-    directory = 'E:\Spike_Sorting\';
-elseif strcmp(getenv('username'),'The Doctor')
-    directory = 'C:\Users\The Doctor\Data\';
-else
-    directory = 'B:\data\Recordings\';
-end
-slash = '\';
+% global directory slash user;
+global filename tasktype;
 
 % Choose default command line output for SummaryPlot
 handles.output = hObject;
@@ -86,7 +71,6 @@ end
 % set(gcf,'Color','white')
 
 % get the arguments passed to the GUI
-global filename tasktype;
 
 %if length(varargin)>3
 if 0
