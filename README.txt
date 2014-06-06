@@ -3,14 +3,11 @@
 *                                      *
 ****************************************
 
-RexGUI is a Matlab GUI designed to process and display recordings made with NIH's REX
-It runs on MATLAB version 2011b and older, and requires the signal processing toolbox.
+RexGUI is a Matlab GUI designed to process and display recordings made with NIH's REX It runs on MATLAB version 2011b and older, and requires the signal processing toolbox.
 
-The directories to recording files (REX's A and E files), and outputs from the GUI 
-(processed files, figures) have to be specified in the code, at multiple locations. 
-If you plan to contribute to the repository, preserve compatibilty with current users'
-settings by simply adding a "elseif" statement at appropriate locations (to find those,  
-make a search for "getenv('username')" and add your own username and, if necessary, path).  
+The directories to recording files (REX's A and E files) have to be specified in the function called SetUserDir. 
+Outputs from the GUI (processed files, figures) will use this directory as root.
+If you plan to contribute to the repository, preserve compatibilty with current users' settings by simply adding a "elseif" statement at the end of the list.
 
 Important note: the code assumes that data from different subjects are kept in separate
 folders, and that recording files' name start with the initial letter of the subject.

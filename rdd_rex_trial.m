@@ -1,4 +1,4 @@
-function [ecodeout, etimeout, spkchan, spk, arate, h, v, start_time, badtrial, curtrialsacInfo] = rdd_rex_trial(name, trial, selclus, reload)
+function [ecodeout, etimeout, spkchan, spk, arate, h, v, start_time, badtrial, curtrialsacInfo] = rdd_rex_trial(name, trial, spikechannel, reload)
 
 % [ecodeout, etimeout, spkchan, spk, arate, h, v, start_time, badtrial] 
 %     = rex_trial(name, trial)
@@ -51,7 +51,7 @@ badtrial = 1;
 % end
 
 if ~strcmp( name,rexloadedname ) || reload;
-     success = rex_load_processed( name, selclus );
+     success = rex_load_processed( name, spikechannel );
      if ~success
          s = sprintf( 'rex_trial:  could not load the data for %s (cannot find .mat or A and E files).', name );
          disp( s );
@@ -89,7 +89,7 @@ if ~isempty(allspk_clus)
     %selclus = 1;
     %end
     try
-        temp_allspk = allspk_clus{selclus};
+        temp_allspk = allspk_clus{spikechannel};
         spk = temp_allspk(trial,~isnan(temp_allspk(trial,:)));
     catch
         fprintf('Invalid cluster selected. Maximum is %d Setting to cluster 1\n',howmanyclus);
