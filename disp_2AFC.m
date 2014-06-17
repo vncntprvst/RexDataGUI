@@ -1,4 +1,4 @@
-function disp_2AFC(recname,datalign,selclus,aligncode,InterAxn)
+function disp_2AFC(recname,datalign,selclus,aligncode,InterAxn, varargin)
 % Called from Rex Data GUI when using Ecodes 465 as alignement (collapse
 % all directions together when doing that)
 % This function will sort data to compare either:
@@ -8,8 +8,13 @@ function disp_2AFC(recname,datalign,selclus,aligncode,InterAxn)
 %  We keep only trials where rule-selecting saccade was contralateral (see
 %  line 45 or so)
 % 8/22/2013 - VP
-fprintf(['Running: disp_2AFC.m\n']);
-fprintf([' Plotting data for: ' InterAxn '\n']);
+
+% Adapted on 6/3/2014 - ZMA to suppress all output when length(varargin)>0. Used for batch processing. 
+
+if length(varargin)==0;
+    fprintf(['Running: disp_2AFC.m\n']);
+    fprintf([' Plotting data for: ' InterAxn '\n']);
+end
 
 % Implicitly setting global variables as can't find where set
 global directory output;
@@ -171,8 +176,13 @@ switch InterAxn
         alladdevents{3}=crsaddevents(and(INS_Trials,Rule0_Trials)); 
         alladdevents{4}=crsaddevents(and(INS_Trials,Rule1_Trials));
     case 'BOTH'
-        disp_2AFC(recname,datalign,selclus,aligncode,'TT');
-        disp_2AFC(recname,datalign,selclus,aligncode,'Interaction');
+        if length(varargin)==0;
+            disp_2AFC(recname,datalign,selclus,aligncode,'TT');
+            disp_2AFC(recname,datalign,selclus,aligncode,'Interaction');
+        else
+            disp_2AFC(recname,datalign,selclus,aligncode,'TT', 1);
+            disp_2AFC(recname,datalign,selclus,aligncode,'Interaction', 1);
+        end
         return;
         
 end
@@ -182,7 +192,9 @@ end
 % end
 
 % Pulls up the figure window with set dimensions
-AFCplots=figure('color','white','position',[20   20  760   760]);
+if length(varargin)==0;
+    AFCplots=figure('color','white','position',[20   20  760   760]);
+end
 NC=1; % Number of columns in the plots
 
 Marker_Types={'k+' 'ko' 'k*' 'k.' 'ks' 'kd'};
@@ -256,50 +268,56 @@ for dataset=1:numrast
 %     rastpos=get(gca,'position');
 %     rastpos(2)=rastpos(2)+rastpos(4)*0.5;
 %     set(gca,'position',rastpos);
-
-    hrastplot(dataset)=subplot(numsubplot/NC,NC,dataset,'Layer','top', ...
-      'XTick',[],'YTick',[],'XColor','white','YColor','white', 'Parent', gcf);
+    
+    if length(varargin)==0;
+        hrastplot(dataset)=subplot(numsubplot/NC,NC,dataset,'Layer','top', ...
+        'XTick',[],'YTick',[],'XColor','white','YColor','white', 'Parent', gcf);
+    end
 
     
     %pre-alloc variable that keeps track of NaN trials
     isnantrial=zeros(1,size(rasters,1));
-    
-    hold on
-    for rastlines=1:size(rasters,1) %plotting rasters trial by trial
-        spiketimes=find(rasters(rastlines,start:stop)); %converting from a matrix representation to a time collection, within selected time range
-        if isnan(sum(rasters(rastlines,start:stop)))
-            isnantrial(rastlines)=1;
-            spiketimes(find(isnan(rasters(rastlines,start:stop))))=0; %#ok<FNDSB>
-        else
-            plot([spiketimes;spiketimes],[ones(size(spiketimes))*rastlines;ones(size(spiketimes))*rastlines-1],...
-                'color',cc(dataset,:),'LineStyle','-','LineWidth',1.5);
-        end
+
+    if length(varargin)==0;    
+        hold on
+        for rastlines=1:size(rasters,1) %plotting rasters trial by trial
+            spiketimes=find(rasters(rastlines,start:stop)); %converting from a matrix representation to a time collection, within selected time range
+            if isnan(sum(rasters(rastlines,start:stop)))
+                isnantrial(rastlines)=1;
+                spiketimes(find(isnan(rasters(rastlines,start:stop))))=0; %#ok<FNDSB>
+            else
+                plot([spiketimes;spiketimes],[ones(size(spiketimes))*rastlines;ones(size(spiketimes))*rastlines-1],...
+                    'color',cc(dataset,:),'LineStyle','-','LineWidth',1.5);
+            end
 %        plot(sactimes(rastlines),rastlines-0.5,'kd','MarkerSize', 3,'LineWidth', 0.7)
 %        plot(eyefixtimes(rastlines),rastlines-0.5,'kx','MarkerSize', 3,'LineWidth', 0.7)
 
 % Plotting indicative marks if they occur with the wanted time
         % window 
-        for ii=1:length(TimeInd)
-            plot(TimeInd{ii}(rastlines),rastlines-0.5,Marker_Types{ii},'MarkerSize', 3,'LineWidth', 0.7); 
-            if (TimeInd{ii}(rastlines)<TimeMax) && (TimeInd{ii}(rastlines)>TimeMin)  
-                CheckBox(dataset,ii)=1;
+            for ii=1:length(TimeInd)
+                plot(TimeInd{ii}(rastlines),rastlines-0.5,Marker_Types{ii},'MarkerSize', 3,'LineWidth', 0.7); 
+                if (TimeInd{ii}(rastlines)<TimeMax) && (TimeInd{ii}(rastlines)>TimeMin)  
+                    CheckBox(dataset,ii)=1;
+                end
             end
         end
-    end
-    set(hrastplot(dataset),'xlim',[1 length(start:stop)]);
-    axis(gca, 'off'); % axis tight sets the axis limits to the range of the data.
-    if dataset==1
-        s1=['File: ',recname ' Clus' num2str(selclus) ' - Aligned at ', alignname, poolstr1];
-        htitle=title(s1);
-        set(htitle,'Interpreter','none','FontName','calibri','FontSize',11);
+        set(hrastplot(dataset),'xlim',[1 length(start:stop)]);
+        axis(gca, 'off'); % axis tight sets the axis limits to the range of the data.
+        if dataset==1
+            s1=['File: ',recname ' Clus' num2str(selclus) ' - Aligned at ', alignname, poolstr1];
+            htitle=title(s1);
+            set(htitle,'Interpreter','none','FontName','calibri','FontSize',11);
+        end
     end
     
     %% Plot sdf
+    if length(varargin)==0;
 %    sdfplot(dataset)=subplot(numsubplot,1,(numsubplot/2)+1:(numsubplot/2)+(numsubplot/2),'Layer','top','Parent', gcf);
-    sdfplot(dataset)=subplot(numsubplot/NC,NC,[numrast+1:numsubplot],'Layer','top','Parent', gcf);
-    %sdfh = axes('Position', [.15 .65 .2 .2], 'Layer','top');
-    title('Spike Density Function','FontName','calibri','FontSize',11);
-    hold on;
+        sdfplot(dataset)=subplot(numsubplot/NC,NC,[numrast+1:numsubplot],'Layer','top','Parent', gcf);
+        %sdfh = axes('Position', [.15 .65 .2 .2], 'Layer','top');
+        title('Spike Density Function','FontName','calibri','FontSize',11);
+        hold on;
+    end
     if size(rasters,1)==1 %if only one good trial,useless plotting this
         sumall=NaN;
     else
@@ -310,17 +328,19 @@ for dataset=1:numrast
     sdf=fullgauss_filtconv(sumall,fsigma,0)./length(find(~isnantrial)).*1000;  %.*1000 to convert to spk/s
     sdf=sdf(fsigma+1:end-fsigma);
     
-    sdflines(dataset)=plot(sdf,'Color',cc(dataset,:),'LineWidth',1.8);
-    % Adding indicators to the legend. If an indicator is included then it
-    % is plotted at 0,0 and added to sdflines and appended to aligntype.
-    % This is only done once all of the rasters have already been plotted.
-    if dataset==numrast,
-        CheckBox=find(logical(sum(CheckBox)));
-        for jj=1:length(CheckBox)
-            sdflines(dataset+jj)=plot(0,0,Marker_Types{CheckBox(jj)},'MarkerSize', 3,'LineWidth', 0.7);
-            aligntype{dataset+jj}=Indicators{CheckBox(jj)};
-        end
-    end    
+    if length(varargin)==0;
+        sdflines(dataset)=plot(sdf,'Color',cc(dataset,:),'LineWidth',1.8);
+        % Adding indicators to the legend. If an indicator is included then it
+        % is plotted at 0,0 and added to sdflines and appended to aligntype.
+        % This is only done once all of the rasters have already been plotted.
+        if dataset==numrast,
+            CheckBox=find(logical(sum(CheckBox)));
+            for jj=1:length(CheckBox)
+                sdflines(dataset+jj)=plot(0,0,Marker_Types{CheckBox(jj)},'MarkerSize', 3,'LineWidth', 0.7);
+                aligntype{dataset+jj}=Indicators{CheckBox(jj)};
+            end
+        end    
+    end
     % Calculating standard errors
     sdfgrid = repmat(sdf, size(rasters(~isnantrial, start-fsigma:stop+fsigma), 1), 1);
     indsdf = spike_density(rasters(~isnantrial, start-fsigma:stop+fsigma), fsigma);
@@ -328,9 +348,10 @@ for dataset=1:numrast
     indsdf = indsdf(:, fsigma+1:end-fsigma);
     sd = sqrt(sum((indsdf-sdfgrid).^2)./size(rasters(~isnantrial, start-fsigma:stop+fsigma), 1))./sqrt(size(rasters(~isnantrial, start-fsigma:stop+fsigma), 1));
 
-    sdlines(dataset, 1)=plot(sdf+sd, ':', 'Color',cc(dataset, :), 'LineWidth', 1);
-    sdlines(dataset, 2)=plot(sdf-sd, ':', 'Color',cc(dataset, :), 'LineWidth', 1);
-    
+    if length(varargin)==0;
+        sdlines(dataset, 1)=plot(sdf+sd, ':', 'Color',cc(dataset, :), 'LineWidth', 1);
+        sdlines(dataset, 2)=plot(sdf-sd, ':', 'Color',cc(dataset, :), 'LineWidth', 1);
+    end
     %% ZMA extract average FRs around ??
     if aligncode == 465;
       befspan = 1;
@@ -374,16 +395,18 @@ for dataset=1:numrast
     FRfortestT = cat_variable_size_row(FRfortestT, Tot_r');
 
     %%
-    axis(gca,'tight');
-    box off;
-    set(gca,'Color','white','TickDir','out','FontName','calibri','FontSize',8);
-    hylabel=ylabel(gca,'Firing rate (spikes/s)','FontName','calibri','FontSize',8);
-    currylim=get(gca,'YLim');
-    
-    if ~isempty(rasters) % drawing the alignment bar
-        patch([repmat((alignidx-start)-2,1,2) repmat((alignidx-start)+2,1,2)], ...
-            [[0 currylim(2)] fliplr([0 currylim(2)])], ...
-            [0 0 0 0],[1 0 0],'EdgeColor','none','FaceAlpha',0.5);
+    if length(varargin)==0;
+        axis(gca,'tight');
+        box off;
+        set(gca,'Color','white','TickDir','out','FontName','calibri','FontSize',8);
+        hylabel=ylabel(gca,'Firing rate (spikes/s)','FontName','calibri','FontSize',8);
+        currylim=get(gca,'YLim');
+        
+        if ~isempty(rasters) % drawing the alignment bar
+            patch([repmat((alignidx-start)-2,1,2) repmat((alignidx-start)+2,1,2)], ...
+                [[0 currylim(2)] fliplr([0 currylim(2)])], ...
+                [0 0 0 0],[1 0 0],'EdgeColor','none','FaceAlpha',0.5);
+        end
     end
     
     
@@ -392,38 +415,10 @@ for dataset=1:numrast
     clear TimeInd; % Just in case    
 end
 %FRout %output ZMA
+
 %% Quick stats ZMA
-if strcmp(InterAxn, 'TT')
-    h1 = ttest2(FRfortestB(1,:), FRfortestB(2,:));
-    h2 = ttest2(FRfortestB(3,:), FRfortestB(4,:));
-    h3 = ttest2(FRfortestA(1,:), FRfortestA(2,:));
-    h4 = ttest2(FRfortestA(3,:), FRfortestA(4,:));
-    bigh = [h1 h3; h2 h4];
-elseif strcmp(InterAxn, 'Interaction')
-    h1 = ttest2(FRfortestB(1,:), FRfortestB(2,:));
-    h2 = ttest2(FRfortestB(1,:), FRfortestB(3,:));
-    h3 = ttest2(FRfortestB(2,:), FRfortestB(4,:));
-    h4 = ttest2(FRfortestB(3,:), FRfortestB(4,:));
-    h5 = ttest2(FRfortestA(1,:), FRfortestA(2,:));
-    h6 = ttest2(FRfortestA(1,:), FRfortestA(3,:));
-    h7 = ttest2(FRfortestA(2,:), FRfortestA(4,:));
-    h8 = ttest2(FRfortestA(3,:), FRfortestA(4,:));   
-    bigh = [h1 h5; h2 h6; h3 h7; h4 h8];
-    % anova
-    FRvecB = [FRfortestB(1,:) FRfortestB(2,:) FRfortestB(3,:) FRfortestB(4,:)]; %put into vector
-    FRvecB = FRvecB(isfinite(FRvecB)); % remove NaNs from cat_variable_size_row
-    FRvecA = [FRfortestA(1,:) FRfortestA(2,:) FRfortestA(3,:) FRfortestA(4,:)]; %put into vector
-    FRvecA = FRvecA(isfinite(FRvecA));
-    FRvecT = [FRfortestT(1,:) FRfortestT(2,:) FRfortestT(3,:) FRfortestT(4,:)]; %put into vector
-    FRvecT = FRvecT(isfinite(FRvecT));
-    TT = [0.*ones(1,FRout(1,3)) 0.*ones(1,FRout(2,3)) 1.*ones(1,FRout(3,3)) 1.*ones(1,FRout(4,3))];
-    RR = [0.*ones(1,FRout(1,3)) 1.*ones(1,FRout(2,3)) 0.*ones(1,FRout(3,3)) 1.*ones(1,FRout(4,3))];
-    pB = anovan(FRvecB, {TT RR}, 'display', 'off');%, 'model', 'interaction');
-    pA = anovan(FRvecA, {TT RR}, 'display', 'off');%, 'model', 'interaction');
-    pT = anovan(FRvecT, {TT RR}, 'display', 'off');%, 'model', 'interaction'); 
-    pAll = [pB' pA' pT'];
-    hAll = pAll<0.05
-end
+batchstats(InterAxn, FRout, FRfortestB, FRfortestA, FRfortestT);
+
 %% last adjustments and save - routine for multiple figures produced
 % for fignum=1:2
 %     
@@ -503,66 +498,68 @@ end
 % end
 
 %% last adjustments and save
-if ReSize==1
-    % 1) Get figure positions
-    allrastpos=cell2mat(get(hrastplot,'position'));
-    sdfpos=cell2mat(get(sdfplot,'position'));
+if length(varargin)==0;
+    if ReSize==1
+        % 1) Get figure positions
+        allrastpos=cell2mat(get(hrastplot,'position'));
+        sdfpos=cell2mat(get(sdfplot,'position'));
 
-    disttosdf=allrastpos(numrast,2)-sdfpos(1,2);
-    % Note: sdfpos(1,2) is fine as all y elements are identical we'll grab #1
+        disttosdf=allrastpos(numrast,2)-sdfpos(1,2);
+        % Note: sdfpos(1,2) is fine as all y elements are identical we'll grab #1
 
-    % This code pushes down all the rasters to be immediate superior to the SDF
-    % plot - not sure the reason for this implementation? Cancelled for now.
-    if disttosdf>0.2
-        allrastpos(:,2)=allrastpos(:,2)-disttosdf/numsubplot;
-        allrastpos=mat2cell(allrastpos,ones(1,size(allrastpos,1))); %reconversion to cell .. un brin penible
-        set(hrastplot,{'position'},allrastpos);
+        % This code pushes down all the rasters to be immediate superior to the SDF
+        % plot - not sure the reason for this implementation? Cancelled for now.
+        if disttosdf>0.2
+            allrastpos(:,2)=allrastpos(:,2)-disttosdf/numsubplot;
+            allrastpos=mat2cell(allrastpos,ones(1,size(allrastpos,1))); %reconversion to cell .. un brin penible
+            set(hrastplot,{'position'},allrastpos);
+        end
     end
-end
 
-%% plot a legend in SDF graph
+    %% plot a legend in SDF graph
 
-hlegdir = legend(sdflines, aligntype','Location','NorthEast');
-set(hlegdir,'Interpreter','none', 'Box', 'off','LineWidth',1.5,'FontName','calibri','FontSize',9);
+    hlegdir = legend(sdflines, aligntype','Location','NorthEast');
+    set(hlegdir,'Interpreter','none', 'Box', 'off','LineWidth',1.5,'FontName','calibri','FontSize',9);
 
-%% setting sdf plot y axis
-ylimdata=get(findobj(sdfplot,'Type','line'),'YDATA');
-if ~iscell(ylimdata)
-    ylimdata={ylimdata};
-end
-if sum((cell2mat(cellfun(@(x) logical(isnan(sum(x))), ylimdata, 'UniformOutput', false)))) %if NaN data
-    ylimdata=ylimdata(~(cell2mat(cellfun(@(x) logical(isnan(sum(x))),...
-        ylimdata, 'UniformOutput', false))));
-end
-if sum(logical(cellfun(@(x) length(x),ylimdata)-1))~=length(ylimdata) %some strange data with a single value
-    ylimdata=ylimdata(logical(cellfun(@(x) length(x),ylimdata)-1));
-end
-newylim=[0, ceil(max(max(cell2mat(ylimdata)))/10)*10]; %rounding up to the decimal
-set(sdfplot,'YLim',newylim);
-% x axis tick labels
-set(sdfplot,'XTick',[0:100:(stop-start)]);
-set(sdfplot,'XTickLabel',[-plotstart:100:plotstop]);
+    %% setting sdf plot y axis
+    ylimdata=get(findobj(sdfplot,'Type','line'),'YDATA');
+    if ~iscell(ylimdata)
+        ylimdata={ylimdata};
+    end
+    if sum((cell2mat(cellfun(@(x) logical(isnan(sum(x))), ylimdata, 'UniformOutput', false)))) %if NaN data
+        ylimdata=ylimdata(~(cell2mat(cellfun(@(x) logical(isnan(sum(x))),...
+            ylimdata, 'UniformOutput', false))));
+    end
+    if sum(logical(cellfun(@(x) length(x),ylimdata)-1))~=length(ylimdata) %some strange data with a single value
+        ylimdata=ylimdata(logical(cellfun(@(x) length(x),ylimdata)-1));
+    end
+    newylim=[0, ceil(max(max(cell2mat(ylimdata)))/10)*10]; %rounding up to the decimal
+    set(sdfplot,'YLim',newylim);
+    % x axis tick labels
+    set(sdfplot,'XTick',[0:100:(stop-start)]);
+    set(sdfplot,'XTickLabel',[-plotstart:100:plotstop]);
 
-%% condense plot
-%     set(subplots,'Units','pixels');
-%     figuresize=getpixelposition(AFCplots(fignum));
-%     figuresize(4)=figuresize(4)*0.9;
-%     set(gcf,'position',figuresize);
+    %% condense plot
+    %     set(subplots,'Units','pixels');
+    %     figuresize=getpixelposition(AFCplots(fignum));
+    %     figuresize(4)=figuresize(4)*0.9;
+    %     set(gcf,'position',figuresize);
 
-%% save figure
-% to check if file already exists and open it:
-% eval(['!' exportfigname '.pdf']);
+    %% save figure
+    % to check if file already exists and open it:
+    % eval(['!' exportfigname '.pdf']);
 
-if output.savfig
-    exportfigname=[directory,'figures\2AFC\',recname,'_Clus',num2str(selclus), '_', InterAxn '_' alignname, poolstr2];
-    %basic png fig:
-    newpos =  get(AFCplots,'Position')/60;
-    set(AFCplots,'PaperUnits','inches','PaperPosition',newpos);
-    print(AFCplots, '-dpng', '-noui', '-opengl','-r600', exportfigname);
-    fprintf(' Saved figure\n');
-    %vector graphics if needed
-%         plot2svg([exportfigname,'.svg'],AFCplots, 'png');
-    delete(AFCplots); %if needed
+    if output.savfig
+        exportfigname=[directory,'figures\2AFC\',recname,'_Clus',num2str(selclus), '_', InterAxn '_' alignname, poolstr2];
+        %basic png fig:
+        newpos =  get(AFCplots,'Position')/60;
+        set(AFCplots,'PaperUnits','inches','PaperPosition',newpos);
+        print(AFCplots, '-dpng', '-noui', '-opengl','-r600', exportfigname);
+        fprintf(' Saved figure\n');
+        %vector graphics if needed
+    %         plot2svg([exportfigname,'.svg'],AFCplots, 'png');
+        delete(AFCplots); %if needed
+    end
 end
 
 sdfsave = [directory, 'SDFs/',recname,'_Clus', num2str(selclus), '_',alignname, poolstr2, '_SDFs'];

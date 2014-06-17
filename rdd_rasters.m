@@ -60,7 +60,7 @@ function [alignedrasters, alignindex, trialindex, alltrigtosac, ...
 global rexnumtrials;
 
 tasktype=get(findobj('Tag','taskdisplay'),'String');
-if isempty(tasktype) && aligntocode(1)==4650;
+if isempty(tasktype);
     tasktype = 'twoafc';
 end
 
