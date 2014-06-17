@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 function disp_2AFC(recname,datalign,selclus,aligncode,InterAxn, varargin)
+=======
+function disp_2AFC(recname,datalign,spikechannel,aligncode,InterAxn)
+>>>>>>> FETCH_HEAD
 % Called from Rex Data GUI when using Ecodes 465 as alignement (collapse
 % all directions together when doing that)
 % This function will sort data to compare either:
@@ -176,6 +180,7 @@ switch InterAxn
         alladdevents{3}=crsaddevents(and(INS_Trials,Rule0_Trials)); 
         alladdevents{4}=crsaddevents(and(INS_Trials,Rule1_Trials));
     case 'BOTH'
+<<<<<<< HEAD
         if length(varargin)==0;
             disp_2AFC(recname,datalign,selclus,aligncode,'TT');
             disp_2AFC(recname,datalign,selclus,aligncode,'Interaction');
@@ -183,6 +188,10 @@ switch InterAxn
             disp_2AFC(recname,datalign,selclus,aligncode,'TT', 1);
             disp_2AFC(recname,datalign,selclus,aligncode,'Interaction', 1);
         end
+=======
+        disp_2AFC(recname,datalign,spikechannel,aligncode,'TT');
+        disp_2AFC(recname,datalign,spikechannel,aligncode,'Interaction');
+>>>>>>> FETCH_HEAD
         return;
         
 end
@@ -301,6 +310,7 @@ for dataset=1:numrast
                 end
             end
         end
+<<<<<<< HEAD
         set(hrastplot(dataset),'xlim',[1 length(start:stop)]);
         axis(gca, 'off'); % axis tight sets the axis limits to the range of the data.
         if dataset==1
@@ -308,6 +318,15 @@ for dataset=1:numrast
             htitle=title(s1);
             set(htitle,'Interpreter','none','FontName','calibri','FontSize',11);
         end
+=======
+    end
+    set(hrastplot(dataset),'xlim',[1 length(start:stop)]);
+    axis(gca, 'off'); % axis tight sets the axis limits to the range of the data.
+    if dataset==1
+        s1=['File: ',recname ' Clus' num2str(spikechannel) ' - Aligned at ', alignname, poolstr1];
+        htitle=title(s1);
+        set(htitle,'Interpreter','none','FontName','calibri','FontSize',11);
+>>>>>>> FETCH_HEAD
     end
     
     %% Plot sdf
@@ -471,7 +490,7 @@ batchstats(InterAxn, FRout, FRfortestB, FRfortestA, FRfortestT);
 %     subplots=findobj(AFCplots(fignum),'Type','axes');
 %     axespos=cell2mat(get(subplots,'Position'));
 %     figtitleh = title(subplots(find(axespos(:,2)==max(axespos(:,2)),1)),...
-%         ['File ',recname,' Clus',num2str(selclus),' Alignment: ',aligntype{2*fignum-1},' vs ',...
+%         ['File ',recname,' Clus',num2str(spikechannel),' Alignment: ',aligntype{2*fignum-1},' vs ',...
 %         aligntype{2*fignum}, ' Aligned at ', alignname, poolstr1]);
 %     set(figtitleh,'Interpreter','none');
 %     
@@ -486,7 +505,7 @@ batchstats(InterAxn, FRout, FRfortestB, FRfortestA, FRfortestT);
 %     % eval(['!' exportfigname '.pdf']);
 % if output.savfig
 %     comp=fnaligntype{fignum};
-%     exportfigname=[directory,'figures\2AFC\',recname,'_',comp,'_Clus',num2str(selclus), '_', alignname, poolstr2];
+%     exportfigname=[directory,'figures\2AFC\',recname,'_',comp,'_Clus',num2str(spikechannel), '_', alignname, poolstr2];
 %     %basic png fig:
 %     newpos =  get(AFCplots(fignum),'Position')/60;
 %     set(AFCplots(fignum),'PaperUnits','inches','PaperPosition',newpos);
@@ -521,6 +540,7 @@ if length(varargin)==0;
     hlegdir = legend(sdflines, aligntype','Location','NorthEast');
     set(hlegdir,'Interpreter','none', 'Box', 'off','LineWidth',1.5,'FontName','calibri','FontSize',9);
 
+<<<<<<< HEAD
     %% setting sdf plot y axis
     ylimdata=get(findobj(sdfplot,'Type','line'),'YDATA');
     if ~iscell(ylimdata)
@@ -560,9 +580,49 @@ if length(varargin)==0;
     %         plot2svg([exportfigname,'.svg'],AFCplots, 'png');
         delete(AFCplots); %if needed
     end
+=======
+%% setting sdf plot y axis
+ylimdata=get(findobj(sdfplot,'Type','line'),'YDATA');
+if ~iscell(ylimdata)
+    ylimdata={ylimdata};
+end
+if sum((cell2mat(cellfun(@(x) logical(isnan(sum(x))), ylimdata, 'UniformOutput', false)))) %if NaN data
+    ylimdata=ylimdata(~(cell2mat(cellfun(@(x) logical(isnan(sum(x))),...
+        ylimdata, 'UniformOutput', false))));
+end
+if sum(logical(cellfun(@(x) length(x),ylimdata)-1))~=length(ylimdata) %some strange data with a single value
+    ylimdata=ylimdata(logical(cellfun(@(x) length(x),ylimdata)-1));
+end
+newylim=[0, ceil(max(max(cell2mat(ylimdata)))/10)*10]; %rounding up to the decimal
+set(sdfplot,'YLim',newylim);
+% x axis tick labels
+set(sdfplot,'XTick',[0:100:(stop-start)]);
+set(sdfplot,'XTickLabel',[-plotstart:100:plotstop]);
+
+%% condense plot
+%     set(subplots,'Units','pixels');
+%     figuresize=getpixelposition(AFCplots(fignum));
+%     figuresize(4)=figuresize(4)*0.9;
+%     set(gcf,'position',figuresize);
+
+%% save figure
+% to check if file already exists and open it:
+% eval(['!' exportfigname '.pdf']);
+
+if output.savfig
+    exportfigname=[directory,'figures\2AFC\',recname,'_Clus',num2str(spikechannel), '_', InterAxn '_' alignname, poolstr2];
+    %basic png fig:
+    newpos =  get(AFCplots,'Position')/60;
+    set(AFCplots,'PaperUnits','inches','PaperPosition',newpos);
+    print(AFCplots, '-dpng', '-noui', '-opengl','-r600', exportfigname);
+    fprintf(' Saved figure\n');
+    %vector graphics if needed
+%         plot2svg([exportfigname,'.svg'],AFCplots, 'png');
+    delete(AFCplots); %if needed
+>>>>>>> FETCH_HEAD
 end
 
-sdfsave = [directory, 'SDFs/',recname,'_Clus', num2str(selclus), '_',alignname, poolstr2, '_SDFs'];
+sdfsave = [directory, 'SDFs/',recname,'_Clus', num2str(spikechannel), '_',alignname, poolstr2, '_SDFs'];
 if output.savsdf
     save(sdfsave, 'allsdf');
 end

@@ -41,9 +41,15 @@ end
 global clustercodes
 %% Which Cluster?
 %%%%%%%%%%%%%%%%%
-selclus = str2double(get(findobj('Tag','whichclus'),'String'));
+selclus_order = get(findobj('Tag','whichclus'),'Value'); %Which element of the list
+spikechannel = get(findobj('Tag','whichclus'),'String');
+if iscell(spikechannel)
+    spikechannel = str2double(spikechannel{selclus_order}(1));
+else
+    spikechannel = str2double(spikechannel);
+end
 
-[ecodeout, etimeout, ~, ~, ~, h, v, ~, badtrial, curtrialsacInfo] = rdd_rex_trial(rdd_filename, trialnumber, selclus, reload);%, rdt_includeaborted);
+[ecodeout, etimeout, ~, ~, ~, h, v, ~, badtrial, curtrialsacInfo] = rdd_rex_trial(rdd_filename, trialnumber, spikechannel, reload);%, rdt_includeaborted);
 
     clear noiseIdx ssacbound esacbound last; %newsacstartposition newsacendposition
     

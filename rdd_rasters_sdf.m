@@ -1,4 +1,4 @@
- function datalign = rdd_rasters_sdf(rdd_filename, trialdirs, plotrasts)
+ function datalign = rdd_rasters_sdf(rdd_filename, trialdirs, spikechannel, plotrasts)
 % rdd_rasters_sdf(rdd_filename, tasktype, trialdirs)
 % display subplots of rasters and sdf overlayed
 
@@ -201,18 +201,20 @@ includebad= get(findobj('Tag','badtrialsbutton'),'value');
 
 %% which channel to use, in case there are multiple channels ?
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if strcmp(get(get(findobj('Tag','chanelspanel'),'SelectedObject'),'Tag'),'ch1button');
-    spikechannel = 1;
-elseif strcmp(get(get(findobj('Tag','chanelspanel'),'SelectedObject'),'Tag'),'ch2button');
-    spikechannel = 2;
-else
-    disp('Channel not recognized. Default: Channel 1');
-    spikechannel = 1;
-end
 
-if strcmp(rdd_filename(end-2:end),'Sp2') || strcmp(rdd_filename(end-2:end),'mod'); % using data from Spike2 processing
- spikechannel = str2double(get(findobj('Tag','whichclus'),'String'));
-end
+% if strcmp(get(get(findobj('Tag','chanelspanel'),'SelectedObject'),'Tag'),'ch1button');
+%     spikechannel = 1;
+% elseif strcmp(get(get(findobj('Tag','chanelspanel'),'SelectedObject'),'Tag'),'ch2button');
+%     spikechannel = 2;
+% else
+%     disp('Channel not recognized. Default: Channel 1');
+%     spikechannel = 1;
+% end
+% 
+% if strcmp(rdd_filename(end-2:end),'Sp2') || strcmp(rdd_filename(end-2:end),'mod'); % using data from Spike2 processing
+%  spikechannel = get(findobj('Tag','whichclus'),'Value');
+% end
+
 
 %% Fusing task type and direction into ecode
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

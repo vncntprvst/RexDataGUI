@@ -1,4 +1,4 @@
-function disp_2AFC_v1(recname,datalign,selclus,aligncode)
+function disp_2AFC_v1(recname,datalign,spikechannel,aligncode)
 % This is an identical copy of ZMAs original disp_2AFC and is included in
 % order to properly test the legacy vs. current version.
 %
@@ -247,7 +247,7 @@ for fignum=1:2
     subplots=findobj(AFCplots(fignum),'Type','axes');
     axespos=cell2mat(get(subplots,'Position'));
     figtitleh = title(subplots(find(axespos(:,2)==max(axespos(:,2)),1)),...
-        ['File ',recname,' Clus',num2str(selclus),' Alignment: ',aligntype{2*fignum-1},' vs ',...
+        ['File ',recname,' Clus',num2str(spikechannel),' Alignment: ',aligntype{2*fignum-1},' vs ',...
         aligntype{2*fignum}, ' Aligned at ', alignname, poolstr1]);
     set(figtitleh,'Interpreter','none');
     
@@ -261,7 +261,7 @@ for fignum=1:2
     % to check if file already exists and open it:
     % eval(['!' exportfigname '.pdf']);
     comp=fnaligntype{fignum};
-    exportfigname=[directory,'figures\2AFC\',recname,'_',comp,'_Clus',num2str(selclus), '_', alignname, poolstr2];
+    exportfigname=[directory,'figures\2AFC\',recname,'_',comp,'_Clus',num2str(spikechannel), '_', alignname, poolstr2];
     %basic png fig:
     newpos =  get(AFCplots(fignum),'Position')/60;
     set(AFCplots(fignum),'PaperUnits','inches','PaperPosition',newpos);
@@ -271,6 +271,6 @@ for fignum=1:2
     delete(AFCplots(fignum)); %if needed
 end
 
-sdfsave = [directory, 'SDFs/',recname,'_Clus', num2str(selclus), '_',alignname, poolstr2, '_SDFs'];
+sdfsave = [directory, 'SDFs/',recname,'_Clus', num2str(spikechannel), '_',alignname, poolstr2, '_SDFs'];
 save(sdfsave, 'allsdf');
 end

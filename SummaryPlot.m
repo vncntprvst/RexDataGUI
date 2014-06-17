@@ -50,23 +50,9 @@ function SummaryPlot_OpeningFcn(hObject, eventdata, handles, varargin)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 % varargin   command line arguments to SummaryPlot (see VARARGIN)
-global directory slash;
-if strcmp(getenv('username'),'SommerVD') ||...
-        strcmp(getenv('username'),'LabV') || ...
-        strcmp(getenv('username'),'Ramanujan')|| ...
-        strcmp(getenv('username'),'JuanandKimi') || ...
-        strcmp(getenv('username'),'vp35')
-    directory = 'C:\Data\Recordings\';
-elseif strcmp(getenv('username'),'DangerZone')
-    directory = 'E:\data\Recordings\';
-elseif strcmp(getenv('username'),'Radu')
-    directory = 'E:\Spike_Sorting\';
-elseif strcmp(getenv('username'),'The Doctor')
-    directory = 'C:\Users\The Doctor\Data\';
-else
-    directory = 'B:\data\Recordings\';
-end
-slash = '\';
+
+% global directory slash user;
+global filename tasktype;
 
 % Choose default command line output for SummaryPlot
 handles.output = hObject;
@@ -86,9 +72,9 @@ end
 % set(gcf,'Color','white')
 
 % get the arguments passed to the GUI
-global filename tasktype;
 
-if length(varargin)>3
+%if length(varargin)>3
+if 0
     plotstart=str2num(varargin{4});
     plotstop=str2num(varargin{5});
     fsigma=str2num(varargin{6});
@@ -470,6 +456,7 @@ for algfile=1:length(filelist)
     plotstart=600;
     plotstop=500;
     fsigma=20;
+    causeker = 0;
     cc=lines(length(dataaligned));
     
     % numsubplot=length(dataaligned)*3; %dividing the panel in three compartments with wequal number of subplots
@@ -908,7 +895,11 @@ tasklist=arguments{3};
 algdir=[directory,'processed',slash,'aligned',slash];
 for algfile=1:length(filelist)
     filename=filelist{algfile};
-    tasktype=tasklist{algfile};
+    if size(tasklist, 1) == 1
+        tasktype=tasklist;
+    else
+        tasktype=tasklist{algfile};
+    end
     set(findobj('tag','dispfilename'),'string',filename);
     set(findobj('tag','disptaskname'),'string',tasktype);
     if length(arguments)<4
@@ -941,6 +932,7 @@ for algfile=1:length(filelist)
     plotstart=1000;
     plotstop=500;
     fsigma=20;
+    causker = 0;
     cc=lines(length(dataaligned));
     
     numsubplot=length(dataaligned)*3; %dividing the panel in three compartments with wequal number of subplots
@@ -1588,8 +1580,14 @@ else
     exportfn=filename;
     exporttsk=tasktype;
 end
-selclus = get(findobj('Tag','whichclus'),'String');
-exportfigname=[directory,'figures\',exportfn,'_',exporttsk,'_',alignment,'_cl_',selclus];
+selclus_order = get(findobj('Tag','whichclus'),'Value'); %Which element of the list
+spikechannel = get(findobj('Tag','whichclus'),'String');
+if iscell(spikechannel)
+    spikechannel = str2double(spikechannel{selclus_order}(1));
+else
+    spikechannel = str2double(spikechannel);
+end
+exportfigname=[directory,'figures\',exportfn,'_cl_',num2str(spikechannel),'_',exporttsk,'_',alignment];
 exportfig=figure('color','white','position',figuresize);
 for k=1:length(subplots)
     copyobj(subplots(k),exportfig);
