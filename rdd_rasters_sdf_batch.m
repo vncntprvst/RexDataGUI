@@ -1,4 +1,4 @@
- function datalign = rdd_rasters_sdf(rdd_filename, trialdirs, plotrasts, ecode, spikechan)
+function datalign = rdd_rasters_sdf_batch(rdd_filename, trialdirs, plotrasts, ecode, spikechan)
 % rdd_rasters_sdf(rdd_filename, tasktype, trialdirs)
 % display subplots of rasters and sdf overlayed
 
@@ -433,6 +433,7 @@ for cnc=1:numcodes
        % includebad=0;
         numplots=numcodes;
     end
+    [rdd_nt, trialdirs] = data_info( rdd_filename, 1);
     [rasters,aidx, trialidx, trigtosacs, sactotrigs, trigtovis, vistotrigs, eyeh,eyev,eyevel,...
         amplitudes,peakvels,peakaccs,allgreyareas,badidx,ssd,rawsigs,alignrawidx] = rdd_rasters( rdd_filename, spikechannel, ...
         allaligncodes(cnc,:), nonecodes, includebad, alignsacnum, aligntype, collapsecode, adjconditions, getraw);
@@ -584,7 +585,7 @@ if strcmp(aligntype,'stop') % make additional analysis
 %% Displaying 2AFC Results
 %=========================================================================%
 elseif strcmp(tasktype, 'twoafc')
-    AFC_ver=2;
+    AFC_ver=2; % DO NOT CHANGE
     %twoafc()
     %uiwait
     InterAxn='BOTH';
@@ -597,7 +598,7 @@ elseif strcmp(tasktype, 'twoafc')
         case 1 % Run original version
             disp_2AFC_v1(rdd_filename,datalign,spikechannel,ecodealign);
         case 2 % Run new version (w/ interactions)
-            disp_2AFC(rdd_filename,datalign,spikechannel,ecodealign,InterAxn);
+            disp_2AFC(rdd_filename,datalign,spikechannel,ecodealign,InterAxn, 1);
         case 3 % Run both versions
             disp_2AFC(rdd_filename,datalign,spikechannel,ecodealign,'BOTH');
             disp_2AFC_v1(rdd_filename,datalign,spikechannel,ecodealign);

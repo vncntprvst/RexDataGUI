@@ -1,4 +1,4 @@
 
 function subjectlist=GetSubjects
 
-subjectlist={'Rigel';'Sixx';'Hilda';'Shuffles';'Pierre'};
+subjectlist={'Rigel';'Sixx';'Hilda';'Shuffles';'Keef';'Pierre'};
