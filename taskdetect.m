@@ -23,7 +23,9 @@ end
 
 firstind = find(codes(1, :) >= 4000 & codes(1, :) < 8000, 1); % finds the index of the basecode, only works if basecode is dropped at same index in each row
 
-alltasktypes={'vg_saccades','base2rem50','memguided','st_saccades','gapstop','gapsac','delayedsac','optiloc','tokens','fixation','twoafc','periodCmd'};
+alltasktypes={'vg_saccades','base2rem50','memguided',...
+    'st_saccades','gapstop','gapsac','delayedsac',...
+    'optiloc','tokens','fixation','twoafc','periodCmd'};
 %fsttlecode=floor(allcodes(1,2)/10)*10;
 if size(codes,1)>1 %for a full file of ecodes
     ecodetypes=unique(floor(codes(:,firstind)/10)*10); %gives away the different ecode if mixed task

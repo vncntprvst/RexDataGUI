@@ -68,6 +68,11 @@ if strcmp(user,'Vincent')
     set(selboxh(strcmp(get(selboxh,'tag'),'hildaselect')),'position',[0.1667 0.02 0.7083 0.3857]);
     set(selboxh(strcmp(get(selboxh,'tag'),'sixxselect')),'position',[0.1667 0.32 0.7083 0.3857]);
     set(selboxh(strcmp(get(selboxh,'tag'),'rigelselect')),'position',[0.1667 0.62 0.7083 0.3857]);
+elseif strcmp(user,'Adam')
+    set(selboxh(strcmp(get(selboxh,'tag'),'shufflesselect')),'visible','off')
+    set(selboxh(strcmp(get(selboxh,'tag'),'hildaselect')),'visible','off');
+    set(selboxh(strcmp(get(selboxh,'tag'),'sixxselect')),'visible','off');
+    set(selboxh(strcmp(get(selboxh,'tag'),'rigelselect')),'visible','off');
 end
 % use varargin to allow for direct input of the name of the file to be analyzed.
 % see http://www.mathworks.com/help/techdoc/creating_guis/f10-998580.html
@@ -976,6 +981,8 @@ elseif strcmp(monkeydir,'hildaselect')
     subject=subjectlist{3};
 elseif strcmp(monkeydir, 'shufflesselect')
     subject=subjectlist{4};
+elseif strcmp(monkeydir, 'pierreselect')
+    subject=subjectlist{5};
 end
 
 
