@@ -525,12 +525,16 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
         end
         
         try % see if database is running
-            conn = connect2DB();        
-            ftp_conn = ftp('152.3.216.217', 'Radu', 'monkey');
+            dbname='vp_sldata';
+            CCNdb = connect2DB(dbname);        
+            %ftp_CCNdb = connect2ftp(dbname); We don't have a ftp server,
+            %and that would mean writing main password in a file. Nope
+            % see connect2ftp.m to use cygwin instead
             date_today = datestr(date,'yyyy-mm-dd');
             chamber = 'UNKNOWN';
-            user = getUser(conn);
+            user = getUser(CCNdb);
             isdbrunning=1;
+            
         catch
             isdbrunning=0;
         end
@@ -542,7 +546,7 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
             origin = regexprep(origin,'Sp2','Spike2');
             origin = regexprep(origin,'REX','Rex');
             if strcmp(origin,'Spike2');
-            fcomments = getComments(trimmed_procname, conn);
+            fcomments = getComments(trimmed_procname, CCNdb);
             else
                 fcomments = ' ';
             end
@@ -615,7 +619,7 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
                     'chamber', chamber,...
                     'user', user);
 
-                [~, ~, rec_id] = addRecord(newrecord, conn);
+                [~, ~, rec_id] = addRecord(newrecord, CCNdb);
 
                 % overwrite a sort, or make a new one?
                 newsort = struct('name', trimmed_procname,...
@@ -625,15 +629,15 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
 
                 q = ['SELECT sort_id FROM sorts s INNER JOIN recordings r ON s.recording_fid = r.recording_id WHERE user = ''' user ''' AND '...
                         'origin = ''' origin ''' AND r.a_file = ''' trimmed_procname 'A'''];
-                    checksort = fetch(conn,q);
+                    checksort = fetch(CCNdb,q);
 
                 if ~isempty(checksort)
                     % overwrite the user's oldest sort for this file
                     sort_id = checksort(end); sort_id = sort_id{1};
-                    [success] = deleteChildren(sort_id, conn, ftp_conn);
-                    updateSort(sort_id, newsort, conn);
+                    [success] = deleteChildren(sort_id, CCNdb, ftp_CCNdb);
+                    updateSort(sort_id, newsort, CCNdb);
                 else
-                    [~, sort_id] = addSort(newsort, conn);
+                    [~, sort_id] = addSort(newsort, CCNdb);
                 end
             end
             for curclus = 1:length(clusnums) % For each of this file's clusters
@@ -727,8 +731,8 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
                 end
 
                 if isdbrunning
-                [~, c_id] = addCluster(sort_id, clusnums(curclus),conn,ftp_conn);
-                [~, psth_id] = addPsth(c_id, conn, ftp_conn);
+                [~, c_id] = addCluster(sort_id, clusnums(curclus),CCNdb,ftp_CCNdb);
+                [~, psth_id] = addPsth(c_id, CCNdb, ftp_CCNdb);
                 else
                 % if not database, write result to excel file
 

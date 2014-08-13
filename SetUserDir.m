@@ -1,6 +1,6 @@
 %find user, directory and slash type
 
-function [directory,slash,user]=SetUserDir
+function [directory,slash,user,dbdir]=SetUserDir
 
 % determines computer type
 archst  = computer('arch');
@@ -25,6 +25,7 @@ elseif strcmp(archst, 'win32') || strcmp(archst, 'win64')
         user='generic';
     elseif strcmp(getenv('username'),'DangerZone')
         directory = 'E:\data\Recordings\';
+        dbdir = 'E:\JDBC';
         user='Vincent';
     elseif strcmp(getenv('username'),'Radu')
         directory = 'E:\Spike_Sorting\';
