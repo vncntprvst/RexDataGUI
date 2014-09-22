@@ -64,15 +64,18 @@ set(hObject,'DefaultTextFontName','Calibri'); %'Color',[0.9 .9 .8]
 %only display selection box for appropriate subjects
 selboxh=get(findobj('tag','monkeyselect'),'Children');
 if strcmp(user,'Vincent')
-    set(selboxh(strcmp(get(selboxh,'tag'),'shufflesselect')),'visible','off')
+    set(selboxh(strcmp(get(selboxh,'tag'),'shufflesselect')),'visible','off');
+    set(selboxh(strcmp(get(selboxh,'tag'),'pierreselect')),'visible','off');
     set(selboxh(strcmp(get(selboxh,'tag'),'hildaselect')),'position',[0.1667 0.02 0.7083 0.3857]);
     set(selboxh(strcmp(get(selboxh,'tag'),'sixxselect')),'position',[0.1667 0.32 0.7083 0.3857]);
     set(selboxh(strcmp(get(selboxh,'tag'),'rigelselect')),'position',[0.1667 0.62 0.7083 0.3857]);
-elseif strcmp(user,'Adam')
-    set(selboxh(strcmp(get(selboxh,'tag'),'shufflesselect')),'visible','off')
+elseif (strcmp(user,'Adam') || strcmp(user,'Anna'))
+    set(selboxh(strcmp(get(selboxh,'tag'),'shufflesselect')),'visible','off');
     set(selboxh(strcmp(get(selboxh,'tag'),'hildaselect')),'visible','off');
     set(selboxh(strcmp(get(selboxh,'tag'),'sixxselect')),'visible','off');
     set(selboxh(strcmp(get(selboxh,'tag'),'rigelselect')),'visible','off');
+else
+    set(selboxh(strcmp(get(selboxh,'tag'),'pierreselect')),'visible','off');
 end
 % use varargin to allow for direct input of the name of the file to be analyzed.
 % see http://www.mathworks.com/help/techdoc/creating_guis/f10-998580.html
@@ -530,8 +533,6 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
             %ftp_CCNdb = connect2ftp(dbname); We don't have a ftp server,
             %and that would mean writing main password in a file. Nope
             % see connect2ftp.m to use cygwin instead
-            date_today = datestr(date,'yyyy-mm-dd');
-            chamber = 'UNKNOWN';
             user = getUser(CCNdb);
             isdbrunning=1;
             
@@ -614,6 +615,8 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
  
              if isdbrunning
                 % add record to database if not already there
+                chamber = getChamber(trimmed_procname, CCNdb);
+                date_today = datestr(date,'yyyy-mm-dd');
                 newrecord = struct('name',trimmed_procname,...
                     'date',date_today,...
                     'chamber', chamber,...
@@ -627,14 +630,14 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
                     'user', user, 'origin', origin,...
                     'parent', rec_id);
 
-                q = ['SELECT sort_id FROM sorts s INNER JOIN recordings r ON s.recording_fid = r.recording_id WHERE user = ''' user ''' AND '...
+                q = ['SELECT sort_id FROM sorts s INNER JOIN recordings r ON s.recording_id_fk = r.recording_id WHERE user = ''' user ''' AND '...
                         'origin = ''' origin ''' AND r.a_file = ''' trimmed_procname 'A'''];
                     checksort = fetch(CCNdb,q);
 
                 if ~isempty(checksort)
                     % overwrite the user's oldest sort for this file
                     sort_id = checksort(end); sort_id = sort_id{1};
-                    [success] = deleteChildren(sort_id, CCNdb, ftp_CCNdb);
+                    [success] = deleteChildren(sort_id, CCNdb); %removed ftp_CCNdb
                     updateSort(sort_id, newsort, CCNdb);
                 else
                     [~, sort_id] = addSort(newsort, CCNdb);
@@ -731,8 +734,8 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
                 end
 
                 if isdbrunning
-                [~, c_id] = addCluster(sort_id, clusnums(curclus),CCNdb,ftp_CCNdb);
-                [~, psth_id] = addPsth(c_id, CCNdb, ftp_CCNdb);
+                [~, c_id] = addCluster(sort_id, clusnums(curclus),CCNdb); %removed ftp_CCNdb
+                [~, psth_id] = addPsth(c_id, CCNdb); % removed ftp_CCNdb
                 else
                 % if not database, write result to excel file
 
