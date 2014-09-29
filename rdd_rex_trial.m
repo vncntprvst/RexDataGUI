@@ -36,7 +36,6 @@ if nargin<4
     reload=0;
 end
 
-
 ecodeout = [];
 etimeout = [];
 spkchan = 0;

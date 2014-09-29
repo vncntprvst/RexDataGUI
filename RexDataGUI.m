@@ -315,13 +315,13 @@ try
     rfname=rfname(1:length(rfname)-1);
     overwrite = 1;
     
-     if ~strcmp(rfname(1),subject(1))
-            procname=cat(2,subject(1), rfname);
-            set(findobj('Tag','filenamedisplay'),'String',procname);
-        else
-            procname=rfname;
-            set(findobj('Tag','filenamedisplay'),'String',rfname);
-     end
+    if ~strcmp(rfname(1),subject(1))
+        procname=cat(2,subject(1), rfname);
+        set(findobj('Tag','filenamedisplay'),'String',procname);
+    else
+        procname=rfname;
+        set(findobj('Tag','filenamedisplay'),'String',rfname);
+    end
     
 catch
     disp('Aborted raw import.');
@@ -348,7 +348,7 @@ if overwrite
         %then update the directory listing
         
         dirlisting = dir([directory,'processed',slash,subject,slash]);
-         
+        
         % Order by date
         filedates=cell2mat({dirlisting(:).datenum});
         [~,fdateidx] = sort(filedates,'descend');
@@ -507,7 +507,7 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
         
         %overwrite option: legacy from the time when one could want to
         %process and analyze at the same time. Not enabled at the moment.
-        %Only processed files will be analyzed. 
+        %Only processed files will be analyzed.
         overwriteAll = 0; % This switch should stay hardcoded, no need for user option
         if  overwriteAll %(exist(strcat({procdir},rfname,{'.mat'}), 'file')==2)
             % Construct question dialog
@@ -529,7 +529,7 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
         
         try % see if database is running
             dbname='vp_sldata';
-            CCNdb = connect2DB(dbname);        
+            CCNdb = connect2DB(dbname);
             %ftp_CCNdb = connect2ftp(dbname); We don't have a ftp server,
             %and that would mean writing main password in a file. Nope
             % see connect2ftp.m to use cygwin instead
@@ -547,30 +547,13 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
             origin = regexprep(origin,'Sp2','Spike2');
             origin = regexprep(origin,'REX','Rex');
             if strcmp(origin,'Spike2');
-            fcomments = getComments(trimmed_procname, CCNdb);
+                fcomments = getComments(trimmed_procname, CCNdb);
             else
                 fcomments = ' ';
             end
+            
             % crude segmentation: set depth limits for top cortex / dentate / bottom cortex
-            if monknum==1
-                cdn_depth=19000;
-                bcx_depth=22000;
-            elseif monknum==2
-                cdn_depth=11000;
-                bcx_depth=17000;
-            elseif monknum==3
-                cdn_depth=19000;
-                bcx_depth=26000;
-            end
-            recdepth=regexp(procname,'_\d+_','match');
-            recdepth=str2num([recdepth{:}(2:end-2) '0']);
-            if (recdepth<cdn_depth)
-                compart={'top_cortex'};
-            elseif (recdepth>=cdn_depth && recdepth<=bcx_depth)
-                compart={'dentate'};
-            elseif (recdepth>bcx_depth)
-                compart={'bottom_cortex'};
-            end
+            compart=reccompart(subject,procname);
             
             if overwrite
                 
@@ -612,28 +595,33 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
             for a = 1:length(clusnames)-1
                 clusnums(a) = str2num(clusnames{a}(1));
             end
- 
-             if isdbrunning
+            
+            if isdbrunning
                 % add record to database if not already there
                 chamber = getChamber(trimmed_procname, CCNdb);
+                part=regexp(trimmed_procname,'^\w\d+','match'); part = part{:}(2:end);
                 date_today = datestr(date,'yyyy-mm-dd');
+                compart=reccompart(subject,procname,part,CCNdb);
                 newrecord = struct('name',trimmed_procname,...
                     'date',date_today,...
                     'chamber', chamber,...
+                    'session', part,...
+                    'task', get(findobj('Tag','taskdisplay'),'String'),...
+                    'recloc', compart,...
                     'user', user);
-
+                
                 [~, ~, rec_id] = addRecord(newrecord, CCNdb);
-
+                
                 % overwrite a sort, or make a new one?
                 newsort = struct('name', trimmed_procname,...
                     'comments', fcomments,...
                     'user', user, 'origin', origin,...
                     'parent', rec_id);
-
+                
                 q = ['SELECT sort_id FROM sorts s INNER JOIN recordings r ON s.recording_id_fk = r.recording_id WHERE user = ''' user ''' AND '...
-                        'origin = ''' origin ''' AND r.a_file = ''' trimmed_procname 'A'''];
-                    checksort = fetch(CCNdb,q);
-
+                    'origin = ''' origin ''' AND r.a_file = ''' trimmed_procname 'A'''];
+                checksort = fetch(CCNdb,q);
+                
                 if ~isempty(checksort)
                     % overwrite the user's oldest sort for this file
                     sort_id = checksort(end); sort_id = sort_id{1};
@@ -644,50 +632,56 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
                 end
             end
             for curclus = 1:length(clusnums) % For each of this file's clusters
-                
+                try
                 for alignmt=1:3
                     set(findobj('Tag','aligntimepanel'),'SelectedObject',alignbh(strcmp(get(alignbh,'tag'),alignmtname{alignmt})))
-                    getaligndata{alignmt} = rdd_rasters_sdf(procname, trialdirs, clusnums(curclus), 0); % align data, don't plot rasters
-
-                    %% statistics on rasters: do stats on collapsed data and individual direction, if > 7 trials
-                    if length([getaligndata{alignmt}.trials])>=7
-                        getaligndata{alignmt}=getaligndata{alignmt}(~cellfun('isempty',{getaligndata{alignmt}.alignidx})); % remove empty conditions
-
-                        %additional measures: cc and auc
-                        % cross-correlation values: pretty reliable indicator to sort out pre-event, peri-event and post-event activities
-                        % possible limits are: pressac <-10ms before sac , >-10ms perisac <+10ms, <10ms postsac
-                        %                     [peakcct, peaksdf]=crosscorel(procname,getaligndata{alignmt},'all',0); %Get peakcc for all directions. Don't plot
-                        % area under curve: separate cells with low baseline FR and sharp burst from higher baseline neurons, especially ramping ones
-                        % possible limit at 2000
-                        try
-                            [dirauc, dirslopes, peaksdft,nadirsdft]=findauc(procname,getaligndata{alignmt},'all'); %Get auc, slopes, peaksdft for all directions
-                        catch
-                            [dirauc, dirslopes, peaksdft,nadirsdft]=deal(nan(1,length(getaligndata{alignmt})));
+                    try
+                        getaligndata{alignmt} = rdd_rasters_sdf(procname, trialdirs, clusnums(curclus), 0); % align data, don't plot rasters
+                        %% statistics on rasters: do stats on collapsed data and individual direction, if > 7 trials
+                        if length([getaligndata{alignmt}.trials])>=7
+                            getaligndata{alignmt}=getaligndata{alignmt}(~cellfun('isempty',{getaligndata{alignmt}.alignidx})); % remove empty conditions
+                            
+                            %additional measures: cc and auc
+                            % cross-correlation values: pretty reliable indicator to sort out pre-event, peri-event and post-event activities
+                            % possible limits are: pressac <-10ms before sac , >-10ms perisac <+10ms, <10ms postsac
+                            %                     [peakcct, peaksdf]=crosscorel(procname,getaligndata{alignmt},'all',0); %Get peakcc for all directions. Don't plot
+                            % area under curve: separate cells with low baseline FR and sharp burst from higher baseline neurons, especially ramping ones
+                            % possible limit at 2000
+                            try
+                                [dirauc, dirslopes, peaksdft,nadirsdft]=findauc(procname,getaligndata{alignmt},'all'); %Get auc, slopes, peaksdft for all directions
+                            catch
+                                [dirauc, dirslopes, peaksdft,nadirsdft]=deal(nan(1,length(getaligndata{alignmt})));
+                            end
+                            % record values in respective array
+                            for psda=1:length(getaligndata{alignmt})
+                                %                         getaligndata{alignmt}(psda).peakramp.peakcct=peakcct(psda); % peak cross-correlation time
+                                %                         getaligndata{alignmt}(psda).peakramp.peaksdf=peaksdf(psda); % main sdf peak, within -200/+199 of aligntime
+                                getaligndata{alignmt}(psda).peakramp.peaksdft=peaksdft(psda); % time of peak sdf
+                                getaligndata{alignmt}(psda).peakramp.nadirsdft=nadirsdft(psda); % time of  sdf low point
+                                getaligndata{alignmt}(psda).peakramp.auc=dirauc(psda); % normalized area under curve
+                                getaligndata{alignmt}(psda).peakramp.slopes=dirslopes(:,psda); % slope of activity to peak (or drought, if negative)
+                            end
+                            
+                            % main stats (adding an extra array for collapsed values)
+                            try
+                                [p_sac,h_sac]=eventraststats(getaligndata{alignmt},alignmtname{alignmt});
+                            catch
+                                [p_sac,h_sac]=deal(nan(1,length(getaligndata{alignmt})));
+                            end
+                            for psda=1:length(getaligndata{alignmt})+1
+                                getaligndata{alignmt}(psda).stats.p=p_sac(psda,:);
+                                getaligndata{alignmt}(psda).stats.h=h_sac(psda,:);
+%                               getaligndata{alignmt}(psda).stats.p_rmanov=p_rmanov(psda,:);
+%                               getaligndata{alignmt}(psda).stats.mcstats=mcstats(psda,:);
+                            end
+                        else
+                            getaligndata{alignmt}(1).peakramp=[];
+                            for psda=1:length(getaligndata{alignmt})+1
+                                getaligndata{alignmt}(psda).stats.h=[];
+                            end
                         end
-                        % record values in respective array
-                        for psda=1:length(getaligndata{alignmt})
-                            %                         getaligndata{alignmt}(psda).peakramp.peakcct=peakcct(psda); % peak cross-correlation time
-                            %                         getaligndata{alignmt}(psda).peakramp.peaksdf=peaksdf(psda); % main sdf peak, within -200/+199 of aligntime
-                            getaligndata{alignmt}(psda).peakramp.peaksdft=peaksdft(psda); % time of peak sdf
-                            getaligndata{alignmt}(psda).peakramp.nadirsdft=nadirsdft(psda); % time of  sdf low point
-                            getaligndata{alignmt}(psda).peakramp.auc=dirauc(psda); % area under curve
-                            getaligndata{alignmt}(psda).peakramp.slopes=dirslopes(:,psda); % slope of activity to peak (or drought, if negative)
-                        end
-
-                        % main stats (adding an extra array for collapsed
-                        % values)
-                        [p_sac,h_sac,p_rmanov,mcstats]=eventraststats(getaligndata{alignmt},alignmtname{alignmt});
-                        for psda=1:length(getaligndata{alignmt})+1
-                            getaligndata{alignmt}(psda).stats.p=p_sac(psda,:);
-                            getaligndata{alignmt}(psda).stats.h=h_sac(psda,:);
-                            getaligndata{alignmt}(psda).stats.p_rmanov=p_rmanov(psda,:);
-                            getaligndata{alignmt}(psda).stats.mcstats=mcstats(psda,:);
-                        end
-                    else
-                        getaligndata{alignmt}(1).peakramp=[];
-                        for psda=1:length(getaligndata{alignmt})+1
-                            getaligndata{alignmt}(psda).stats.h=[];
-                        end
+                    catch
+                        continue
                     end
                 end
                 % export data
@@ -696,14 +690,14 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
                 end
                 guidata(findobj('Tag','exportdata'),getaligndata);
                 exportdata_Callback(findobj('tag','exportdata'), eventdata, handles);
-
+                
                 % if statistically significant event related activity in
                 % any alignment, categorize activity
-
+                
                 if sum(~cellfun('isempty',arrayfun(@(x) x.stats, cell2mat(arrayfun(@(x) x, getaligndata)),'UniformOutput',false))) &&...
-                        nansum(cell2mat(arrayfun(@(x) x.stats.h, cell2mat(arrayfun(@(x) x,getaligndata)),...
+                        nansum(cell2mat(arrayfun(@(x) x.stats.h, cell2mat(arrayfun(@(x) x, getaligndata)),...
                         'UniformOutput',false))) %checking if any useful stats to categorize
-
+                    
                     [activlevel,activtype,maxmean,profile,dirselective,bestlt]=catstatres(getaligndata);
                     if ~sum([activlevel{:}])
                         [activtype,profile,dirselective,maxmean,activlevel,bestlt]=deal({0});
@@ -711,7 +705,7 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
                 else
                     [activtype,profile,dirselective,maxmean,activlevel,bestlt]=deal({0});
                 end
-
+                
                 % print vignette figure of every alignement (not just
                 % statistically significant result)
                 effectcat={'sac','vis','rew'};
@@ -721,10 +715,10 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
                         % somehow
                         summary_procname = regexprep(procname, '(_Sp2$)',['_Sp2_cl_' num2str(clusnums(curclus))]);
                         summary_procname = regexprep(summary_procname, '(_REX$)',['_REX_cl_' num2str(clusnums(curclus))]);
-                        SummaryPlot(effectcat{effnum},summary_procname,get(findobj('Tag','taskdisplay'),'String'),getaligndata{effnum});
-                        close(gcf);
+                        %                         SummaryPlot(effectcat{effnum},summary_procname,get(findobj('Tag','taskdisplay'),'String'),getaligndata{effnum});
+                        %                         close(gcf);
                     catch
-                        close(gcf);
+                        %                         close(gcf);
                     end
                 end
                 if sum([activlevel{:}]>1)
@@ -732,45 +726,48 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
                 else
                     foundeff=max(1,find([activlevel{:}]==max([activlevel{:}])));
                 end
-
+                
                 if isdbrunning
-                [~, c_id] = addCluster(sort_id, clusnums(curclus),CCNdb); %removed ftp_CCNdb
-                [~, psth_id] = addPsth(c_id, CCNdb); % removed ftp_CCNdb
+                    [~, c_id] = addCluster(sort_id, clusnums(curclus),CCNdb); %removed ftp_CCNdb
+                    [~, ~] = addPsth(c_id, clusnums(curclus), CCNdb); % removed ftp_CCNdb
+                    [ ~, ~ ] = addStats(c_id, getaligndata, effectcat, CCNdb);
                 else
-                % if not database, write result to excel file
-
-%                 get number of row in "database"
-                exl = actxserver('excel.application');
-                exlWkbk = exl.Workbooks;
-                exlFile = exlWkbk.Open([directory 'procdata.xlsx']);
-                exlSheet = exlFile.Sheets.Item(monknum);% e.g.: 2 = Sixx
-                robj = exlSheet.Columns.End(4);
-                numrows = robj.row;
-                if numrows==1048576 %empty document
-                    numrows=1;
+                    % if not database, write result to excel file
+                    
+                    %                 get number of row in "database"
+                    exl = actxserver('excel.application');
+                    exlWkbk = exl.Workbooks;
+                    exlFile = exlWkbk.Open([directory 'procdata.xlsx']);
+                    exlSheet = exlFile.Sheets.Item(monknum);% e.g.: 2 = Sixx
+                    robj = exlSheet.Columns.End(4);
+                    numrows = robj.row;
+                    if numrows==1048576 %empty document
+                        numrows=1;
+                    end
+                    Quit(exl);
+                    
+                    cd(directory);
+                    % remove appendix
+                    procname=procname(1:end-4);
+                    % get current processed file list from excel file
+                    [~,pfilelist] = xlsread('procdata.xlsx',monknum,['A2:A' num2str(numrows)]);
+                    if logical(sum(ismember(pfilelist,procname))) %file has to have been processed already, but if for some reason not, then do not go further
+                        wline=find(ismember(pfilelist,procname))+1;
+                    else
+                        continue
+                    end
+                    
+                    xlswrite('procdata.xlsx', compart, monknum, sprintf('H%d',wline));
+                    xlswrite('procdata.xlsx', {max([activlevel{foundeff}])}, monknum, sprintf('K%d',wline));
+                    xlswrite('procdata.xlsx', {[activtype{foundeff}]}, monknum, sprintf('L%d',wline));
+                    xlswrite('procdata.xlsx', {max([maxmean{foundeff}])}, monknum, sprintf('M%d',wline));
+                    xlswrite('procdata.xlsx', {[profile{foundeff}]}, monknum, sprintf('N%d',wline));
+                    xlswrite('procdata.xlsx', {[dirselective{foundeff}]}, monknum, sprintf('O%d',wline));
+                    xlswrite('procdata.xlsx', {[bestlt{foundeff}]}, monknum, sprintf('P%d',wline));
                 end
-                Quit(exl);
-                
-                cd(directory);
-                % remove appendix
-                procname=procname(1:end-4);
-                % get current processed file list from excel file
-                [~,pfilelist] = xlsread('procdata.xlsx',monknum,['A2:A' num2str(numrows)]);
-                if logical(sum(ismember(pfilelist,procname))) %file has to have been processed already, but if for some reason not, then do not go further
-                    wline=find(ismember(pfilelist,procname))+1;
-                else
-                    continue
+                catch
+                        continue
                 end
-                
-                xlswrite('procdata.xlsx', compart, monknum, sprintf('H%d',wline));
-                xlswrite('procdata.xlsx', {max([activlevel{foundeff}])}, monknum, sprintf('K%d',wline));
-                xlswrite('procdata.xlsx', {[activtype{foundeff}]}, monknum, sprintf('L%d',wline));
-                xlswrite('procdata.xlsx', {max([maxmean{foundeff}])}, monknum, sprintf('M%d',wline));
-                xlswrite('procdata.xlsx', {[profile{foundeff}]}, monknum, sprintf('N%d',wline));
-                xlswrite('procdata.xlsx', {[dirselective{foundeff}]}, monknum, sprintf('O%d',wline));
-                xlswrite('procdata.xlsx', {[bestlt{foundeff}]}, monknum, sprintf('P%d',wline));
-                end
-                
             end % End of things to do for this cluster
         end % End of things to do for this file
     else
@@ -820,8 +817,8 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
             disp('rdd_rasters_sdf call from RexDataGui failed');
             return;
         end
-
-            dataaligned=dataaligned(~cellfun('isempty',{dataaligned.alignidx}));
+        
+        dataaligned=dataaligned(~cellfun('isempty',{dataaligned.alignidx}));
         %% do stats
         [p_sac,h_sac,p_rmanov,mcstats]=raststats(dataaligned);
         for psda=1:length(dataaligned)
@@ -865,7 +862,7 @@ dbstop(s);
 rdd_filename=get(findobj('Tag','filenamedisplay'),'String');
 [rdd_nt, trialdirs] = data_info( rdd_filename );
 try
-
+    
     if strcmp(rdd_filename(end-2:end),'Sp2'); % using data from Spike2 processing
         spikechannel = get(findobj('Tag','whichclus'),'Value');
     else
@@ -877,7 +874,7 @@ catch err
     disp('rdd_rasters_sdf call from RexDataGui replot failed');
     return;
 end
-    guidata(findobj('Tag','exportdata'),dataaligned);
+guidata(findobj('Tag','exportdata'),dataaligned);
 
 % --- Executes on button press in exportdata.
 function exportdata_Callback(hObject, eventdata, handles)
@@ -975,7 +972,7 @@ subjectlist=GetSubjects;
 % get list of subject select boxes
 selboxh=get(findobj('tag','monkeyselect'),'Children');
 if strcmp(user,'Vincent')
-	set(selboxh(strcmp(get(selboxh,'tag'),'sixxselect')),'value',1);
+    set(selboxh(strcmp(get(selboxh,'tag'),'sixxselect')),'value',1);
 end
 
 %setting process directory
@@ -1399,8 +1396,8 @@ tasktype=get(findobj('Tag','taskdisplay'),'String');
 prealtime=get(findobj('Tag','msbefore'),'String');
 postaltime=get(findobj('Tag','msafter'),'String');
 sigval=get(findobj('Tag','sigmaval'),'String');
-rastsort=get(findobj('Tag','sumplotrastsort'),'Value')-1; 
-kernel=get(findobj('Tag','sumplotsdfkernel'),'Value')-1; 
+rastsort=get(findobj('Tag','sumplotrastsort'),'Value')-1;
+kernel=get(findobj('Tag','sumplotsdfkernel'),'Value')-1;
 dataaligned=guidata(findobj('Tag','exportdata'));
 if strcmp(tasktype,'optiloc')
     SummaryPlot_ol(dataaligned,filename,tasktype);
@@ -1508,7 +1505,7 @@ subjselec=get(get(findobj('Tag','monkeyselect'),'children') ,'Value');
 subject=subjectlist{~cellfun(@isempty,(regexpi(subjseleclist{logical([subjselec{:}])},subjectlist)))};
 %list directory
 dirlisting = dir([directory,'processed',slash,subject,slash]); %('B:\data\Recordings\processed\Rigel');
-   
+
 fileNames = {dirlisting.name};  % Put the file names in a cell array
 
 if hObject==findobj('Tag','displayfbt_files')
@@ -1519,7 +1516,7 @@ if hObject==findobj('Tag','displayfbt_files')
     dirlisting = {dirlisting(:).name};
     dirlisting = dirlisting(fdateidx);
     dirlisting = dirlisting(~cellfun('isempty',strfind(dirlisting,'mat')));
-%     dirlisting = dirlisting(~cellfun('isempty',strfind(dirlisting,'REX')));
+    %     dirlisting = dirlisting(~cellfun('isempty',strfind(dirlisting,'REX')));
     dirlisting = dirlisting(cellfun('isempty',strfind(dirlisting,'myBreakpoints')));
     dirlisting = cellfun(@(x) x(1:end-4), dirlisting, 'UniformOutput', false);
     set(findobj('Tag','displaymfiles'),'string',dirlisting);
@@ -1530,7 +1527,7 @@ elseif hObject==findobj('Tag','displayfbt_session')
         ['^' subject(1) '\d+'], 'match');           % initial letter  followed by a set of digits 1 or larger
     inFiles = index(~cellfun(@isempty,index));  % Get the names of the matching files in a cell array
     sessionNumbers = cellfun(@(x) strrep(x, subject(1), ' '), inFiles, 'UniformOutput', false);
-
+    
     
     if ~isempty(sessionNumbers)
         dispsession = cat(1,sessionNumbers{:});
@@ -1696,6 +1693,6 @@ function rawsigoption_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 if strcmp(get(gcbo, 'Checked'),'on')
     set(gcbo, 'Checked', 'off');
-else 
+else
     set(gcbo, 'Checked', 'on');
 end

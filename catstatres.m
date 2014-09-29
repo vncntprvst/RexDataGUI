@@ -110,10 +110,10 @@ for lustat=1:length(alignt_q)
         end
         
         % add 1 for significant p_rmanov
-        pmanov=arrayfun(@(x) (x{:}.p_rmanov)<0.05, {getaligndata{alignt_q(lustat)}(~cellfun(@isempty, {getaligndata{alignt_q(lustat)}.stats})).stats});
-        if sum(pmanov)>=size(getaligndata{alignt_q(lustat)},2)-1
-            activlevel{alignt_q(lustat)}=activlevel{alignt_q(lustat)}+1;
-        end
+%         pmanov=arrayfun(@(x) (x{:}.p_rmanov)<0.05, {getaligndata{alignt_q(lustat)}(~cellfun(@isempty, {getaligndata{alignt_q(lustat)}.stats})).stats});
+%         if sum(pmanov)>=size(getaligndata{alignt_q(lustat)},2)-1
+%             activlevel{alignt_q(lustat)}=activlevel{alignt_q(lustat)}+1;
+%         end
         
         % applying qualifier
         if activlevel{alignt_q(lustat)}>1

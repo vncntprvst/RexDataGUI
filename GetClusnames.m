@@ -1,5 +1,5 @@
 function clusnames = GetClusnames(input_args)
-%UNTITLED2 Summary of this function goes here
+%GetClusnames Summary of this function goes here
 %   Detailed explanation goes here
 if strcmp(input_args(end-2:end),'REX')
     clusnames = {'1',' '};
@@ -17,24 +17,24 @@ else
         comments = true;
     end
     if comments
-        a = 1;
-        clusnames{a} = fgetl(fhandle);
-        while ischar(clusnames{a})
-            a = a+1;
-            clusnames{a} = fgetl(fhandle);
+        clusidx = 1;
+        clusnames{clusidx} = fgetl(fhandle);
+        while ischar(clusnames{clusidx})
+            clusidx = clusidx+1;
+            clusnames{clusidx} = fgetl(fhandle);
         end
-        clusnames{a} = [];
+        clusnames{clusidx} = [];
         fclose(fhandle);
     else
-        b = []; % count non empty allspk_clus entries
-        for a = 1:length(allspk_clus)
-            if nansum(nansum(allspk_clus{a}))
-                b = [b a];
+        nzent = []; % count non empty allspk_clus entries
+        for clusidx = 1:length(allspk_clus)
+            if nansum(nansum(allspk_clus{clusidx}))
+                nzent = [nzent clusidx];
             end
         end
-        clusnames = cell(1,length(b));
-        for a = 1:length(b)
-            clusnames{a} = num2str(b(a));
+        clusnames = cell(1,length(nzent));
+        for clusidx = 1:length(nzent)
+            clusnames{clusidx} = num2str(nzent(clusidx));
         end
     end
 end

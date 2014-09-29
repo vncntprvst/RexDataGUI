@@ -46,8 +46,24 @@ elseif strcmp(archst, 'win32') || strcmp(archst, 'win64')
     if logical(regexp(connlist,'OK'))
         %in case multiple mapped drives, add some code here
         carrets=regexpi(connlist,'\r\n|\n|\r');
-        servrep=connlist(regexp(connlist,':','start')-1:carrets(find(carrets>regexp(connlist,':','start'),1))-1);
-        servrep=regexprep(servrep,'[^\w\\|.|:|-'']','');
-        mapdr=servrep(1:2);servrep=servrep(3:end);servrep=regexprep(servrep,'\\','/');
+        if ~length(regexp(connlist,':','start'))
+            disp('connect remote drive to place files on server')
+        elseif length(regexp(connlist,':','start'))==1
+            servrep=connlist(regexp(connlist,':','start')-1:carrets(find(carrets>regexp(connlist,':','start'),1))-1);
+            servrep=regexprep(servrep,'[^\w\\|.|:|-'']','');
+            mapdr=servrep(1:2);servrep=servrep(3:end);servrep=regexprep(servrep,'\\','/');
+        elseif length(regexp(connlist,':','start'))==2
+            servs=regexp(connlist,':','start')-1;
+            for servl=1:length(servs)
+                if logical(strfind(regexprep(connlist(servs(servl):carrets(find(carrets>servs(servl),1))-1),'[^\w\\|.|:|-'']',''),...
+                'ccn-sommerserv.win.duke.edu'))
+                    servrep=regexprep(connlist(servs(servl):carrets(find(carrets>servs(servl),1))-1),'[^\w\\|.|:|-'']','');
+                    mapdr=servrep(1:2);servrep=servrep(3:end);servrep=regexprep(servrep,'\\','/');
+                    break;
+                end
+            end
+        end
+    else 
+        [servrep,mapdr]=deal([]); 
     end
 end

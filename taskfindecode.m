@@ -80,6 +80,16 @@ elseif strcmp(tasktype,'gapsac')
     tgtcode=684;
     tgtoffcode=103;
     saccode=704;
+elseif strcmp(tasktype, 'periodCmd')
+    basecode=480; 
+    %then all other codes are foudn with reference to reward (1030) or next
+    %trial initiation (1035)
+    fixcode=103;
+    fixoffcode=103;
+    tgtcode=103;
+    tgtoffcode=103;
+    saccode=103;
+    stopcode=103;
 else
     disp('task type no recognized');
     return
