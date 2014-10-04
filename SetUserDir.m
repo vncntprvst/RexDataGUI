@@ -37,6 +37,7 @@ elseif strcmp(archst, 'win32') || strcmp(archst, 'win64')
     else strcmp(getenv('username'),'Vincent')
         directory = 'B:\data\Recordings\';
         user='Vincent';
+        dbldir = 'B:\JDBC';
         mapddataf='vincedata';
     end
     slash = '\';
@@ -52,7 +53,7 @@ elseif strcmp(archst, 'win32') || strcmp(archst, 'win64')
             servrep=connlist(regexp(connlist,':','start')-1:carrets(find(carrets>regexp(connlist,':','start'),1))-1);
             servrep=regexprep(servrep,'[^\w\\|.|:|-'']','');
             mapdr=servrep(1:2);servrep=servrep(3:end);servrep=regexprep(servrep,'\\','/');
-        elseif length(regexp(connlist,':','start'))==2
+        elseif length(regexp(connlist,':','start'))>=2
             servs=regexp(connlist,':','start')-1;
             for servl=1:length(servs)
                 if logical(strfind(regexprep(connlist(servs(servl):carrets(find(carrets>servs(servl),1))-1),'[^\w\\|.|:|-'']',''),...
