@@ -16,11 +16,15 @@ if length(varargin)==0;
     fprintf([' Plotting data for: ' InterAxn '\n']);
 end
 
+% if length(varargin)==1;
+%     InterAxn='Interaction';
+% end
+
 % Implicitly setting global variables as can't find where set
 global directory output;
 output.savfig=0;
-output.savsdf=0;
-output.sides = 1; % set to 1 for all saccades, 2 for leftward saccades, 3 for rightward saccades (rule selecting)
+output.savsdf=1;
+output.sides=1; % set to 1 for all saccades, 2 for leftward saccades, 3 for rightward saccades (rule selecting)
 
 load(recname,'allbad','allcodes','alltimes');  % saccadeInfo probably not needed
 FRfortestB = [];
@@ -57,6 +61,8 @@ elseif aligncode == 585;
     alignname = 'Refix';
 elseif aligncode == 605;
     alignname = 'PercStim';
+elseif aligncode == 625;
+    alignname = 'Go2';
 elseif aligncode == 645;
     alignname = 'Sac2';
 else
@@ -66,6 +72,7 @@ AFCplots=nan(2,1);
 
 allsdf=cell(4,1);
 allrast=cell(4,1);
+smallrast=cell(4,1);
 alladdevents=cell(4,1);
 
 numrast=4; %Two figures, ploting two sets of data per figure
@@ -180,7 +187,8 @@ switch InterAxn
             disp_2AFC(recname,datalign,selclus,aligncode,'TT');
             disp_2AFC(recname,datalign,selclus,aligncode,'Interaction');
         else
-            disp_2AFC(recname,datalign,selclus,aligncode,'TT', 1);
+            %disp_2AFC(recname,datalign,selclus,aligncode,'TT', 1); we
+            %only want the interactions for ANOVAs
             disp_2AFC(recname,datalign,selclus,aligncode,'Interaction', 1);
         end
         return;
@@ -308,6 +316,14 @@ for dataset=1:numrast
             htitle=title(s1);
             set(htitle,'Interpreter','none','FontName','calibri','FontSize',11);
         end
+    else % still need to check isnantrial even if not plotting
+        for rastlines=1:size(rasters,1) %plotting rasters trial by trial
+            spiketimes=find(rasters(rastlines,start:stop)); %converting from a matrix representation to a time collection, within selected time range
+            if isnan(sum(rasters(rastlines,start:stop)))
+                isnantrial(rastlines)=1;
+                spiketimes(find(isnan(rasters(rastlines,start:stop))))=0; %#ok<FNDSB>
+            end
+        end
     end
     
     %% Plot sdf
@@ -321,7 +337,7 @@ for dataset=1:numrast
     if size(rasters,1)==1 %if only one good trial,useless plotting this
         sumall=NaN;
     else
-        sumall=sum(rasters(~isnantrial,start-fsigma:stop+fsigma));
+        sumall=sum(rasters(~isnantrial,start-fsigma:stop+fsigma), 1);
     end
 %     sdf=spike_density(sumall,fsigma)./length(find(~isnantrial)); %instead
 %     of number of trials
@@ -412,12 +428,14 @@ for dataset=1:numrast
     
     %% keep sdf
     allsdf{dataset}=sdf;
+    smallrast{dataset}=rasters(:, alignidx-befspan:alignidx+aftspan);
+    rasts{dataset}=rasters(~isnantrial,start:stop);
     clear TimeInd; % Just in case    
 end
 %FRout %output ZMA
 
 %% Quick stats ZMA
-batchstats(InterAxn, FRout, FRfortestB, FRfortestA, FRfortestT);
+batchstats(InterAxn, FRout, FRfortestB, FRfortestA, FRfortestT, smallrast);
 
 %% last adjustments and save - routine for multiple figures produced
 % for fignum=1:2
@@ -557,13 +575,17 @@ if length(varargin)==0;
         print(AFCplots, '-dpng', '-noui', '-opengl','-r600', exportfigname);
         fprintf(' Saved figure\n');
         %vector graphics if needed
-    %         plot2svg([exportfigname,'.svg'],AFCplots, 'png');
+%             plot2svg([exportfigname,'.svg'],AFCplots, 'png');
         delete(AFCplots); %if needed
     end
 end
 
-sdfsave = [directory, 'SDFs/',recname,'_Clus', num2str(spikechannel), '_',alignname, poolstr2, '_SDFs'];
+sdfsave = [directory, 'SDFs/',alignname, '/',recname,'_Clus', num2str(selclus), '_',alignname, poolstr2, '_SDFs'];
 if output.savsdf
     save(sdfsave, 'allsdf');
 end
+
+rastsave = [directory, 'Rasters/', alignname, '/', recname,'_Clus', num2str(selclus), '_',alignname, poolstr2, '_rasts'];
+%save(rastsave, 'rasts');
+
 end
