@@ -524,6 +524,9 @@ for trialnumber = 1:nt
         if isempty(char(saccadeInfo(:,end).status))
             disp('last column empty');
             break;
+        elseif length([saccadeInfo(next,~cellfun('isempty',saccadeInfo(next,:).latency)).latency])>1
+            disp('rex_process_inGUI: too many latencies') %prolly need to clear the old one
+            break
         end
         next = next + 1;
     end;

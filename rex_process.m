@@ -258,7 +258,7 @@ AccThreshold = 0.1;          %if acc > 100000 degrees/s^2, that is 0.1 deg/ms^2,
             noiseIdx(noisyperiod(1):noisyperiod(end)) = 0;
             disp('noise was in filtered velocity data, corrected');
         else
-            disp('noise in raw data, left uncorrected');
+            disp('noise in  data, left uncorrected');
         end
     end        
       

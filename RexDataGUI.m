@@ -624,7 +624,7 @@ elseif strcmp(get(gcf,'SelectionType'),'open') || strcmp(eventdata,'rightclkevt'
                 
                 if ~isempty(checksort)
                     % overwrite the user's oldest sort for this file
-                    sort_id = checksort(end); sort_id = sort_id{1};
+                    sort_id = checksort(end); sort_id = sort_id{1}; 
                     [success] = deleteChildren(sort_id, CCNdb); %removed ftp_CCNdb
                     updateSort(sort_id, newsort, CCNdb);
                 else
