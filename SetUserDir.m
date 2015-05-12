@@ -35,9 +35,9 @@ elseif strcmp(archst, 'win32') || strcmp(archst, 'win64')
         directory = 'C:\Users\The Doctor\Data\';
         user='generic';
     else strcmp(getenv('username'),'Vincent')
-        directory = 'B:\data\Recordings\';
+        directory = 'D:\data\Recordings\';
         user='Vincent';
-        dbldir = 'B:\JDBC';
+        dbldir = 'D:\JDBC';
         mapddataf='vincedata';
     end
     slash = '\';

@@ -5,13 +5,24 @@ function  filtvals = fullgauss_filtconv(vector,sigma,causal)
 % vector is binned data (i.e., spike train)
 % sigma is SD
 % causal is for using causal kernel 
-% For conversion to spike rate, see spike_density
+% If bin size is 1 (millisecond precision: binary data), see spike_density
+% or conv_raster to convert to spike rate.
+
+% Example:
+% foo = mean([poissrnd(3,1,100);sin(0:0.3:29.7)]);
+% foo=foo-mean(foo);
+% plot(foo)
+% hold on
+% c_foo=fullgauss_filtconv(foo(1,1:end),1,0);
+% plot(c_foo,'r')
+% c_foo=fullgauss_filtconv(foo(1,1:end),5,0);
+% plot(c_foo,'k')
+% cc_foo=fullgauss_filtconv(foo(1,1:end),1,1);
+% plot(cc_foo,'g')
 
 if nargin < 2 || isempty(sigma)
      sigma = 5;
 end
-
-bin_size=1; %millisecond precision
 
 ksize = 6*sigma;
 x = linspace(-ksize / 2, ksize / 2, ksize+1);
