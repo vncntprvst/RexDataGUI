@@ -337,19 +337,19 @@ for plotnum=1:numplots
                 sumall=sum(rasters(~isnantrial,start-fsigma:stop+fsigma));
             end
         else
-            sumall=sum(rasters(~isnantrial,start-fsigma:stop+fsigma));
+            sumall=sum(rasters(~isnantrial,start:stop));
         end
         %     sdf=spike_density(sumall,fsigma)./length(find(~isnantrial)); %instead of number of trials
         sdf=fullgauss_filtconv(sumall,fsigma,0)./length(find(~isnantrial)).*1000;
-        sdf=sdf(fsigma+1:end-fsigma);
+%         sdf=sdf(fsigma+1:end-fsigma);
         
          %% calculate confidence intervals
-    lcut_rasters=rasters(~isnantrial,start-fsigma:stop+fsigma);
+    lcut_rasters=rasters(~isnantrial,start:stop);
     smoothtrial=zeros(size(lcut_rasters));
     for crsem=1:size(rasters(~isnantrial),1)
         smoothtrial(crsem,:)=fullgauss_filtconv(lcut_rasters(crsem,:),1,0).*1000; 
     end
-    smoothtrial=smoothtrial(:,fsigma+1:end-fsigma);
+%     smoothtrial=smoothtrial(:,fsigma+1:end-fsigma);
 %     if numrast==2 && rastnum==1  %collect old trials
 %           first_smtrials=smoothtrial;
 %     end

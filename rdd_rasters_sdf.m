@@ -914,10 +914,10 @@ if plotrasts
         
         %% sdf plot
         % for kernel optimization, see : http://176.32.89.45/~hideaki/res/ppt/histogram-kernel_optimization.pdf
-        sumall=sum(rasters(~isnantrial{cnp},start-fsigma:stop+fsigma));
+        sumall=sum(rasters(~isnantrial{cnp},start:stop));
         %sdf=spike_density(sumall,fsigma)./length(find(~isnantrial{cnp})); %instead of number of trials
         sdf=fullgauss_filtconv(sumall,fsigma,0)./length(find(~isnantrial{cnp})).*1000; %instead of number of trials
-        sdf=sdf(fsigma+1:end-fsigma);
+%         sdf=sdf(fsigma+1:end-fsigma);
         %pdf = probability_density( sumall, fsigma ) ./ trials;
         
         if cut_rast_siz(1) == 1 || length(sdf) <= 1

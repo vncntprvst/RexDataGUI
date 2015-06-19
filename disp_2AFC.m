@@ -337,12 +337,12 @@ for dataset=1:numrast
     if size(rasters,1)==1 %if only one good trial,useless plotting this
         sumall=NaN;
     else
-        sumall=sum(rasters(~isnantrial,start-fsigma:stop+fsigma), 1);
+        sumall=sum(rasters(~isnantrial,start:stop), 1);
     end
 %     sdf=spike_density(sumall,fsigma)./length(find(~isnantrial)); %instead
 %     of number of trials
     sdf=fullgauss_filtconv(sumall,fsigma,0)./length(find(~isnantrial)).*1000;  %.*1000 to convert to spk/s
-    sdf=sdf(fsigma+1:end-fsigma);
+%     sdf=sdf(fsigma+1:end-fsigma);
     
     if length(varargin)==0;
         sdflines(dataset)=plot(sdf,'Color',cc(dataset,:),'LineWidth',1.8);
@@ -358,11 +358,11 @@ for dataset=1:numrast
         end    
     end
     % Calculating standard errors
-    sdfgrid = repmat(sdf, size(rasters(~isnantrial, start-fsigma:stop+fsigma), 1), 1);
-    indsdf = spike_density(rasters(~isnantrial, start-fsigma:stop+fsigma), fsigma);
-%     indsdf = fullgauss_filtconv(rasters(~isnantrial, start-fsigma:stop+fsigma), fsigma,0);
-    indsdf = indsdf(:, fsigma+1:end-fsigma);
-    sd = sqrt(sum((indsdf-sdfgrid).^2)./size(rasters(~isnantrial, start-fsigma:stop+fsigma), 1))./sqrt(size(rasters(~isnantrial, start-fsigma:stop+fsigma), 1));
+    sdfgrid = repmat(sdf, size(rasters(~isnantrial, start:stop), 1), 1);
+    indsdf = spike_density(rasters(~isnantrial, start:stop), fsigma);
+%     indsdf = fullgauss_filtconv(rasters(~isnantrial, start:stop), fsigma,0);
+%     indsdf = indsdf(:, fsigma+1:end-fsigma);
+    sd = sqrt(sum((indsdf-sdfgrid).^2)./size(rasters(~isnantrial, start:stop), 1))./sqrt(size(rasters(~isnantrial, start:stop), 1));
 
     if length(varargin)==0;
         sdlines(dataset, 1)=plot(sdf+sd, ':', 'Color',cc(dataset, :), 'LineWidth', 1);

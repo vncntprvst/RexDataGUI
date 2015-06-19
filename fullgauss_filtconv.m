@@ -1,4 +1,4 @@
-function  filtvals = fullgauss_filtconv(vector,sigma,causal)
+function  filtvals = fullgauss_filtconv(vector,sigma,causal,constraint)
 % Smoothing with gaussian filtering
 % Same as gauss_filtconv, but with added denominator in front of the 
 % exponential. Result is identical to using normpdf. 
@@ -22,6 +22,10 @@ function  filtvals = fullgauss_filtconv(vector,sigma,causal)
 
 if nargin < 2 || isempty(sigma)
      sigma = 5;
+     constraint = 'valid';
+end
+if nargin < 4
+    constraint = 'valid';
 end
 
 ksize = 6*sigma;
@@ -35,4 +39,13 @@ gaussFilter = gaussFilter / sum (gaussFilter); % normalize
 % if size(vector,1)>1
 %     gaussFilter=repmat(gaussFilter,size(vector,1),1);
 % end
-filtvals = conv (vector, gaussFilter, 'same'); % filter vector data
+% filtvals = conv (vector, gaussFilter, 'same'); 
+
+% if ~isnan(vector)
+    filtvals = conv (vector, gaussFilter, constraint); % filter vector data
+% else
+%     filtvals = nanconv(vector, gaussFilter,'edge');
+%     filtvals = filtvals(:,sigma*3+1:end-3*sigma);
+% end
+
+

@@ -249,19 +249,19 @@ for rastnum=1:numrast
         %useless plotting this
         sumall=NaN;
     else
-        sumall=sum(rasters(~isnantrial,start-fsigma:stop+fsigma));
+        sumall=sum(rasters(~isnantrial,start:stop));
     end
     %     sdf=spike_density(sumall,fsigma)./length(find(~isnantrial)); %instead of number of trials
     sdf=fullgauss_filtconv(sumall,fsigma,causker)./length(find(~isnantrial)).*1000;
-    sdf=sdf(fsigma+1:end-fsigma);
+%     sdf=sdf(fsigma+1:end-fsigma);
     
     %% calculate confidence intervals
-    lcut_rasters=rasters(~isnantrial,start-fsigma:stop+fsigma);
+    lcut_rasters=rasters(~isnantrial,start:stop);
     smoothtrial=zeros(size(lcut_rasters));
     for crsem=1:size(rasters(~isnantrial),1)
         smoothtrial(crsem,:)=fullgauss_filtconv(lcut_rasters(crsem,:),fsigma,causker).*1000; 
     end
-    smoothtrial=smoothtrial(:,fsigma+1:end-fsigma);
+%     smoothtrial=smoothtrial(:,fsigma+1:end-fsigma);
     if numrast==2 && rastnum==1  %collect old trials
           first_smtrials=smoothtrial;
     end
@@ -500,13 +500,13 @@ for algfile=1:length(filelist)
         %title('SDF: best direction','FontName','calibri','FontSize',11);
         hold on;
         if size(bdrasters,1)==1 %if only one good trial
-            sumall=bdrasters(~isnantrial,start-fsigma:stop+fsigma);
+            sumall=bdrasters(~isnantrial,start:stop);
         else
-            sumall=sum(bdrasters(~isnantrial,start-fsigma:stop+fsigma));
+            sumall=sum(bdrasters(~isnantrial,start:stop));
         end
         %             bdsdf=spike_density(sumall,fsigma)./length(find(~isnantrial)); %instead of number of trials
         bdsdf=fullgauss_filtconv(sumall,fsigma,causker)./length(find(~isnantrial)).*1000;
-        bdsdf=bdsdf(fsigma+1:end-fsigma);
+%         bdsdf=bdsdf(fsigma+1:end-fsigma);
         
         bdsdfline=plot(bdsdf,'Color',[0.4389    0.1111    0.2581],'LineWidth',1.8);
         % axis([0 stop-start 0 200])
@@ -1040,15 +1040,15 @@ for algfile=1:length(filelist)
             title('Spike Density Function','FontName','calibri','FontSize',11);
             hold on;
             if size(rasters,1)==1 %if only one good trial
-                sumall=rasters(~isnantrial,start-fsigma:stop+fsigma);
+                sumall=rasters(~isnantrial,start:stop);
                 sumall(isnan(sumall))=0;
             else
-                sumall=sum(rasters(~isnantrial,start-fsigma:stop+fsigma));
+                sumall=sum(rasters(~isnantrial,start:stop));
                 sumall(isnan(sumall))=0;
             end
             %             sdf=spike_density(sumall,fsigma)./length(find(~isnantrial)); %instead of number of trials
             sdf=fullgauss_filtconv(sumall,fsigma,causker)./length(find(~isnantrial)).*1000;
-            sdf=sdf(fsigma+1:end-fsigma);
+%             sdf=sdf(fsigma+1:end-fsigma);
             
             plot(sdf,'Color',cc(rstplt,:),'LineWidth',1.8);
             % axis([0 stop-start 0 200])
@@ -1325,13 +1325,13 @@ for i=1:numrast
     
     %Plot sdf
     if size(rasters,1)==1 %if only one good trial
-        sumall=rasters(~isnantrial,start-fsigma:stop+fsigma);
+        sumall=rasters(~isnantrial,start:stop);
     else
-        sumall=sum(rasters(~isnantrial,start-fsigma:stop+fsigma));
+        sumall=sum(rasters(~isnantrial,start:stop));
     end
     %     sdf=spike_density(sumall,fsigma)./length(find(~isnantrial)); %instead of number of trials
     sdf=fullgauss_filtconv(sumall,fsigma,causker)./length(find(~isnantrial)).*1000;
-    sdf=sdf(1+fsigma:end-fsigma);
+%     sdf=sdf(1+fsigma:end-fsigma);
     
     plot(sdf,'Color',cc(i,:),'LineWidth',1.8);
     %title('Spike Density Function','FontName','calibri','FontSize',11);
