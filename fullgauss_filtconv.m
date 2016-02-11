@@ -11,20 +11,26 @@ function  filtvals = fullgauss_filtconv(vector,sigma,causal,constraint)
 % Example:
 % foo = mean([poissrnd(3,1,100);sin(0:0.3:29.7)]);
 % foo=foo-mean(foo);
+% figure
 % plot(foo)
 % hold on
 % c_foo=fullgauss_filtconv(foo(1,1:end),1,0);
-% plot(c_foo,'r')
+% plot(4:97,c_foo) % missing 3 data points on each side
+% smoother
 % c_foo=fullgauss_filtconv(foo(1,1:end),5,0);
-% plot(c_foo,'k')
+% plot(16:85,c_foo) % missing 15 data points on each side
+% causal kernel
 % cc_foo=fullgauss_filtconv(foo(1,1:end),1,1);
-% plot(cc_foo,'g')
+% plot(4:97,cc_foo)
 
 if nargin < 2 || isempty(sigma)
      sigma = 5;
-     constraint = 'valid';
-end
-if nargin < 4
+     causal=0;
+     constraint = 'valid'; %10/28/15 new attempts at constraint 'same', not 'valid'
+elseif nargin < 3
+    causal=0;
+    constraint = 'valid';
+elseif nargin < 4
     constraint = 'valid';
 end
 
@@ -42,7 +48,7 @@ gaussFilter = gaussFilter / sum (gaussFilter); % normalize
 % filtvals = conv (vector, gaussFilter, 'same'); 
 
 % if ~isnan(vector)
-    filtvals = conv (vector, gaussFilter, constraint); % filter vector data
+filtvals = conv (vector, gaussFilter, constraint); % filter vector data
 % else
 %     filtvals = nanconv(vector, gaussFilter,'edge');
 %     filtvals = filtvals(:,sigma*3+1:end-3*sigma);

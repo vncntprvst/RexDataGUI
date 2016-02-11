@@ -1,8 +1,12 @@
-function [directory,slash,user,dbldir,mapdr,servrep,mapddataf]=SetUserDir
+function userinfo=SetUserDir
 %find user, directory and slash type
 %added database directory 08/14 - VP
+%changed varout to structure
 
 % should switch by hostname: [~,foo]=system('hostname')
+
+userinfo=struct('directory',[],'slash',[],'user',[],'dbldir',[],...
+    'syncdir',[],'mapdr',[],'servrep',[],'mapddataf',[]);
 
 % determines computer type
 archst  = computer('arch'); 
@@ -10,39 +14,41 @@ archst  = computer('arch');
 if strcmp(archst, 'maci64')
     name = getenv('USER');
     if strcmp(name, 'zacharyabzug')
-        directory = '/Users/zacharyabzug/Desktop/zackdata/';
-        user='Zach';
+        userinfo.directory = '/Users/zacharyabzug/Desktop/zackdata/';
+        userinfo.user='Zach';
     elseif strcmp(name, 'zmabzug')
-        directory = '/Users/zmabzug/Desktop/zackdata/';
-        user='Zach';
+        userinfo.directory = '/Users/zmabzug/Desktop/zackdata/';
+        userinfo.user='Zach';
     end
-    slash = '/';
+    userinfo.slash = '/';
 elseif strcmp(archst, 'win32') || strcmp(archst, 'win64')
     if strcmp(getenv('username'),'SommerVD') || ...
             strcmp(getenv('username'),'LabV') || ...
             strcmp(getenv('username'),'Purkinje') || ...
             strcmp(getenv('username'),'JuanandKimi') || ...
             strcmp(getenv('username'),'vp35')
-        directory = 'C:\Data\Recordings\';
-        user='generic';
+        userinfo.directory = 'C:\Data\Recordings\';
+        userinfo.user='generic';
     elseif strcmp(getenv('username'),'DangerZone')
-        directory = 'E:\data\Recordings\';
-        user='Vincent';
-        dbldir = 'E:\JDBC';
-        mapddataf='vincedata';
+        userinfo.directory = 'E:\data\Recordings\';
+        userinfo.user='Vincent';
+        userinfo.dbldir = 'E:\JDBC';
+        userinfo.mapddataf='vincedata';
+        userinfo.syncdir='E:\BoxSync\Box Sync\Home Folder vp35\Sync\CbTimingPredict\data';
     elseif strcmp(getenv('username'),'Radu')
-        directory = 'E:\Spike_Sorting\';
-        user='Radu';
+        userinfo.directory = 'E:\Spike_Sorting\';
+        userinfo.user='Radu';
     elseif strcmp(getenv('username'),'The Doctor')
-        directory = 'C:\Users\The Doctor\Data\';
-        user='generic';
+        userinfo.directory = 'C:\Users\The Doctor\Data\';
+        userinfo.user='generic';
     else strcmp(getenv('username'),'Vincent')
-        directory = 'D:\data\Recordings\';
-        user='Vincent';
-        dbldir = 'D:\JDBC';
-        mapddataf='vincedata';
+        userinfo.directory = 'D:\data\Recordings\';
+        userinfo.user='Vincent';
+        userinfo.dbldir = 'D:\JDBC'; %or C:\Box Sync\Home Folder vp35\Sync\CbTimingPredict\data\JDBC
+        userinfo.mapddataf='vincedata';
+        userinfo.syncdir='C:\Box Sync\Home Folder vp35\Sync\CbTimingPredict\data';
     end
-    slash = '\';
+    userinfo.slash = '\';
     
     %find if one or more remote drives are mapped
     [~,connlist]=system('net use');
@@ -52,21 +58,21 @@ elseif strcmp(archst, 'win32') || strcmp(archst, 'win64')
         if ~length(regexp(connlist,':','start'))
             disp('connect remote drive to place files on server')
         elseif length(regexp(connlist,':','start'))==1
-            servrep=connlist(regexp(connlist,':','start')-1:carrets(find(carrets>regexp(connlist,':','start'),1))-1);
-            servrep=regexprep(servrep,'[^\w\\|.|:|-'']','');
-            mapdr=servrep(1:2);servrep=servrep(3:end);servrep=regexprep(servrep,'\\','/');
+            userinfo.servrep=connlist(regexp(connlist,':','start')-1:carrets(find(carrets>regexp(connlist,':','start'),1))-1);
+            userinfo.servrep=regexprep(userinfo.servrep,'[^\w\\|.|:|-'']','');
+            userinfo.mapdr=userinfo.servrep(1:2);userinfo.servrep=userinfo.servrep(3:end);userinfo.servrep=regexprep(userinfo.servrep,'\\','/');
         elseif length(regexp(connlist,':','start'))>=2
             servs=regexp(connlist,':','start')-1;
             for servl=1:length(servs)
                 if logical(strfind(regexprep(connlist(servs(servl):carrets(find(carrets>servs(servl),1))-1),'[^\w\\|.|:|-'']',''),...
                 'ccn-sommerserv.win.duke.edu'))
-                    servrep=regexprep(connlist(servs(servl):carrets(find(carrets>servs(servl),1))-1),'[^\w\\|.|:|-'']','');
-                    mapdr=servrep(1:2);servrep=servrep(3:end);servrep=regexprep(servrep,'\\','/');
+                    userinfo.servrep=regexprep(connlist(servs(servl):carrets(find(carrets>servs(servl),1))-1),'[^\w\\|.|:|-'']','');
+                    userinfo.mapdr=userinfo.servrep(1:2);userinfo.servrep=userinfo.servrep(3:end);userinfo.servrep=regexprep(userinfo.servrep,'\\','/');
                     break;
                 end
             end
         end
     else 
-        [servrep,mapdr]=deal([]); 
+        [userinfo.servrep,userinfo.mapdr]=deal([]); 
     end
 end
