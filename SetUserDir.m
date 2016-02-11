@@ -2,8 +2,10 @@ function [directory,slash,user,dbldir,mapdr,servrep,mapddataf]=SetUserDir
 %find user, directory and slash type
 %added database directory 08/14 - VP
 
+% should switch by hostname: [~,foo]=system('hostname')
+
 % determines computer type
-archst  = computer('arch');
+archst  = computer('arch'); 
 
 if strcmp(archst, 'maci64')
     name = getenv('USER');
