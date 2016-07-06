@@ -964,7 +964,10 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
 end
 
 %find user, directory and slash type
-[directory,slash,user]=SetUserDir;
+userinfo=SetUserDir;
+directory=userinfo.directory;
+slash=userinfo.slash;
+user=userinfo.user;
 
 %get subject list
 subjectlist=GetSubjects;
