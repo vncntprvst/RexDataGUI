@@ -1,4 +1,4 @@
-function [newecodes, newetimes,clus_names] = replaceecodes2(ecodes,etimes,figs)
+function [newecodes, newetimes,clus_names] = replaceecodes3(ecodes,etimes,figs)
 if nargin <3
     figs=0;
 end
