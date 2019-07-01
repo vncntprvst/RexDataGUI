@@ -20,7 +20,6 @@ if strcmp(archst, 'maci64')
         userinfo.directory = '/Users/zmabzug/Desktop/zackdata/';
         userinfo.user='Zach';
     end
-    userinfo.slash = '/';
 elseif strcmp(archst, 'win32') || strcmp(archst, 'win64')
     if strcmp(getenv('username'),'SommerVD') || ...
             strcmp(getenv('username'),'LabV') || ...
@@ -34,7 +33,13 @@ elseif strcmp(archst, 'win32') || strcmp(archst, 'win64')
         userinfo.user='Vincent';
         userinfo.dbldir = 'E:\JDBC';
         userinfo.mapddataf='vincedata';
-        userinfo.syncdir='E:\Dropbox\Vincent Docs\CbTimingPredict\data'; %'E:\BoxSync\Box Sync\Home Folder vp35\Sync\CbTimingPredict\data';
+        userinfo.syncdir='E:\BoxSync\Box Sync\Home Folder vp35\Sync\CbTimingPredict\data';
+    elseif strcmp(getenv('username'),'Manu')
+        userinfo.directory = 'G:\Boulot\Data\data';
+        userinfo.user='Vincent';
+        userinfo.dbldir = 'G:\Boulot\Manuscripts\CbTimingPredict\data\JDBC';
+        userinfo.mapddataf='vincedata';
+        userinfo.syncdir='G:\Dropbox\Vincent Docs\CbTimingPredict\data';
     elseif strcmp(getenv('username'),'Radu')
         userinfo.directory = 'E:\Spike_Sorting\';
         userinfo.user='Radu';
@@ -48,7 +53,7 @@ elseif strcmp(archst, 'win32') || strcmp(archst, 'win64')
         userinfo.mapddataf='vincedata';
         userinfo.syncdir='C:\Box Sync\Home Folder vp35\Sync\CbTimingPredict\data';
     end
-    userinfo.slash = '\';
+    filesep = '\';
     
     %find if one or more remote drives are mapped
     [~,connlist]=system('net use');

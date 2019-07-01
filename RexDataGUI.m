@@ -966,7 +966,7 @@ end
 %find user, directory and slash type
 userinfo=SetUserDir;
 directory=userinfo.directory;
-slash=userinfo.slash;
+slash=filesep;
 user=userinfo.user;
 
 %get subject list
