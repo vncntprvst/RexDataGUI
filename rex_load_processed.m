@@ -46,7 +46,7 @@ namelength = length( name );
 rexmatname = name;
 if ~strcmpi(  name( namelength-3:namelength ) , '.mat' )
     rexmatname = cat( 2, name, '.mat' );  
-end;
+end
 if ~exist( rexmatname, 'file' ) && ~skip
     disp( 'File to be processed...');
 %     if findstr(name,'gap')
@@ -57,11 +57,11 @@ if ~exist( rexmatname, 'file' ) && ~skip
     if ~success
         disp( 'Failed to process file...');
         return;
-    end;
+    end
 elseif ~exist( rexmatname, 'file' ) && skip
     success=0;
     return;
-end;
+end
 
 success = 1;
 load( rexmatname );

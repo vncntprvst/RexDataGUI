@@ -29,7 +29,7 @@ function [ecodeout, etimeout, spkchan, spk, arate, h, v, start_time, badtrial, c
 %     allcodelen allspklen alleyelen allsaclen saccadeInfo;
 global allcodes alltimes allspkchan allspk allspk_clus allrates ...
         allh allv allstart allbad saccadeInfo;
-global sessiondata rexloadedname rexnumtrials;
+global rexloadedname rexnumtrials; %sessiondata
 
     
 if nargin<4
@@ -55,8 +55,8 @@ if ~strcmp( name,rexloadedname ) || reload;
          s = sprintf( 'rex_trial:  could not load the data for %s (cannot find .mat or A and E files).', name );
          disp( s );
          return;
-     end;        
-end;
+     end    
+end
 
 if isempty(rexnumtrials)
 rexnumtrials=str2num(get(findobj('Tag','trialnumbdisplay'),'String'));

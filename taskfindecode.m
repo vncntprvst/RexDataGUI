@@ -43,7 +43,7 @@ elseif strcmp(tasktype,'st_saccades')
     tgtcode=662;
     tgtoffcode=682;
     saccode=702;
-elseif strcmp(tasktype,'gapstop')
+elseif strcmp(tasktype,'gapstop') || strcmp(tasktype,'cmd')
     basecode=[604,407];
     fixcode=[624,427];
     fixoffcode=[664,467];

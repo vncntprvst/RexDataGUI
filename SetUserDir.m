@@ -34,7 +34,7 @@ elseif strcmp(archst, 'win32') || strcmp(archst, 'win64')
         userinfo.user='Vincent';
         userinfo.dbldir = 'E:\JDBC';
         userinfo.mapddataf='vincedata';
-        userinfo.syncdir='E:\BoxSync\Box Sync\Home Folder vp35\Sync\CbTimingPredict\data';
+        userinfo.syncdir='E:\Dropbox\Vincent Docs\CbTimingPredict\data'; %'E:\BoxSync\Box Sync\Home Folder vp35\Sync\CbTimingPredict\data';
     elseif strcmp(getenv('username'),'Radu')
         userinfo.directory = 'E:\Spike_Sorting\';
         userinfo.user='Radu';

@@ -39,12 +39,12 @@ firsttrial = 0;
 %argument? 
 if num == 0
     return;
-end;
+end
 
 if includebad
     firsttrial = 1;
     return;
-end;
+end
 
 badtrial = 1;
 trial = 1;
@@ -54,5 +54,5 @@ while badtrial && trial < num
         trial = trial + 1;
     else
         firsttrial = trial;
-    end;
-end;
+    end
+end

@@ -36,10 +36,11 @@ rexloadedname=get(findobj('Tag','filenamedisplay'),'String');
 if ~strcmp(rdd_filename,rexloadedname) || reload; % rexloadedname is created in rex_process
      rexnumtrials = 0;
      %disp( 'File not loaded yet...');
-     success = rex_load_processed( rdd_filename, skipunproc);
+%      success = rex_load_processed( rdd_filename, skipunproc);
+     success = load_REXfile(rdd_filename);
      if ~success
          return;
-     end;
+     end
      set(findobj('Tag','filenamedisplay'),'String',rdd_filename);
      set(findobj('Tag','nboftrialsdisplay'),'String',num2str(rexnumtrials));
 else 
